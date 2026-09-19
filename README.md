@@ -2,7 +2,6 @@
 
 **A bilingual (English / العربية) AI-powered academy for audit and accounting professionals — one workspace for ISA & IFRS exam prep, a 20-industry risk library, AI fieldwork assistants, and 23 neural voices that read English and Arabic beautifully.**
 
-[![CI](https://github.com/mahmoudmohamedxx1-hue/auditedge/actions/workflows/ci.yml/badge.svg)](https://github.com/mahmoudmohamedxx1-hue/auditedge/actions/workflows/ci.yml)
 ![Next.js 16](https://img.shields.io/badge/Next.js_16-000000?logo=nextdotjs)
 ![React 19](https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript_5-3178C6?logo=typescript&logoColor=white)
@@ -97,7 +96,7 @@ Adding a voice is a data change, not a code change: append an `EdgeVoiceInfo` en
 | Data | Prisma 6 + SQLite |
 | AI | Z.ai GLM-4.7-Flash / GLM-4.6V-Flash / GLM-4-Plus via OpenAI-compatible streaming |
 | Speech | Microsoft Edge neural TTS (custom WSS client), Z.ai TTS fallback, ASR dictation |
-| Runtime & tooling | Bun, ESLint 9, GitHub Actions CI |
+| Runtime & tooling | Bun, ESLint 9, GitHub Actions (workflow config included) |
 
 ## Getting started
 
@@ -155,7 +154,7 @@ The repo ships with the verification suites used during development:
 | `bun scripts/test-engagement-v12.ts` | 28 | Audit-program engagement objects |
 | `bun scripts/test-models-v15.ts` | 14 | Live GLM streaming for all three models (needs `ZAI_OPEN_API_KEY`) |
 
-CI runs lint, typecheck and a production build on every push and pull request.
+A ready-to-run GitHub Actions workflow ships at [`docs/ci-workflow.yml`](docs/ci-workflow.yml) — lint, typecheck and a production build on every push and pull request. GitHub only accepts workflow files through the web UI or a `workflow`-scoped token, so to switch CI on: copy the file to `.github/workflows/ci.yml` (the GitHub web editor works) and commit.
 
 ## Project structure
 
