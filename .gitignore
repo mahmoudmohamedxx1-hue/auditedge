@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# build output
+.next/
+out/
+build/
+
+# environment - never commit secrets
+.env*
+!.env.example
+
+# database (SQLite, created by `bun run db:push`)
+db/
+*.db
+*.db-journal
+
+# logs
+*.log
+
+# misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+
+# vercel
+.vercel/

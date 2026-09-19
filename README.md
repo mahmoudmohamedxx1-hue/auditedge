@@ -1,0 +1,219 @@
+# AuditEdge Academy
+
+**A bilingual (English / العربية) AI-powered academy for audit and accounting professionals — one workspace for ISA & IFRS exam prep, a 20-industry risk library, AI fieldwork assistants, and 23 neural voices that read English and Arabic beautifully.**
+
+[![CI](https://github.com/mahmoudmohamedxx1-hue/auditedge/actions/workflows/ci.yml/badge.svg)](https://github.com/mahmoudmohamedxx1-hue/auditedge/actions/workflows/ci.yml)
+![Next.js 16](https://img.shields.io/badge/Next.js_16-000000?logo=nextdotjs)
+![React 19](https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript_5-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?logo=tailwindcss&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma_6-2D3748?logo=prisma&logoColor=white)
+![EN | AR RTL](https://img.shields.io/badge/EN%20%7C%20%D8%B9%D8%B1%D8%A8%D9%8A%20RTL-blue)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+
+![Dashboard - light theme](docs/screenshots/dashboard-light.png)
+
+## About
+
+AuditEdge Academy is a personal learning workspace built for a Senior Associate in external audit (Egypt) — designed to feel like a professional tool, not a course catalog. It carries **30 courses and 933 lessons** across the full ISA framework, IFRS core standards and the Egyptian regulatory environment (FRA decrees, Egyptian Standards on Auditing, Companies Law 159/1981), plus **146 library materials** including official standard texts.
+
+Around the curriculum sits an AI suite: a tutor that grounds its answers in your own library (RAG with cited excerpts), an industry risk analyst that streams sector-specific risk profiles, a Key Audit Matters drafter, and a trial-balance / journal-entry analyzer. Read-aloud is powered by 23 voices across two engines — including Egyptian and Gulf Arabic neural voices — with an Auto mode that matches the language of whatever is being read.
+
+Everything is bilingual (full RTL, not just translated strings), themeable (light/dark, FOUC-free), installable (PWA with offline lessons), and private (single-user, passwordless, no trackers).
+
+## Screenshots
+
+| Arabic RTL | Dark theme |
+|:---:|:---:|
+| ![Arabic RTL dashboard](docs/screenshots/dashboard-arabic-rtl.png) | ![Dark dashboard](docs/screenshots/dashboard-dark.png) |
+| *Full right-to-left layout across every view* | *Theme-aware tokens, OS-preference aware* |
+
+| AI Tutor | Voice catalog |
+|:---:|:---:|
+| ![AI Tutor - dark](docs/screenshots/ai-tutor-dark.png) | ![Voice catalog](docs/screenshots/voice-catalog.png) |
+| *Streaming answers grounded in the library* | *23 voices, searchable, with per-voice previews* |
+
+## Features
+
+### Curriculum and library
+- **30 courses / 933 lessons** — ISA 315, 330, 240, 570, EVD 500, IFRS core, the Egyptian FRA framework, audit analytics, plus curated Arabic IFRS & auditing playlists
+- **146 library materials** with official standard texts — searchable, excerpt-served
+- **Discover & Import** — search Coursera, MIT OCW, edX, OpenStax and YouTube, import as courses
+- Quizzes with certificates, XP, streaks and achievements with live earn-progress
+- Video lessons, lesson builder and full admin tooling
+
+### AI suite
+- **AI Tutor** — full page and floating popup, streaming answers, RAG over your library with cited excerpts, persistent conversations, and a tutor persona that encodes the full IFAC / IAASB / IESBA architecture plus the Egyptian regulatory map
+- **AI Industry Risk Analyst** — streaming risk profiles for 20 sectors, with deep-dive presets
+- **KAM drafter** — drafts Key Audit Matters from your program findings
+- **TB & JE analyzer** — trial balance and journal-entry analysis (Benford's law, JE testing)
+- **Vision** — attach an image (a reconciliation screenshot, a ledger extract) to your question
+- **Model switcher** — GLM-4.7-Flash (default, reasoning, free tier), GLM-4.6V-Flash (vision, free tier), GLM-4-Plus, with graceful fallback
+
+### Read-aloud and dictation
+- **16 Microsoft Edge neural voices** — Salma & Shakir (Egyptian Arabic), Zariyah & Hamed (Gulf Arabic), Jenny & Guy (US English), Sonia & Ryan (UK English), Natasha (AU), Neerja (IN), Denise (FR), Elvira (ES), Katja (DE), Elsa (IT), Emel (TR), Swara (HI)
+- **7 built-in Z.ai voices** as a fallback engine
+- **Auto mode** routes each text to a native voice by language — Arabic answers are read by Salma, English by Jenny
+- Searchable grouped picker with per-voice previews and speed control (0.75x - 1.5x)
+- Speech-to-text dictation in the composer
+
+### Engagement workspace
+- **Audit Program** — the full external audit cycle as a working tool: risk core, materiality calculator, PBC lists, findings, signoffs
+- Fully bilingual program — every section in English and Arabic
+
+### Platform
+- Full RTL Arabic across every view
+- Dark and light themes — persisted, OS-preference aware, no flash of unstyled theme
+- PWA — installable, offline lessons via service worker
+- Single-user by design — the app simply opens; no accounts, no trackers
+- SQLite + Prisma, Next.js standalone output
+
+## AI architecture
+
+- All model traffic proxies through server routes — the API key never reaches the browser
+- The tutor retrieves over the materials library (scored PDF/text excerpts) and cites what it used
+- The system prompt encodes the IFAC standard-setting architecture (who issues what), the Egyptian oversight map (FRA, CBE, Law 159/1981, PM Decree 3725/2025) and audit craft from engagement acceptance to partner review
+- A model router serves all three GLM models with balance-aware fallback
+
+## The voice engine (reverse-engineered, key-free)
+
+The 16 international voices are served by a from-scratch TypeScript client for Microsoft Edge's read-aloud neural TTS service (`src/lib/edge-tts.ts`):
+
+- WSS handshake against `speech.platform.bing.com` with a current-Chromium user agent, `muid` cookie and the `Sec-MS-GEC` DRM token (SHA-256 over clock-skew-corrected Windows-epoch ticks)
+- SSML synthesis with per-voice prosody — the app's 0.75x - 1.5x speed range maps to SSML rate adjustments
+- Binary frame reassembly (2-byte big-endian header length, `Path:audio` chunks reassembled into MP3)
+- Clock-skew retry recovered from the 403 `Date` header, plus a silent fallback to the Z.ai voices if the service is unreachable
+
+Adding a voice is a data change, not a code change: append an `EdgeVoiceInfo` entry in `src/lib/voices.ts`.
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router, standalone output) |
+| UI | React 19, Tailwind CSS 4, shadcn/ui, Radix primitives, Framer Motion |
+| Language | TypeScript 5 (strict) |
+| State | Zustand (persisted preferences), TanStack Query & Table |
+| Data | Prisma 6 + SQLite |
+| AI | Z.ai GLM-4.7-Flash / GLM-4.6V-Flash / GLM-4-Plus via OpenAI-compatible streaming |
+| Speech | Microsoft Edge neural TTS (custom WSS client), Z.ai TTS fallback, ASR dictation |
+| Runtime & tooling | Bun, ESLint 9, GitHub Actions CI |
+
+## Getting started
+
+### Prerequisites
+
+- [Bun](https://bun.sh) 1.2+ (the lockfile is Bun's; Node 20+ with npm also works if you regenerate the lockfile)
+- A Z.ai API key for the AI features (the free tier covers GLM-4.7-Flash and GLM-4.6V-Flash) — optional; everything else works without it
+
+### Setup
+
+```bash
+git clone https://github.com/mahmoudmohamedxx1-hue/auditedge.git
+cd auditedge
+bun install
+cp .env.example .env.local      # add your ZAI_OPEN_API_KEY for the AI features
+bun run db:push                 # create the SQLite schema
+bun run dev
+```
+
+Open http://localhost:3000 — the workspace boots straight in (single-user, passwordless; the account is provisioned automatically on first request).
+
+Optional — seed the 8 in-house standards courses (ISA 315 / 330 / 240 / 570, EVD 500, IFRS core, the Egyptian FRA framework, audit analytics):
+
+```bash
+bun scripts/seed/index.ts I-UNDERSTAND-THIS-WIPES-THE-DB
+```
+
+### Environment variables
+
+| Variable | Required | Default | Purpose |
+|---|---|---|---|
+| `DATABASE_URL` | yes | `file:./db/custom.db` | SQLite database file |
+| `ZAI_OPEN_API_KEY` | for AI features | — | Z.ai open-platform API key |
+| `ZAI_OPEN_BASE_URL` | no | `https://api.z.ai/api/paas/v4` | API base URL override |
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `bun run dev` | Dev server on port 3000 |
+| `bun run build` | Production build (standalone output) |
+| `bun run start` | Serve the standalone production build |
+| `bun run lint` | ESLint across the repo |
+| `bun run db:push` | Sync the Prisma schema to SQLite |
+| `bun scripts/seed/index.ts I-UNDERSTAND-THIS-WIPES-THE-DB` | Re-seed the 8 in-house courses (destructive) |
+
+## Verification and testing
+
+The repo ships with the verification suites used during development:
+
+| Suite | Checks | Covers |
+|---|---|---|
+| `bun scripts/test-sectors-v15.ts` | 515 | 20 sector risk profiles — risk matrices, assertions, deep-dive presets |
+| `bun scripts/test-sectors-v13.ts` | 351 | Sector library structural integrity |
+| `bun scripts/test-engagement-v12.ts` | 28 | Audit-program engagement objects |
+| `bun scripts/test-models-v15.ts` | 14 | Live GLM streaming for all three models (needs `ZAI_OPEN_API_KEY`) |
+
+CI runs lint, typecheck and a production build on every push and pull request.
+
+## Project structure
+
+```
+auditedge/
+├── docs/screenshots/            # UI captures (light, dark, Arabic RTL)
+├── prisma/schema.prisma         # SQLite schema — users, courses, lessons,
+│                                #   progress, quizzes, AI conversations
+├── public/                      # PWA manifest, icons, service worker
+├── scripts/
+│   ├── seed/                    # 8 in-house standards courses
+│   ├── test-sectors-v15.ts      # 515-check sector suite
+│   ├── test-models-v15.ts       # 14-check live GLM suite
+│   └── ...                      # verification, migration and ops tooling
+└── src/
+    ├── app/
+    │   ├── api/                 # 27 routes — AI (chat, tts, asr, industry,
+    │   │                        #   kam), courses, progress, materials,
+    │   │                        #   team, files, auth, bootstrap
+    │   ├── layout.tsx           # fonts, theme pre-paint, app shell
+    │   └── page.tsx             # single-page workspace shell
+    ├── components/
+    │   ├── audit/               # the app — tutor, analyst, program, sectors,
+    │   │                        #   library, player, voice picker, KAM drafter
+    │   └── ui/                  # shadcn/ui primitives
+    ├── lib/
+    │   ├── ai.ts                # GLM routing, RAG, tutor & analyst prompts
+    │   ├── edge-tts.ts          # Microsoft Edge neural TTS client (WSS + SSML)
+    │   ├── voices.ts            # 23-voice catalog + language routing
+    │   ├── program/             # audit program + 20 sector risk profiles
+    │   └── i18n.ts              # EN/AR dictionaries
+    └── store/useAppStore.ts     # Zustand state + localStorage persistence
+```
+
+## Roadmap
+
+- Trust and verification layer over AI answers — an inline verification pass over tutor / analyst output before display
+- Read-aloud in the lesson player, plus per-voice volume control
+- More neural voices and languages (the catalog is data-driven)
+- Scheduled library backups and exports
+
+## Security
+
+- Secrets live only in `.env*` files (gitignored) — no keys in the repo or the client bundle; every AI call proxies through server routes
+- Single-user and passwordless by design — no third-party trackers or analytics
+- The tutor grounds answers in the local library and shows the excerpts it used
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+## Acknowledgements
+
+- Content sources: IAASB Handbook, IFAC, Egyptian FRA decree texts (Egyptian Accounting & Auditing Standards), IFRS Foundation publications
+- Voices: Microsoft Edge read-aloud neural voices, Z.ai TTS
+- AI: Z.ai GLM-4.7-Flash, GLM-4.6V-Flash, GLM-4-Plus
+- Built with Next.js, Tailwind CSS, shadcn/ui, Prisma and Bun
+
+---
+
+**Built by [Mahmoud El-Sayeed](https://github.com/mahmoudmohamedxx1-hue)** — Senior Associate, External Audit.

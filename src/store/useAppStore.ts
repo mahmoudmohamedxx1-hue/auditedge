@@ -1,0 +1,576 @@
+"use client"
+
+import { create } from "zustand"
+import { toast } from "sonner"
+import {
+  AiContext,
+  BootstrapData,
+  Course,
+  Lesson,
+  LessonContent,
+  Material,
+  QuizQuestion,
+  ViewName,
+} from "@/lib/audit-types"
+import type { Lang } from "@/lib/i18n"
+import { DEFAULT_MODEL, isAiModelId, type AiModelId } from "@/lib/models"
+import {
+  DEFAULT_TTS_SPEED,
+  DEFAULT_TTS_VOICE,
+  isTtsVoiceId,
+  TTS_SPEEDS,
+  type TtsVoiceId,
+} from "@/lib/voices"
+
+/** localStorage keys for the site-wide UI language.
+ *  LEGACY: v10–v12 kept the language under "auditedge-program-lang" (Audit
+ *  Program only) — it migrates automatically on first hydration. */
+const LANG_KEY = "auditedge-lang"
+const LEGACY_LANG_KEY = "auditedge-program-lang"
+/** Persisted UI theme ("light" | "dark") — applied to <html> as a class. */
+const THEME_KEY = "auditedge-theme"
+
+export type ThemeMode = "light" | "dark"
+/** localStorage key for the selected AI engine model (v15). */
+const AI_MODEL_KEY = "auditedge-ai-model"
+/** localStorage keys for the TTS reading voice + speed (v17). */
+const TTS_VOICE_KEY = "auditedge-tts-voice"
+const TTS_SPEED_KEY = "auditedge-tts-speed"
+
+interface NavigateOpts {
+  courseId?: string
+  lessonId?: string
+}
+
+export interface CourseInput {
+  code: string
+  title: string
+  subtitle: string
+  description: string
+  category: string
+  level: string
+  cpeHours: number
+  instructorName: string
+  instructorTitle: string
+  instructorBio: string
+  icon: string
+  accent: string
+  published?: boolean
+}
+
+export interface LessonInput {
+  title: string
+  type: "lesson" | "quiz"
+  durationMin: number
+  xp: number
+  content: LessonContent
+  attachments: string[]
+  videoUrl?: string
+  externalUrl?: string
+  quiz?: { title: string; passScore: number; questions: QuizQuestion[] } | null
+}
+
+interface AppState {
+  view: ViewName
+  prevView: ViewName
+  selectedCourseId: string | null
+  selectedLessonId: string | null
+  catalogQuery: string
+  catalogCategory: string | null
+  authChecked: boolean
+  data: BootstrapData | null
+  loading: boolean
+
+  /** Site-wide UI language (EN/AR) — drives the whole app incl. RTL. */
+  lang: Lang
+  setLang: (l: Lang) => void
+  /** Restore the persisted language (localStorage) after hydration. */
+  hydrateLang: () => void
+
+  /** Site-wide UI theme (light/dark) — toggles the `dark` class on <html>. */
+  theme: ThemeMode
+  setTheme: (t: ThemeMode) => void
+  /** Restore the persisted theme (localStorage; falls back to system preference). */
+  hydrateTheme: () => void
+
+  /** The AI engine model powering the tutor / analyst (v15). */
+  aiModel: AiModelId
+  setAiModel: (m: AiModelId) => void
+  /** Restore the persisted model choice after hydration. */
+  hydrateAiModel: () => void
+
+  /** The read-aloud voice for AI answers (v17) — "auto" matches the
+   *  answer's language; any of the 7 catalog voices can be pinned. */
+  ttsVoice: TtsVoiceId
+  setTtsVoice: (v: TtsVoiceId) => void
+  /** Read-aloud playback speed (one of TTS_SPEEDS). */
+  ttsSpeed: number
+  setTtsSpeed: (s: number) => void
+  /** Restore the persisted voice + speed after hydration. */
+  hydrateTtsPrefs: () => void
+
+  // AI tutor state
+  aiContext: AiContext | null
+  aiPopupOpen: boolean
+  aiConversationId: string | null
+  /** Question pre-filled into the full AI tutor (e.g. from the Audit Program) */
+  aiPresetQuestion: string | null
+  /** Search pre-filled into the Library (e.g. a standard referenced in the Audit Program) */
+  libraryPresetQuery: string | null
+
+  navigate: (view: ViewName, opts?: NavigateOpts) => void
+  setCatalogQuery: (q: string) => void
+  setCatalogCategory: (c: string | null) => void
+  checkAuth: () => Promise<void>
+  bootstrap: () => Promise<void>
+
+  setAiContext: (ctx: AiContext | null) => void
+  openAiPopup: (ctx?: AiContext) => void
+  closeAiPopup: () => void
+  setAiConversationId: (id: string | null) => void
+  setAiPresetQuestion: (q: string | null) => void
+  setLibraryPresetQuery: (q: string | null) => void
+
+  enroll: (courseId: string) => Promise<void>
+  completeLesson: (lessonId: string) => Promise<void>
+  submitQuiz: (
+    quizId: string,
+    picks: (number | null)[]
+  ) => Promise<{ score: number; passed: boolean; correct: number; total: number }>
+
+  /** Returns the course id, or null on failure (error toast shown by caller via `errOf`). */
+  saveCourse: (input: CourseInput, id?: string) => Promise<string | null>
+  deleteCourse: (id: string) => Promise<string | null>
+  saveModule: (
+    courseId: string,
+    title: string,
+    description: string,
+    id?: string
+  ) => Promise<string | null>
+  deleteModule: (id: string) => Promise<string | null>
+  saveLesson: (moduleId: string, input: LessonInput, id?: string) => Promise<string | null>
+  deleteLesson: (id: string) => Promise<string | null>
+  deleteMaterial: (id: string) => Promise<string | null>
+  reorderModule: (courseId: string, moduleId: string, dir: "up" | "down") => Promise<void>
+  reorderLesson: (moduleId: string, lessonId: string, dir: "up" | "down") => Promise<void>
+  saveMember: (
+    input: { name: string; email: string; jobTitle: string; role: "learner" | "admin" },
+    id?: string
+  ) => Promise<string | null>
+  deleteMember: (id: string) => Promise<string | null>
+}
+
+export const useAppStore = create<AppState>((set, get) => ({
+  view: "home",
+  prevView: "home",
+  selectedCourseId: null,
+  selectedLessonId: null,
+  catalogQuery: "",
+  catalogCategory: null,
+  authChecked: false,
+  data: null,
+  loading: true,
+
+  lang: "en",
+  theme: "light",
+
+  aiContext: null,
+  aiPopupOpen: false,
+  aiConversationId: null,
+  aiPresetQuestion: null,
+  libraryPresetQuery: null,
+
+  navigate: (view, opts) => {
+    set((s) => {
+      const courseId =
+        opts?.courseId ??
+        (view === "course" || view === "lesson" || view === "quiz" || view === "studio-course"
+          ? s.selectedCourseId
+          : null)
+      const lessonId =
+        opts?.lessonId ?? (view === "lesson" || view === "quiz" ? s.selectedLessonId : null)
+      return {
+        prevView: s.view,
+        view,
+        selectedCourseId: courseId,
+        selectedLessonId: lessonId,
+        // the AI tutor follows what the learner is studying (sticky until cleared)
+        aiContext: lessonId ? { view, courseId: courseId ?? undefined, lessonId } : s.aiContext,
+      }
+    })
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })
+  },
+
+  setCatalogQuery: (q) => set({ catalogQuery: q }),
+  setCatalogCategory: (c) => set({ catalogCategory: c }),
+
+  setLang: (l) => {
+    set({ lang: l })
+    try {
+      localStorage.setItem(LANG_KEY, l)
+    } catch {}
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = l === "ar" ? "ar" : "en"
+      document.documentElement.dir = l === "ar" ? "rtl" : "ltr"
+    }
+  },
+
+  hydrateLang: () => {
+    try {
+      const saved =
+        (localStorage.getItem(LANG_KEY) as Lang | null) ??
+        (localStorage.getItem(LEGACY_LANG_KEY) as Lang | null)
+      if (saved === "ar" || saved === "en") {
+        get().setLang(saved)
+        if (saved === "ar") {
+          try {
+            localStorage.removeItem(LEGACY_LANG_KEY)
+          } catch {}
+        }
+      }
+    } catch {}
+  },
+
+  setTheme: (t) => {
+    set({ theme: t })
+    try {
+      localStorage.setItem(THEME_KEY, t)
+    } catch {}
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", t === "dark")
+    }
+  },
+
+  hydrateTheme: () => {
+    try {
+      const saved = localStorage.getItem(THEME_KEY)
+      if (saved === "light" || saved === "dark") {
+        set({ theme: saved })
+        document.documentElement.classList.toggle("dark", saved === "dark")
+        return
+      }
+      // first visit: follow the OS preference
+      const prefersDark =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      set({ theme: prefersDark ? "dark" : "light" })
+      document.documentElement.classList.toggle("dark", prefersDark)
+    } catch {}
+  },
+
+  aiModel: DEFAULT_MODEL,
+  setAiModel: (m) => {
+    set({ aiModel: m })
+    try {
+      localStorage.setItem(AI_MODEL_KEY, m)
+    } catch {}
+  },
+  hydrateAiModel: () => {
+    try {
+      const saved = localStorage.getItem(AI_MODEL_KEY)
+      if (isAiModelId(saved)) {
+        set({ aiModel: saved })
+      }
+    } catch {}
+  },
+
+  ttsVoice: DEFAULT_TTS_VOICE,
+  ttsSpeed: DEFAULT_TTS_SPEED,
+  setTtsVoice: (v) => {
+    set({ ttsVoice: v })
+    try {
+      localStorage.setItem(TTS_VOICE_KEY, v)
+    } catch {}
+  },
+  setTtsSpeed: (s) => {
+    if (!(TTS_SPEEDS as readonly number[]).includes(s)) return
+    set({ ttsSpeed: s })
+    try {
+      localStorage.setItem(TTS_SPEED_KEY, String(s))
+    } catch {}
+  },
+  hydrateTtsPrefs: () => {
+    try {
+      const v = localStorage.getItem(TTS_VOICE_KEY)
+      if (isTtsVoiceId(v)) set({ ttsVoice: v })
+      const s = Number(localStorage.getItem(TTS_SPEED_KEY))
+      if ((TTS_SPEEDS as readonly number[]).includes(s)) set({ ttsSpeed: s })
+    } catch {}
+  },
+
+  // single-user workspace: no sign-in — just load the app
+  checkAuth: async () => {
+    await get().bootstrap()
+  },
+
+  bootstrap: async () => {
+    try {
+      const res = await fetch("/api/bootstrap")
+      if (res.status === 401) {
+        set({ authChecked: true, loading: false, data: null })
+        return
+      }
+      const data = await res.json()
+      set({ data, loading: false, authChecked: true })
+    } catch {
+      set({ loading: false, authChecked: true })
+    }
+  },
+
+  setAiContext: (ctx) => set({ aiContext: ctx }),
+  openAiPopup: (ctx) => set((s) => ({ aiPopupOpen: true, aiContext: ctx ?? s.aiContext })),
+  closeAiPopup: () => set({ aiPopupOpen: false }),
+  setAiConversationId: (id) => set({ aiConversationId: id }),
+  setAiPresetQuestion: (q) => set({ aiPresetQuestion: q }),
+  setLibraryPresetQuery: (q) => set({ libraryPresetQuery: q }),
+
+  enroll: async (courseId) => {
+    const { data } = get()
+    if (!data) return
+    if (!data.enrollments.some((e) => e.courseId === courseId)) {
+      set({
+        data: {
+          ...data,
+          enrollments: [
+            ...data.enrollments,
+            { id: `tmp-${courseId}`, courseId, startedAt: new Date().toISOString(), completedAt: null },
+          ],
+        },
+      })
+      const res = await fetch("/api/enroll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId }),
+      })
+      if (!res.ok) {
+        // revert the optimistic enrollment so the UI never lies
+        await get().bootstrap()
+        toast.error(await errOf(res, "Could not start the course"))
+      }
+    }
+  },
+
+  completeLesson: async (lessonId) => {
+    const { data } = get()
+    if (!data) return
+    if (data.completedLessonIds.includes(lessonId)) return
+    const lesson = findLesson(data.courses, lessonId)
+    if (!lesson) return
+    set({
+      data: {
+        ...data,
+        completedLessonIds: [...data.completedLessonIds, lessonId],
+        user: { ...data.user, xp: data.user.xp + lesson.xp },
+      },
+    })
+    const res = await fetch("/api/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lessonId }),
+    })
+    if (!res.ok) {
+      await get().bootstrap()
+      toast.error(await errOf(res, "Could not save your progress"))
+    }
+  },
+
+  submitQuiz: async (quizId, picks) => {
+    const { data } = get()
+    // the server grades the submitted picks against the stored answer key —
+    // the client never self-reports a score (XP/certificates can't be faked)
+    const res = await fetch("/api/quiz", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quizId, picks }),
+    })
+    if (!res.ok) {
+      toast.error(await errOf(res, "Could not submit the quiz"))
+      const total = picks.length
+      const correct = 0
+      return { score: Math.round((correct / Math.max(total, 1)) * 100), passed: false, correct, total }
+    }
+    const result = (await res.json()) as {
+      score: number
+      passed: boolean
+      correct: number
+      total: number
+    }
+    if (data) {
+      set({
+        data: {
+          ...data,
+          quizAttempts: [
+            ...data.quizAttempts,
+            {
+              id: `tmp-${quizId}-${Date.now()}`,
+              quizId,
+              score: result.score,
+              correct: result.correct,
+              total: result.total,
+              passed: result.passed,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        },
+      })
+    }
+    await get().bootstrap()
+    return result
+  },
+
+  // ---------------- admin operations ----------------
+
+  saveCourse: async (input, id) => {
+    const url = id ? `/api/admin/course/${id}` : "/api/admin/course"
+    const res = await fetch(url, {
+      method: id ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    if (!res.ok) {
+      toast.error(await errOf(res, "Could not save the course"))
+      return null
+    }
+    const course = await res.json()
+    await get().bootstrap()
+    return course.id as string
+  },
+
+  deleteCourse: async (id) => {
+    const res = await fetch(`/api/admin/course/${id}`, { method: "DELETE" })
+    if (!res.ok) return errOf(res, "Could not delete the course")
+    await get().bootstrap()
+    return null
+  },
+
+  saveModule: async (courseId, title, description, id) => {
+    const url = id ? `/api/admin/module/${id}` : "/api/admin/module"
+    const res = await fetch(url, {
+      method: id ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courseId, title, description }),
+    })
+    if (!res.ok) return errOf(res, "Could not save the module")
+    await get().bootstrap()
+    return null
+  },
+
+  deleteModule: async (id) => {
+    const res = await fetch(`/api/admin/module/${id}`, { method: "DELETE" })
+    if (!res.ok) return errOf(res, "Could not delete the module")
+    await get().bootstrap()
+    return null
+  },
+
+  saveLesson: async (moduleId, input, id) => {
+    const url = id ? `/api/admin/lesson/${id}` : "/api/admin/lesson"
+    const res = await fetch(url, {
+      method: id ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleId, ...input }),
+    })
+    if (!res.ok) return errOf(res, "Could not save the lesson")
+    await get().bootstrap()
+    return null
+  },
+
+  deleteLesson: async (id) => {
+    const res = await fetch(`/api/admin/lesson/${id}`, { method: "DELETE" })
+    if (!res.ok) return errOf(res, "Could not delete the lesson")
+    await get().bootstrap()
+    return null
+  },
+
+  deleteMaterial: async (id) => {
+    const res = await fetch(`/api/materials/${id}`, { method: "DELETE" })
+    if (!res.ok) return errOf(res, "Could not remove the material")
+    await get().bootstrap()
+    return null
+  },
+
+  reorderModule: async (courseId, moduleId, dir) => {
+    const { data } = get()
+    const course = data?.courses.find((c) => c.id === courseId)
+    if (!course) return
+    const sorted = [...course.modules].sort((a, b) => a.order - b.order)
+    const idx = sorted.findIndex((m) => m.id === moduleId)
+    const swapWith = dir === "up" ? idx - 1 : idx + 1
+    if (swapWith < 0 || swapWith >= sorted.length) return
+    const a = sorted[idx]
+    const b = sorted[swapWith]
+    await Promise.all([
+      fetch(`/api/admin/module/${a.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: b.order }),
+      }),
+      fetch(`/api/admin/module/${b.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: a.order }),
+      }),
+    ])
+    await get().bootstrap()
+  },
+
+  reorderLesson: async (moduleId, lessonId, dir) => {
+    const { data } = get()
+    const course = data?.courses.find((c) => c.modules.some((m) => m.id === moduleId))
+    const module_ = course?.modules.find((m) => m.id === moduleId)
+    if (!module_) return
+    const sorted = [...module_.lessons].sort((x, y) => x.order - y.order)
+    const idx = sorted.findIndex((l) => l.id === lessonId)
+    const swapWith = dir === "up" ? idx - 1 : idx + 1
+    if (swapWith < 0 || swapWith >= sorted.length) return
+    const a = sorted[idx]
+    const b = sorted[swapWith]
+    await Promise.all([
+      fetch(`/api/admin/lesson/${a.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: b.order }),
+      }),
+      fetch(`/api/admin/lesson/${b.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: a.order }),
+      }),
+    ])
+    await get().bootstrap()
+  },
+
+  saveMember: async (input, id) => {
+    const url = id ? `/api/team/${id}` : "/api/team"
+    const res = await fetch(url, {
+      method: id ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      return j.error ?? "Failed"
+    }
+    await get().bootstrap()
+    return null
+  },
+
+  deleteMember: async (id) => {
+    const res = await fetch(`/api/team/${id}`, { method: "DELETE" })
+    if (!res.ok) return errOf(res, "Could not remove the member")
+    await get().bootstrap()
+    return null
+  },
+}))
+
+/** Extract a human-readable error message from a failed API response. */
+async function errOf(res: Response, fallback: string): Promise<string> {
+  const j = await res.json().catch(() => null)
+  return (j && typeof j.error === "string" && j.error) || fallback
+}
+
+function findLesson(courses: Course[], lessonId: string): Lesson | null {
+  for (const c of courses)
+    for (const m of c.modules)
+      for (const l of m.lessons) if (l.id === lessonId) return l
+  return null
+}

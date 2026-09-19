@@ -1,0 +1,267 @@
+import { ProgramSection } from "./types"
+
+/** Account-area programs B: Fixed Assets, Payables, Payroll, Financing, Provisions, Related Parties. */
+export const ACCOUNTS_B: ProgramSection[] = [
+  {
+    id: "fixed-assets",
+    code: "AP-11",
+    group: "accounts",
+    icon: "building",
+    title: { en: "Fixed Assets & Depreciation", ar: "الأصول الثابتة والإهلاك" },
+    scope: {
+      en: "Property, plant & equipment, depreciation, capitalization policy, and impairment — where valuation errors hide in the depreciation run.",
+      ar: "الممتلكات والآلات والمعدات والإهلاك وسياسة الرسملة والانخفاض — حيث تختبئ أخطاء التقييم في حساب الإهلاك.",
+    },
+    objectives: [
+      { en: "Confirm additions exist and are genuine capital expenditure, not expenses.", ar: "التأكد من وجود الإضافات وأنها إنفاق رأسمالي حقيقي لا مصروفات." },
+      { en: "Verify depreciation rates, method, and useful lives; test impairment indicators.", ar: "التحقق من معدلات الإهلاك وطريقته والأعمار الإنتاجية؛ واختبار مؤشرات الانخفاض." },
+    ],
+    assertions: ["EX", "C", "A", "VA", "RO", "PR"],
+    risks: [
+      { en: "Repairs and maintenance capitalized to boost profit (or the reverse — capital items expensed).", ar: "رسملة مصروفات الصيانة والإصلاح لتحسين الربح (أو العكس — خصم بنود رأسمالية كمصروفات)." },
+      { en: "Depreciation rates inconsistent with policy or changed without disclosure.", ar: "معدلات إهلاك غير متسقة مع السياسة أو متغيرة دون إفصاح." },
+      { en: "Fully-depreciated assets still in use (or absent), and idle assets not impaired.", ar: "أصول مكتملة الإهلاك لا تزال مستخدمة (أو غائبة)، وأصول معطلة لم يُخصم انخفاضها." },
+    ],
+    documents: [
+      { en: "Fixed asset register reconciled to the GL for each class", ar: "سجل الأصول الثابتة مطابقًا للدفتر العام لكل فئة" },
+      { en: "Additions: purchase invoices, contracts, capitalization approvals, technical reports", ar: "الإضافات: فواتير الشراء والعقود واعتمادات الرسملة والتقارير الفنية" },
+      { en: "Disposals: sale contracts, board approvals, gate passes", ar: "الاستبعادات: عقود البيع واعتمادات مجلس الإدارة وأذونات الخروج" },
+      { en: "Depreciation policy and the depreciation computation for the year", ar: "سياسة الإهلاك وحساب الإهلاك للسنة" },
+      { en: "Title deeds and land/property registrations for owned real estate", ar: "مستندات الملكية وتسجيلات الأراضي والعقارات المملوكة" },
+    ],
+    procedures: [
+      { id: "fa-1", ref: "ISA/ESA 500", text: { en: "Reconcile the fixed asset register to the GL by class; agree opening balances to the prior-year working papers.", ar: "مطابقة سجل الأصول الثابتة بالدفتر العام لكل فئة؛ ومطابقة الأرصدة الافتتاحية بأوراق عمل السنة السابقة." } },
+      { id: "fa-2", ref: "IAS 16 / EAS 10", text: { en: "Vouch additions to invoices, contracts, and payment evidence; verify the capitalization test: does the item meet the asset definition, and are directly attributable costs included (and borrowing costs under IAS 23)?", ar: "فحص الإضافات رجوعًا إلى الفواتير والعقود وإثباتات السداد؛ والتحقق من اختبار الرسملة: هل يحقق البند تعريف الأصل، وهل تكلفة الاقتراض المؤهلة مُرسملة وفق IAS 23؟" } },
+      { id: "fa-3", ref: "ISA/ESA 240", text: { en: "Scan expense ledgers (repairs & maintenance, spare parts) for capital items expensed; scan additions for revenue items capitalized.", ar: "مسح دفاتر المصروفات (الصيانة وقطع الغيار) بحثًا عن بنود رأسمالية مصروفة؛ ومسح الإضافات بحثًا عن بنود تشغيلية مرسملة." } },
+      { id: "fa-4", ref: "IAS 16", text: { en: "Recompute depreciation on a sample (including a full class run): rate, method, useful life, and month-convention for additions/disposals; confirm consistency with policy and prior years.", ar: "إعادة حساب الإهلاك على عينة (بما فيها تشغيل فئة كاملة): المعدل والطريقة والعمر واتفاقية الشهر للإضافات والاستبعادات؛ وتأكيد الاتساق مع السياسة والسنوات السابقة." } },
+      { id: "fa-5", ref: "ISA/ESA 505", text: { en: "Inspect title deeds for land and buildings; verify ownership matches the register, check for mortgages/pledges registered on the assets.", ar: "فحص مستندات الملكية للأراضي والمباني؛ والتأكد من تطابق الملكية مع السجل وفحص الرهون المسجلة على الأصول." } },
+      { id: "fa-6", ref: "IAS 36", text: { en: "Test impairment: physical inspection of a sample of assets, review of idle/damaged items, and comparison of carrying value to market value for indicators; if found, test the recoverable amount model.", ar: "اختبار الانخفاض: الفحص الفعلي لعينة من الأصول، ومراجعة المعطل والتالف، ومقارنة القيمة الدفترية بالسوق بحثًا عن مؤشرات؛ وعند وجودها، اختبار نموذج المبلغ القابل للاسترداد." } },
+      { id: "fa-7", ref: "ISA/ESA 330", text: { en: "Vouch disposals: gain/loss recomputation, proceeds traced to bank, and removal from the register verified; confirm approval per authorization matrix.", ar: "فحص الاستبعادات: إعادة حساب الربح/الخسارة، وتتبع المتحصلات إلى البنك، والتأكد من الحذف من السجل؛ وتأكيد الاعتماد وفق مصفوفة الصلاحيات." } },
+      { id: "fa-8", ref: "ISA/ESA 501", text: { en: "Physically inspect a sample of high-value assets and trace to the register (existence), and reverse: register items to the floor (completeness of the register).", ar: "الفحص الفعلي لعينة من الأصول عالية القيمة وتتبعها إلى السجل (الوجود)، والعكس: بنود السجل إلى الواقع (اكتمال السجل)." } },
+      { id: "fa-9", ref: "IFRS 16 / EAS 20", text: { en: "Leased assets: verify ROU asset and lease liability for leases over 12 months (IFRS 16 model) — or operating/finance classification under EAS 20 — and discount rates used.", ar: "الأصول المستأجرة: التحقق من أصل حق الاستخدام والتزام الإيجار لعقود تتجاوز 12 شهرًا (نموذج IFRS 16 — أو التصنيف تشغيلي/تمويلي وفق المعيار المصري) وأسعار الخصم المستخدمة." } },
+      { id: "fa-10", ref: "IAS 16 / IFRS 5", text: { en: "Assets held for sale: confirm classification criteria (sale highly probable within a year, actively marketed) and measurement at the lower of carrying amount and fair value less costs to sell.", ar: "الأصول المحتفظ بها للبيع: تأكيد معايير التصنيف (البيع مرجح جدًا خلال سنة، تسويق نشط) والقياس بالأقل من القيمة الدفترية والقيمة العادلة مطروحًا منها تكاليف البيع." } },
+      { id: "fa-11", ref: "IAS 16 / IAS 1", text: { en: "Disclosure check: classes, depreciation by class, revaluation basis (if any), pledged assets, capital commitments, and the reconciliation of carrying amounts.", ar: "فحص الإفصاح: الفئات والإهلاك لكل فئة وأساس إعادة التقييم (إن وجد) والأصول المرهونة والالتزامات الرأسمالية وتسوية القيم الدفترية." } },
+    ],
+    pitfalls: [
+      { en: "Depreciation tested only on additions — never on the full continuing balance.", ar: "اختبار الإهلاك على الإضافات فقط دون الرصيد المستمر بالكامل أبدًا." },
+      { en: "Land left in the depreciation run 'by the system' year after year.", ar: "بقاء الأراضي في تشغيل الإهلاك «بفعل النظام» سنة بعد سنة." },
+    ],
+    standards: ["IAS 16", "IAS 23", "IAS 36", "IFRS 16", "IFRS 5", "EAS 10", "EAS 20"],
+  },
+
+  {
+    id: "payables",
+    code: "AP-12",
+    group: "accounts",
+    icon: "shopping-cart",
+    title: { en: "Payables, Purchases & Unrecorded Liabilities", ar: "الذمم الدائنة والمشتريات والالتزامات غير المسجلة" },
+    scope: {
+      en: "Trade payables, accruals, and the search for unrecorded liabilities — the account where completeness is the whole game.",
+      ar: "الذمم التجارية الدائنة والمستحقات والبحث عن الالتزامات غير المسجلة — البند الذي فيه الاكتمال هو اللعبة كلها.",
+    },
+    objectives: [
+      { en: "Confirm all liabilities that exist at year-end are recorded.", ar: "التأكد من تسجيل كل الالتزامات القائمة في نهاية السنة." },
+      { en: "Verify purchases are genuine and recorded in the right period.", ar: "التحقق من أن المشتريات حقيقية ومسجلة في الفترة الصحيحة." },
+    ],
+    assertions: ["C", "EX", "A", "CO", "CL", "PR"],
+    risks: [
+      { en: "Invoices received after year-end for goods delivered before — never booked.", ar: "فواتير تُستلم بعد نهاية السنة عن بضاعة وصلت قبلها — ولا تُسجل أبدًا." },
+      { en: "Debit balances netted against credit balances to hide disputes and misstated liquidity.", ar: "مقاصة الأرصدة المدينة مع الدائنة لإخفاء النزاعات وتحريف السيولة." },
+      { en: "Fictitious suppliers or duplicate payments routed round-trip back to the entity.", ar: "موردون وهميون أو مدفوعات مكررة تعود دورة إلى المنشأة." },
+    ],
+    documents: [
+      { en: "Aged payables listing reconciled to the GL and supplier statements", ar: "كشف أعمار الذمم الدائنة مطابقًا للدفتر وكشوف الموردين" },
+      { en: "Supplier statements for major suppliers (directly requested)", ar: "كشوف حسابات الموردين الرئيسيين (مطلوبة مباشرة منهم)" },
+      { en: "January/February payments list and the invoice register for the search period", ar: "قائمة مدفوعات يناير وفبراير وسجل الفواتير لفترة البحث" },
+      { en: "Purchase orders, receiving reports, and matching invoices", ar: "أوامر الشراء وتقارير الاستلام والفواتير المتطابقة" },
+    ],
+    procedures: [
+      { id: "payables-1", ref: "ISA/ESA 550", text: { en: "Search for unrecorded liabilities: inspect all payments and invoice registrations AFTER year-end (2–3 months) and investigate any relating to the audit period; trace goods/services received before year-end to recording.", ar: "البحث عن الالتزامات غير المسجلة: فحص كل المدفوعات وتسجيلات الفواتير بعد نهاية السنة (2–3 أشهر) والتحقيق في ما يعود لفترة المراجعة؛ وتتبع البضائع/الخدمات المستلمة قبل نهاية السنة إلى التسجيل." } },
+      { id: "payables-2", ref: "ISA/ESA 330", text: { en: "Open the period-end close: review post-close journal entries in the purchases/accruals area, especially manual round amounts, approved by whom.", ar: "فحص إقفال نهاية الفترة: مراجعة قيود ما بعد الإقفال في منطقة المشتريات والمستحقات، خاصة اليدوية بمبالغ مقربة، ومن اعتمدها." } },
+      { id: "payables-3", ref: "ISA/ESA 505", text: { en: "Request supplier statements directly from major suppliers and reconcile to the payables ledger; investigate differences — unrecorded invoices, timing, or disputes.", ar: "طلب كشوف الموردين مباشرة من الموردين الرئيسيين ومطابقتها بدفتر الدائنين؛ والتحقيق في الفروقات — فواتير غير مسجلة أو فروق توقيت أو نزاعات." } },
+      { id: "payables-4", ref: "ISA/ESA 330", text: { en: "Cut-off: test receiving reports and invoices around year-end (±5 days); goods received before year-end must sit in inventory AND payables of the same period.", ar: "الاستقطاع: اختبار تقارير الاستلام والفواتير حول نهاية السنة (±5 أيام)؛ البضاعة المستلمة قبل نهاية السنة يجب أن تظهر في المخزون والذمم الدائنة لنفس الفترة." } },
+      { id: "payables-5", ref: "ISA/ESA 330", text: { en: "Detail test — existence & accuracy: vouch a sample of recorded payables to supplier invoices, receiving reports, and contracts; recompute aging.", ar: "اختبار تفصيلي — الوجود والدقة: فحص عينة من الذمم المسجلة رجوعًا إلى فواتير الموردين وتقارير الاستلام والعقود؛ وإعادة حساب الأعمار." } },
+      { id: "payables-6", ref: "IAS 37", text: { en: "Review accrued expenses: recompute accruals with a formula (usage × rate), compare to prior year and subsequent payments; look for one-sided accrual reversals.", ar: "مراجعة المصروفات المستحقة: إعادة حسابها بمعادلة (الكمية × السعر)، ومقارنتها بالسنة السابقة والمدفوعات اللاحقة؛ والبحث عن قيود عكسية أحادية الجانب." } },
+      { id: "payables-7", ref: "ISA/ESA 240", text: { en: "Vendor master changes: review new suppliers added during the year and bank account changes — for fake suppliers or employee-linked accounts; match addresses/IBANs against employees.", ar: "تغييرات ملف الموردين: مراجعة الموردين الجدد خلال السنة وتغييرات الحسابات البنكية — بحثًا عن موردين وهميين أو حسابات مرتبطة بالموظفين؛ ومقارنة العناوين وأرقام الحسابات ببيانات الموظفين." } },
+      { id: "payables-8", ref: "ISA/ESA 330", text: { en: "Scan for duplicate invoice numbers/amounts and payments to the same supplier twice; test a sample of duplicate credits.", ar: "مسح أرقام الفواتير والمبالغ المكررة والمدفوعات مرتين لنفس المورد؛ واختبار عينة من الإشعارات المدينة المكررة." } },
+      { id: "payables-9", ref: "IAS 1", text: { en: "Reclassify material debit balances to receivables; disclose payables to related parties, directors, and shareholders separately.", ar: "إعادة تصنيف الأرصدة المدينة الجوهرية إلى الذمم المدينة؛ والإفصاح المنفصل عن الذمم الدائنة للأطراف ذات العلاقة وأعضاء مجلس الإدارة والمساهمين." } },
+    ],
+    pitfalls: [
+      { en: "Supplier statements received through the client — evidence loses independence.", ar: "استلام كشوف الموردين عن طريق العميل — يفقد الدليل استقلاله." },
+      { en: "The unrecorded-liabilities search limited to January only when payment terms are 60–90 days.", ar: "قصر البحث عن الالتزامات غير المسجلة على يناير بينما مهلة السداد 60–90 يومًا." },
+    ],
+    standards: ["ISA 550", "ISA 505", "IAS 37", "IAS 1", "EAS 18"],
+  },
+
+  {
+    id: "payroll",
+    code: "AP-13",
+    group: "accounts",
+    icon: "users",
+    title: { en: "Payroll & Employees' End-of-Service Benefits", ar: "الرواتب ومكافآت نهاية الخدمة" },
+    scope: {
+      en: "Monthly payroll, social insurance, taxes withheld, and end-of-service/gratuity provisions.",
+      ar: "الرواتب الشهرية والتأمينات الاجتماعية والضرائب المخصومة ومخصصات نهاية الخدمة.",
+    },
+    objectives: [
+      { en: "Confirm employees on the payroll are real and paid the right amounts.", ar: "التأكد من أن الموظفين على المسير حقيقيون وأنهم تلقوا المبالغ الصحيحة." },
+      { en: "Verify end-of-service and leave provisions are complete and computed correctly.", ar: "التحقق من اكتمال مخصصات نهاية الخدمة والأجازات وصحة حسابها." },
+    ],
+    assertions: ["EX", "C", "A", "CO", "PR"],
+    risks: [
+      { en: "Ghost employees or unauthorized increments loaded into the payroll run.", ar: "موظفون وهميون أو زيادات غير معتمدة محمّلة على مسير الرواتب." },
+      { en: "End-of-service provision based on basic salary only, ignoring contract terms or last salary.", ar: "مخصص نهاية الخدمة على الأساسي فقط متجاهلًا شروط العقد أو آخر أجر." },
+    ],
+    documents: [
+      { en: "Monthly payroll runs (signed) and the payroll master file", ar: "مسيرات الرواتب الشهرية (معتمدة) وملف البيانات الرئيسي" },
+      { en: "HR records: contracts, appointment/promotion decisions, leavers' clearances", ar: "ملفات الموارد البشرية: العقود وقرارات التعيين والترقية ومخالصات المنتهية خدماتهم" },
+      { en: "Social insurance forms (1/2/6) and tax settlement forms", ar: "نماذج التأمينات الاجتماعية (1/2/6) ونماذج التسوية الضريبية" },
+      { en: "Bank transfer instructions / payslips distribution evidence", ar: "تعليمات التحويل البنكي / إثبات توزيع قسائم الرواتب" },
+    ],
+    procedures: [
+      { id: "payroll-1", ref: "ISA/ESA 330", text: { en: "Reconcile total payroll cost per run to the GL; reconcile headcount to the HR list and investigate joiners/leavers around year-end.", ar: "مطابقة إجمالي تكلفة الرواتب بالدفتر العام؛ ومطابقة عدد العاملين بقائمة الموارد البشرية والتحقيق في الملتحقين والمنتهية خدمتهم حول نهاية السنة." } },
+      { id: "payroll-2", ref: "ISA/ESA 240", text: { en: "Ghost-employee test: select employees and inspect contracts, ID, insurance registration, and evidence of payment to a personal bank account; check for duplicate names/IBANs.", ar: "اختبار الموظفين الوهميين: اختيار موظفين وفحص العقود والهوية والتسجيل التأميني وإثبات التحويل لحساب بنكي شخصي؛ وفحص الأسماء وأرقام الحسابات المكررة." } },
+      { id: "payroll-3", ref: "ISA/ESA 330", text: { en: "Recompute a sample of payslips: basic, allowances, overtime, deductions (social insurance shares, income tax), and net; agree to contract and authorization.", ar: "إعادة حساب عينة من قسائم الرواتب: الأساسي والبدلات والعمل الإضافي والاستقطاعات (أنصبة التأمينات وضريبة كسب العمل) والصافي؛ ومطابقتها بالعقد والاعتمادات." } },
+      { id: "payroll-4", ref: "Local law", text: { en: "Test social insurance: re-registerable insurable wages (Form 6 changes) reconciled to payroll, and remittance of deductions to the authority on time — unremitted amounts are a liability.", ar: "اختبار التأمينات: الأجور التأمينية (تغييرات النموذج 6) مطابقة بالمسير، وسداد الاستقطاعات للهيئة في مواعيدها — المبالغ غير المسددة التزام قائم." } },
+      { id: "payroll-5", ref: "Local law", text: { en: "Test payroll tax: monthly settlements (Forms 5/19) recomputed on a sample and annual settlement agreed; confirm withholding remitted.", ar: "اختبار ضريبة كسب العمل: إعادة حساب التسويات الشهرية على عينة ومطابقة التسوية السنوية؛ وتأكيد سداد المخصوم." } },
+      { id: "payroll-6", ref: "IAS 19 / EAS 25", text: { en: "End-of-service provision: recompute on an actuarial or formula basis for a sample of employees (last salary × service years × rate), review assumptions (attrition, salary growth), and test the roll-forward.", ar: "مخصص نهاية الخدمة: إعادة حسابه لنموذج اكتواري أو بمعادلة لعينة من الموظفين (آخر أجر × سنوات الخدمة × المعامل)، ومراجعة الافتراضات (الاستنزاف، نمو الأجور)، واختبار تدوير الرصيد." } },
+      { id: "payroll-7", ref: "IAS 19", text: { en: "Leave balance provision: obtain the leave balances report, recompute the accrual for a sample, and check the balance sheet cut-off.", ar: "مخصص الأجازات: الحصول على تقرير أرصدة الأجازات وإعادة حساب المستحق لعينة وفحص الاستقطاع في الميزانية." } },
+      { id: "payroll-8", ref: "IAS 24 / IAS 1", text: { en: "Key management compensation disclosure: identify directors/executives on the payroll, and related-party employment contracts.", ar: "إفصاح مكافآت الإدارة العليا: تحديد أعضاء مجلس الإدارة والتنفيذيين على المسير وعقود العمل مع الأطراف ذات العلاقة." } },
+      { id: "payroll-9", ref: "ISA/ESA 330", text: { en: "Cut-off: check the December payroll is recorded in December (paid in early January) and any bonus/annual increment is in the right period per approval dates.", ar: "الاستقطاع: التأكد من تسجيل مسير ديسمبر في ديسمبر (المسدد في مطلع يناير) وأن الحوافز والزيادات السنوية في الفترة الصحيحة وفق تواريخ الاعتماد." } },
+    ],
+    pitfalls: [
+      { en: "Payroll tested only by agreeing the total to the GL — never item-level or headcount.", ar: "اختبار الرواتب بمطابقة الإجمالي بالدفتر فقط — دون مستوى البند أو العدد أبدًا." },
+      { en: "Provision formula never compared to the actual labor law/contract formula in force.", ar: "معادلة المخصص لم تُقارن قط بمعادلة قانون العمل أو العقد المعمول بها فعلًا." },
+    ],
+    standards: ["IAS 19", "IAS 24", "EAS 25", "Labor Law 14/2025 (Egypt)"],
+  },
+
+  {
+    id: "financing",
+    code: "AP-14",
+    group: "accounts",
+    icon: "landmark",
+    title: { en: "Equity, Loans & Financing", ar: "حقوق الملكية والقروض والتمويل" },
+    scope: {
+      en: "Share capital, reserves, dividends, bank loans, overdrafts, and finance leases — approvals first, then mathematics.",
+      ar: "رأس المال واحتياطياته والتوزيعات والقروض البنكية والسحب على المكشوف والتأجير التمويلي — الاعتمادات أولًا ثم الحسابات.",
+    },
+    objectives: [
+      { en: "Confirm financing exists, is properly authorized, and is completely recorded.", ar: "التأكد من وجود التمويل واعتماده الصحيح وتسجيله باكتمال." },
+      { en: "Verify interest, covenants, and classification between current and non-current.", ar: "التحقق من الفوائد والتعهدات والتصنيف بين المتداول وغير المتداول." },
+    ],
+    assertions: ["EX", "C", "A", "VA", "RO", "CL", "PR"],
+    risks: [
+      { en: "Borrowings recorded net of issue costs or with incorrect amortization of fees.", ar: "اقتراضات مسجلة صافية تكاليف الإصدار أو باستهلاك رسوم خاطئ." },
+      { en: "Covenant breaches undisclosed or unmeasured; current/non-current split wrong.", ar: "مخالفة تعهدات القروض دون إفصاح أو قياس؛ وتصنيف المتداول/غير المتداول خاطئ." },
+      { en: "Dividends paid without retained earnings or legal-reserve availability.", ar: "توزيعات مدفوعة دون توافر أرباح مرحلة أو احتياطي قانوني." },
+    ],
+    documents: [
+      { en: "Loan agreements, facility letters, and security documents", ar: "اتفاقيات القروض وخطابات التسهيلات ومستندات الضمان" },
+      { en: "Bank confirmations covering borrowings and guarantees given (see Cash section)", ar: "تأكيدات البنوك الشاملة للاقتراضات والضمانات الممنوحة (راجع قسم النقدية)" },
+      { en: "Board/AGM minutes for capital changes, dividends, and new financing", ar: "محاضر مجلس الإدارة/الجمعية العمومية لتغييرات رأس المال والتوزيعات والتمويل الجديد" },
+      { en: "Amortization schedules for fees and interest, and repayment statements", ar: "جداول استهلاك الرسوم والفوائد وكشوف السداد" },
+    ],
+    procedures: [
+      { id: "fin-1", ref: "ISA/ESA 505", text: { en: "Confirm all loans directly with lenders: outstanding principal, interest rate, maturity, security, and guarantees given or received.", ar: "التأكيد المباشر مع المقرضين على كل القروض: أصل الدين القائم وسعر الفائدة والاستحقاق والضمانات والكفالات الممنوحة أو المقبوضة." } },
+      { id: "fin-2", ref: "ISA/ESA 500", text: { en: "Read the loan agreements: drawdown conditions, covenants (DSCR, leverage, tangible net worth), and events of default; recompute covenant ratios from the draft statements.", ar: "قراءة اتفاقيات القروض: شروط السحب والتعهدات (نسبة خدمة الدين، الرافعة، صافي الأصول الملموسة) وحالات التعثر؛ وإعادة حساب نسب التعهدات من مسودة القوائم." } },
+      { id: "fin-3", ref: "IAS 23 / IFRS 9", text: { en: "Recompute interest expense: rate × time × principal on a sample; verify effective-interest amortization of arrangement fees and check capitalization during qualifying construction.", ar: "إعادة حساب مصروف الفوائد: المعدل × المدة × الأصل لعينة؛ والتحقق من استهلاك رسوم الترتيب بأسلوب الفائدة الفعلية ورسملتها خلال الإنشاء المؤهل." } },
+      { id: "fin-4", ref: "IAS 1", text: { en: "Classify current vs non-current: installments due within 12 months are current; reclassify when refinanced on a long-term basis before the reporting date only with signed evidence.", ar: "التصنيف بين المتداول وغير المتداول: الأقساط المستحقة خلال 12 شهرًا متداولة؛ ولا يعاد التصنيف عند إعادة التمويل طويل الأجل قبل تاريخ التقرير إلا بمستند موقع." } },
+      { id: "fin-5", ref: "Company law", text: { en: "Capital: inspect the commercial registry, GAFI/records, share certificates; verify authorized/issued/paid-up and that changes are approved and registered.", ar: "رأس المال: فحص السجل التجاري وقيود الهيئة العامة للاستثمار/السجل شهادات الأسهم؛ والتحقق من المصرح والمصدر والمدفوع واعتماد وتسجيل التغييرات." } },
+      { id: "fin-6", ref: "Company law / EAS", text: { en: "Reserves and dividends: recompute the legal reserve (10% of net profit until 50% of capital under the Companies Law), verify dividend approval and presentation as a liability if declared before year-end.", ar: "الاحتياطيات والتوزيعات: إعادة حساب الاحتياطي القانوني (10% من صافي الربح حتى 50% من رأس المال وفق قانون الشركات)، والتحقق من اعتماد التوزيعات وعرضها التزامًا إذا أُقرت قبل نهاية السنة." } },
+      { id: "fin-7", ref: "IFRS 16", text: { en: "Finance leases: verify lease liabilities and interest split from principal in payments; confirm ROU presentation for lessee accounting.", ar: "التأجير التمويلي: التحقق من التزامات الإيجار وفصل الفائدة عن أصل الدفعة؛ وتأكيد عرض أصل حق الاستخدام في محاسبة المستأجر." } },
+      { id: "fin-8", ref: "IFRS 7", text: { en: "Disclosures: maturity analysis of borrowings, interest-rate risk, pledged assets, covenant status, and contingent guarantees — tie to the notes.", ar: "الإفصاحات: تحليل استحقاق الاقتراضات ومخاطر سعر الفائدة والأصول المرهونة ووضع التعهدات والكفالات المحتملة — ومطابقتها بالإيضاحات." } },
+      { id: "fin-9", ref: "ISA/ESA 330", text: { en: "Scan for undisclosed financing: pledges over receivables, factoring with recourse, supplier financing programs — confirm via bank confirmations and management inquiry documented.", ar: "مسح التمويل غير المفصح عنه: رهن الذمم، وخصم الأوراق بمسؤولية رجوعية، وبرامج تمويل الموردين — التأكيد عبر تأكيدات البنوك واستفسار الإدارة الموثق." } },
+    ],
+    pitfalls: [
+      { en: "Interest expense never reconciled to the amortization schedule in the agreement.", ar: "مصروف الفوائد لم يُطابق قط بجدول الاستهلاك في الاتفاقية." },
+      { en: "Covenant compliance assessed by asking management instead of recomputing.", ar: "تقييم الالتزام بالتعهدات بسؤال الإدارة بدل إعادة الحساب." },
+    ],
+    standards: ["IAS 23", "IAS 1", "IFRS 7", "IFRS 16", "IFRS 9", "EAS 26"],
+  },
+
+  {
+    id: "provisions",
+    code: "AP-15",
+    group: "accounts",
+    icon: "shield-alert",
+    title: { en: "Provisions & Contingent Liabilities", ar: "المخصصات والالتزامات المحتملة" },
+    scope: {
+      en: "IAS 37 territory: litigation, tax assessments, warranties, and onerous contracts — estimate, disclose, or do nothing; the classification must be deliberate.",
+      ar: "نطاق IAS 37: التقاضي وتقييمات الضرائب والضمانات والعقود المجحفة — تقدير أو إفصاح أو لا شيء؛ والتصنيف يجب أن يكون مقصودًا.",
+    },
+    objectives: [
+      { en: "Identify ALL claims and assessments and measure the ones that meet the recognition test.", ar: "تحديد كل المطالبات والتقييمات وقياس ما يستوفي شرط الإثبات." },
+      { en: "Distinguish provisions (recognized) from contingent liabilities (disclosed) from contingent assets (usually ignored).", ar: "التمييز بين المخصصات (تُقيد) والالتزامات المحتملة (تُفصح) والأصول المحتملة (تُتجاهل غالبًا)." },
+    ],
+    assertions: ["C", "VA", "PR"],
+    risks: [
+      { en: "Tax assessments for open years recorded 'parked' with no estimate, or dismissed as remote without legal opinion.", ar: "تقييمات ضريبية لسنوات مفتوحة معلقة دون تقدير، أو استبعادها كبعيدة الاحتمال دون رأي قانوني." },
+      { en: "Provisions used as profit-smoothing cookie jars (add in good years, release in bad).", ar: "استخدام المخصصات لتنعيم الأرباح (إضافتها في السنين الجيدة وردّها في السيئة)." },
+    ],
+    documents: [
+      { en: "Legal letters (sent and received) and counsel's invoices for the period", ar: "الخطابات القانونية (المرسلة والمستلمة) وفواتير المستشارين عن الفترة" },
+      { en: "Tax returns, audit assessments, and appeals file", ar: "الإقرارات الضريبية وتقييمات الفحص وملفات الطعون" },
+      { en: "Warranty claim history and the provision model", ar: "سجل مطالبات الضمان ونموذج المخصص" },
+      { en: "Management's legal-claims schedule with their assessment of outcome", ar: "كشف المطالبات القانونية للإدارة مع تقييمها للنتيجة" },
+    ],
+    procedures: [
+      { id: "prov-1", ref: "ISA/ESA 501", text: { en: "Send legal letters to all external counsel: pending litigation, claims against the entity, guarantees given, and their assessment of probable outcome and amount.", ar: "إرسال الخطابات القانونية لكل المستشارين الخارجيين: التقاضي الجاري والمطالبات ضد المنشأة والكفالات الممنوحة وتقييمهم للنتيجة المرجحة والمبلغ." } },
+      { id: "prov-2", ref: "ISA/ESA 501", text: { en: "Inspect minutes of the board and legal expense analysis for unidentified claims; inquire of in-house counsel and read correspondence with regulators.", ar: "فحص محاضر مجلس الإدارة وتحليل المصروفات القانونية بحثًا عن مطالبات غير محددة؛ والاستفسار من المستشار القانوني الداخلي وقراءة المراسلات مع الجهات الرقابية." } },
+      { id: "prov-3", ref: "IAS 37", text: { en: "For each claim, apply the recognition test: present obligation (legal/constructive)? probable outflow (more likely than not)? reliable estimate? Recognize a provision only if ALL three pass; otherwise disclose as contingent (or ignore if remote).", ar: "لكل مطالبة، طبّق اختبار الإثبات: التزام قائم (قانوني/ضمني)؟ تسرب موارد مرجح (أكثر احتمالًا من عدمه)؟ تقدير موثوق؟ لا يُقيد المخصص إلا باستيفاء الثلاثة؛ وإلا يُفصح كالتزام محتمل (أو يُتجاهل إن كان بعيد الاحتمال)." } },
+      { id: "prov-4", ref: "IAS 37", text: { en: "Tax provisions: for each open year, recompute the exposure (assessment less expected deductions) with the tax advisor's opinion; assess the Appeals Court position and history of similar cases.", ar: "المخصصات الضريبية: لكل سنة مفتوحة، إعادة حساب الانكشاف (التقييم مطروحًا منه الخصومات المتوقعة) برأي المستشار الضريبي؛ وتقييم موقف لجان الطعون وسوابق الحالات المشابهة." } },
+      { id: "prov-5", ref: "IAS 37", text: { en: "Warranty provisions: recompute using the claims history (claims % of sales × period exposed); test the roll-forward: opening + accrual − utilization = closing.", ar: "مخصص الضمان: إعادة حسابه بسجل المطالبات (نسبة المطالبات من المبيعات × فترة التعرض)؛ واختبار التدوير: افتتاحي + استحقاق − استخدام = ختامي." } },
+      { id: "prov-6", ref: "IAS 37", text: { en: "Onerous contracts: identify contracts where unavoidable costs exceed economic benefits (purchase commitments above market, idle lease); measure the least-cost exit.", ar: "العقود المجحفة: تحديد العقود التي تتجاوز تكاليفها الحتمية منافعها الاقتصادية (التزامات شراء فوق السوق، إيجار معطل)؛ وقياس أقل تكلفة خروج." } },
+      { id: "prov-7", ref: "IAS 37", text: { en: "Discount provisions where the time value of money is material; verify the discount rate used and unwinding recorded as interest expense.", ar: "خصم المخصصات عندما يكون أثر القيمة الزمنية للنقود جوهريًا؛ والتحقق من معدل الخصم وتسجيل فك الخصم كمصروف فوائد." } },
+      { id: "prov-8", ref: "IAS 37 / IAS 10", text: { en: "Check events after the reporting date: a claim settled in January is evidence the obligation existed at year-end — update the provision, not just the disclosure.", ar: "فحص الأحداث اللاحقة لتاريخ التقرير: مطالبة سُويت في يناير دليل على قيام الالتزام في نهاية السنة — حدّث المخصص لا الإفصاح فقط." } },
+      { id: "prov-9", ref: "IAS 37", text: { en: "Disclosure test: nature of each provision, timing, uncertainties, reimbursement assets recognized separately, and contingencies with an estimate of financial effect (or a statement that it cannot be made).", ar: "اختبار الإفصاح: طبيعة كل مخصص وتوقيته وعدم اليقين وأصول الاسترداد المقيدة منفصلة، والالتزامات المحتملة مع تقدير الأثر المالي (أو بيان استحالة التقدير)." } },
+    ],
+    pitfalls: [
+      { en: "Legal letter replies ignored when they contradict management's 'no problem' assessment.", ar: "تجاهل ردود الخطابات القانونية عندما تناقض تقييم الإدارة بأن «لا مشكلة»." },
+      { en: "Provision releases credited to revenue instead of reversing the original expense line.", ar: "رد المخصصات مُقيّد في الإيرادات بدل عكس بند المصروف الأصلي." },
+    ],
+    standards: ["IAS 37", "IAS 10", "ISA 501", "EAS 19"],
+  },
+
+  {
+    id: "related-parties",
+    code: "AP-16",
+    group: "accounts",
+    icon: "link",
+    title: { en: "Related Parties", ar: "الأطراف ذات العلاقة" },
+    scope: {
+      en: "Identifying related parties, confirming their balances and transactions are real and at arm's length, and policing the disclosures — including the undisclosed-relationship fraud risk.",
+      ar: "تحديد الأطراف ذات العلاقة، والتأكد من أن أرصدتها ومعاملاتها حقيقية وبأسعار تعامل معتادة، وضبط الإفصاحات — بما فيه خطر الاحتيال بالعلاقات غير المفصح عنها.",
+    },
+    objectives: [
+      { en: "Build a COMPLETE list of related parties, not just the ones management volunteers.", ar: "بناء قائمة كاملة بالأطراف ذات العلاقة لا الاكتفاء بما تقدمه الإدارة." },
+      { en: "Verify transactions are properly recorded, priced, and disclosed.", ar: "التحقق من تسجيل المعاملات وتسعيرها وإفصاحها بشكل صحيح." },
+    ],
+    assertions: ["EX", "C", "A", "PR"],
+    risks: [
+      { en: "Undisclosed related parties used to fabricate or shift revenue/expenses (a defined fraud risk under ISA 240).", ar: "أطراف ذات علاقة غير مفصح عنها تُستخدم لتزييف الإيرادات أو المصروفات أو تحويلها (خطر احتيال محدد في ISA 240)." },
+      { en: "Balances/receivables from shareholders or directors dressed as trade items.", ar: "أرصدة أو ذمم مدينة للمساهمين أو المديرين متنكرة كبنود تجارية." },
+    ],
+    documents: [
+      { en: "Shareholder register and group structure chart", ar: "سجل المساهمين والهيكل التنظيمي للمجموعة" },
+      { en: "Directors'/officers' declarations of interests and board minutes", ar: "إقرارات أعضاء مجلس الإدارة والمديرين بمصالحهم ومحاضر الاجتماعات" },
+      { en: "Related-party transaction schedule with pricing basis", ar: "كشف معاملات الأطراف ذات العلاقة وأساس التسعير" },
+      { en: "Prior-year file's related-party list and management letter points", ar: "قائمة الأطراف ذات العلاقة في ملف السنة السابقة وملاحظات خطاب الإدارة" },
+    ],
+    procedures: [
+      { id: "rp-1", ref: "ISA/ESA 550", text: { en: "Obtain management's list of related parties and TEST completeness: cross-check the shareholder register, group structure, directors' declarations, and prior-year list; investigate newly identified names.", ar: "الحصول على قائمة الإدارة للأطراف ذات العلاقة واختبار اكتمالها: مطابقة سجل المساهمين وهيكل المجموعة وإقرارات المديرين وقائمة السنة السابقة؛ والتحقيق في الأسماء المكتشفة حديثًا." } },
+      { id: "rp-2", ref: "ISA/ESA 550", text: { en: "Scan the ledgers for red flags: similar addresses/IBANs to employees, unusual counterpart names (holdings, family names), round-amount movements, dormant-account activations.", ar: "مسح الدفاتر بحثًا عن مؤشرات: عناوين أو حسابات بنكية مشابهة للموظفين، وأسماء غير معتادة (قابضات، أسماء عائلية)، وحركات بمبالغ مقربة، وتنشيط حسابات ساكنة." } },
+      { id: "rp-3", ref: "IAS 24 / EAS 24", text: { en: "Confirm balances directly with significant related parties: amounts, terms, guarantees, and any balances the entity guarantees.", ar: "التأكيد المباشر مع الأطراف ذات العلاقة الجوهرية على: المبالغ والشروط والضمانات وأي أرصدة تكفلها المنشأة." } },
+      { id: "rp-4", ref: "IAS 24", text: { en: "Test pricing on significant transactions against comparable market prices (or methods like cost-plus); document why the terms are consistent with arm's length or quantify the difference.", ar: "اختبار تسعير المعاملات الجوهرية بأسعار السوق المماثلة (أو طرق مثل التكلفة زائد هامش)؛ وتوثيق لماذا الشروط متسقة مع التعامل المعتاد أو قياس الفرق." } },
+      { id: "rp-5", ref: "ISA/ESA 240", text: { en: "Respond to the undisclosed-related-party fraud risk: inspect contracts for unusual clauses (side letters), trace significant payments near year-end, and perform background checks on major new counterparties.", ar: "الاستجابة لخطر الأطراف غير المفصح عنها: فحص العقود بحثًا عن بنود غير معتادة (خطابات جانبية)، وتتبع المدفوعات الجوهرية قرب نهاية السنة، وفحص خلفية كبار المتعاملين الجدد." } },
+      { id: "rp-6", ref: "IAS 24", text: { en: "Test that related-party transactions are genuinely recorded: vouch to contracts, invoices, and payment evidence; identify transactions with no business substance (e.g. round-tripping).", ar: "اختبار حقيقة تسجيل معاملات الأطراف ذات العلاقة: فحصها رجوعًا إلى العقود والفواتير وإثباتات السداد؛ وتحديد المعاملات بلا جوهر تجاري (مثل الدورة المغلقة)." } },
+      { id: "rp-7", ref: "IAS 24 / IAS 1", text: { en: "Classify receivables from/payables to shareholders and directors per their nature (not as trade); assess collectibility of shareholder loans like any other receivable.", ar: "تصنيف الذمم المدينة والدائنة للمساهمين والمديرين حسب طبيعتها (لا كبنود تجارية)؛ وتقييم قابلية تحصيل قروض المساهمين كأي ذمم أخرى." } },
+      { id: "rp-8", ref: "IAS 24", text: { en: "Disclosure check: relationships, transaction amounts, outstanding balances, terms, guarantees, and key management compensation — complete and consistent with the schedule.", ar: "فحص الإفصاح: العلاقات ومبالغ المعاملات والأرصدة القائمة والشروط والضمانات ومكافآت الإدارة العليا — كاملة ومتسقة مع الكشف." } },
+    ],
+    pitfalls: [
+      { en: "Relying on management's related-party list without any completeness procedure.", ar: "الاعتماد على قائمة الإدارة دون أي إجراء لاختبار الاكتمال." },
+      { en: "Zero transactions concluded because 'the schedule says none' — while dormant accounts moved all year.", ar: "الاستنتاج بعدم وجود معاملات لأن «الكشف يقول ذلك» — بينما حسابات ساكنة تحركت طوال العام." },
+    ],
+    standards: ["ISA 550", "ISA 240", "IAS 24", "EAS 24"],
+  },
+]

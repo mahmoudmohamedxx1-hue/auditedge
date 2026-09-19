@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  role           String   @default("learner") // learner | admin
+  jobTitle       String   @default("")
+  initials       String   @default("")
+  passwordHash   String?  // scrypt hash — null until a password is set
+  xp             Int      @default(0)
+  streakDays     Int      @default(0)
+  lastActiveAt   DateTime @default(now())
+  isDemo         Boolean  @default(false) // seeded leaderboard colleagues
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  enrollments      Enrollment[]
+  lessonProgress   LessonProgress[]
+  quizAttempts     QuizAttempt[]
+  certificates     Certificate[]
+  materials        Material[]
+  sessions         Session[]
+  aiConversations  AiConversation[]
+
+  @@index([xp])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AiConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String   @default("New conversation")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages AiMessage[]
+}
+
+model AiMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String // user | assistant
+  content        String
+  sources        String   @default("[]") // JSON array of {url,name,snippet,host_name}
+  /** Small thumbnail data-URL of an image the user attached (vision questions) */
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId])
+}
+
+model Material {
+  id           String   @id @default(cuid())
+  title        String
+  description  String   @default("")
+  category     String   @default("Reference") // Reference | Standards | Egyptian Standards | IFRS | Templates | Working Papers | Policies
+  fileName     String   @unique // stored file name on disk
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  textContent  String   @default("") // extracted text (RAG index for the AI tutor)
+  sourceUrl    String   @default("") // official source link (ingested standards)
+  hasFile      Boolean  @default(true) // false = DB-only record pointing at an external source
+  uploadedById String?
+  uploader     User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+}
+
+model Course {
+  id             String  @id @default(cuid())
+  slug           String  @unique
+  code           String // e.g. ISA-315
+  title          String
+  subtitle       String
+  description    String
+  category       String // "International Standards" | "Egyptian Framework" | "IFRS" | "Analytics"
+  level          String // "Foundation" | "Intermediate" | "Advanced"
+  cpeHours       Float
+  instructorName String
+  instructorTitle String
+  instructorBio  String
+  rating         Float   @default(0)
+  ratingCount    Int     @default(0)
+  studentsCount  Int     @default(0)
+  icon           String // lucide icon key
+  accent         String // "terracotta" | "olive" | "sage" | "plum" | "sand" | "clay"
+  featured       Boolean @default(false)
+  published      Boolean @default(true)
+  order          Int     @default(0)
+  sourcePlatform String  @default("") // youtube | coursera | edx | mit-ocw | openstax | "" (built in-house)
+  sourceUrl      String  @default("") // original URL when imported from a free external source
+
+  modules       Module[]
+  enrollments   Enrollment[]
+  certificates  Certificate[]
+}
+
+model Module {
+  id          String  @id @default(cuid())
+  courseId    String
+  course      Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  description String  @default("")
+  order       Int
+
+  lessons Lesson[]
+}
+
+model Lesson {
+  id         String  @id @default(cuid())
+  moduleId   String
+  module     Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title      String
+  type       String  @default("lesson") // lesson | quiz
+  durationMin Int    @default(12)
+  xp         Int     @default(10)
+  content     String  @default("{}") // JSON blob: sections, keyPoints, example, takeaway
+  attachments String  @default("[]") // JSON array of material ids
+  videoUrl    String  @default("") // optional YouTube video for this lesson
+  externalUrl String  @default("") // optional external link (MOOC platform lesson)
+  order       Int
+
+  quiz         Quiz?
+  progress     LessonProgress[]
+}
+
+model Quiz {
+  id         String  @id @default(cuid())
+  lessonId   String  @unique
+  lesson     Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  courseId   String
+  title      String
+  passScore  Int     @default(70) // percent
+  questions  String  // JSON array
+
+  attempts QuizAttempt[]
+}
+
+model Enrollment {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@unique([userId, courseId])
+}
+
+model LessonProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completedAt DateTime @default(now())
+
+  @@unique([userId, lessonId])
+}
+
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  score     Int // percent
+  correct   Int
+  total     Int
+  passed    Boolean
+  createdAt DateTime @default(now())
+}
+
+model Certificate {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  serial    String   @unique
+  issuedAt  DateTime @default(now())
+
+  @@unique([userId, courseId])
+}

@@ -1,0 +1,186 @@
+import { ProgramSection } from "./types"
+
+/** Account-area programs A: Cash, Receivables, Inventory, Revenue. */
+export const ACCOUNTS_A: ProgramSection[] = [
+  {
+    id: "cash",
+    code: "AP-07",
+    group: "accounts",
+    icon: "banknote",
+    title: { en: "Cash & Bank Balances", ar: "النقدية والأرصدة البنكية" },
+    scope: {
+      en: "Cash on hand, current accounts, deposits, and treasury operations — the account where existence is physical and completeness hides in the reconciliations.",
+      ar: "النقدية بالخزينة والحسابات الجارية والودائع وعمليات الخزينة — البند الذي يكون فيه الوجود ماديًا ويختبئ الاكتمال في المطابقات.",
+    },
+    objectives: [
+      { en: "Confirm cash exists and belongs to the entity at the reporting date.", ar: "التأكد من وجود النقدية وأنها مملوكة للمنشأة في تاريخ التقرير." },
+      { en: "Verify reconciliations are genuine and all movements are recorded.", ar: "التحقق من أن المطابقات حقيقية وأن كل الحركات مسجلة." },
+    ],
+    assertions: ["EX", "C", "RO", "CO", "PR"],
+    risks: [
+      { en: "Window dressing: funds deposited just before year-end and withdrawn after.", ar: "تجميل المراكز: إيداعات قبيل نهاية السنة تُسحب بعدها." },
+      { en: "Long outstanding reconciling items hiding errors or unrecorded transfers (kiting).", ar: "بنود مطابقة قديمة تخفي أخطاء أو تحويلات غير مسجلة (التنقل بين البنوك)." },
+      { en: "Restricted deposits (pledged as loan collateral) presented as free cash.", ar: "ودائع مقيدة (مرهونة كضمان قروض) تُعرض كنقدية متاحة." },
+    ],
+    documents: [
+      { en: "All bank statements for the year + December and January for cut-off", ar: "كشوف الحسابات البنكية للسنة كاملة + ديسمبر ويناير للاستقطاع" },
+      { en: "Bank reconciliations for every account at year-end", ar: "مطابقات بنكية لكل حساب في نهاية السنة" },
+      { en: "Bank confirmations (balances, loans, guarantees, pledged deposits)", ar: "تأكيدات البنوك (الأرصدة والقروض والضمانات والودائع المرهونة)" },
+      { en: "Fixed deposit certificates and their contracts", ar: "شهادات الودائع لأجل وعقودها" },
+      { en: "Treasury/cash count reports and petty cash vouchers", ar: "تقارير جرد الخزينة وسندات المصروفات النثرية" },
+    ],
+    procedures: [
+      { id: "cash-1", ref: "ISA/ESA 505", text: { en: "Send bank confirmation requests to ALL banks the entity deals with (including closed accounts during the year) — including balances, borrowings, guarantees, and pledged deposits.", ar: "إرسال طلبات التأكيد إلى جميع البنوك المتعامل معها (بما فيها الحسابات المغلقة خلال السنة) — تشمل الأرصدة والاقتراضات والضمانات والودائع المرهونة." } },
+      { id: "cash-2", ref: "ISA/ESA 505", text: { en: "Control the confirmation process end-to-end: the auditor prepares, sends, and receives directly (email to the bank's official domain or physical mail) — never through the client.", ar: "التحكم الكامل في عملية التأكيد: المراجع يعدّ ويرسل ويستلم مباشرة (بريد إلكتروني على نطاق البنك الرسمي أو بريد مادي) — وليس أبدًا عن طريق العميل." } },
+      { id: "cash-3", ref: "ISA/ESA 330", text: { en: "Test year-end bank reconciliations: trace balances to statements and ledger, age and investigate old reconciling items, and verify supporting documents for each item.", ar: "اختبار مطابقات نهاية السنة: تتبع الأرصدة إلى الكشوف والدفاتر، وتقادم بنود المطابقة والتحقيق في القديم منها، وفحص مستندات كل بند." } },
+      { id: "cash-4", ref: "ISA/ESA 500", text: { en: "Trace all deposits in transit and outstanding cheques to January statements; investigate cheques issued before year-end but presented long after (potential window dressing).", ar: "تتبع الإيداعات بالطريق والشيكات المعلقة إلى كشوف يناير؛ والتحقيق في الشيكات الصادرة قبل نهاية السنة والمقدمة للصرف بعد ذلك بوقت طويل (تجميل محتمل)." } },
+      { id: "cash-5", ref: "ISA/ESA 501", text: { en: "Attend surprise cash counts at the treasury (count simultaneously across all funds if possible), count from the custodian to auditor, and agree to the cash book at that moment.", ar: "حضور الجرد المفاجئ للخزينة (الجرد في وقت واحد في كل الخزائن إن أمكن)، والعد من أمين الخزينة بمرافقة المراجع، والمطابقة مع دفتر النقدية في تلك اللحظة." } },
+      { id: "cash-6", ref: "ISA/ESA 330", text: { en: "Test the mathematical accuracy of the cash book and trace a sample of receipts/payments to supporting vouchers, approvals, and bank statements.", ar: "اختبار الدقة الحسابية لدفتر النقدية وتتبع عينة من المقبوضات والمدفوعات إلى السندات والاعتمادات وكشوف البنك." } },
+      { id: "cash-7", ref: "ISA/ESA 240", text: { en: "Review transfers between bank accounts in the last two weeks of the year and first two weeks after — check recording on both sides in the right period (kiting test).", ar: "فحص التحويلات بين الحسابات البنكية في آخر أسبوعين من السنة وأول أسبوعين بعدها — والتأكد من التسجيل في الطرفين وبالفترة الصحيحة (اختبار التنقل)." } },
+      { id: "cash-8", ref: "IFRS 9 / EAS", text: { en: "Inspect deposit certificates: confirm holder name, amount, interest rate, maturity; verify accrued interest income and check for restrictions/pledges.", ar: "فحص شهادات الودائع: التأكد من اسم الحامل والمبلغ وسعر الفائدة وتاريخ الاستحقاق؛ والتحقق من إيراد الفوائد المستحق وفحص القيود والرهون." } },
+      { id: "cash-9", ref: "IFRS 7 / EAS 4", text: { en: "Disclose correctly: cash vs equivalents, restricted balances (pledge/legal), foreign-currency balances with rates, and bank overdrafts presented within borrowings.", ar: "الإفصاح الصحيح: النقدية وما في حكمها، والأرصدة المقيدة (رهنًا أو قانونًا)، والأرصدة بالعملات الأجنبية بأسعار الصرف، والسحب على المكشوف ضمن الاقتراضات." } },
+      { id: "cash-10", ref: "ISA/ESA 330", text: { en: "Scan bank statements for large or unusual transactions near year-end and account for their business rationale (round amounts, related-party transfers, late entries).", ar: "مسح كشوف البنوك بحثًا عن معاملات كبيرة أو غير معتادة قرب نهاية السنة وتفسير مبررها التجاري (مبالغ مقربة، تحويلات أطراف ذات علاقة، قيود متأخرة)." } },
+    ],
+    pitfalls: [
+      { en: "Confirmations received via the client's email — independence of the evidence is lost.", ar: "استلام التأكيدات عبر بريد العميل — يضيع استقلال الدليل." },
+      { en: "Testing reconciliations without getting December AND January statements.", ar: "اختبار المطابقات دون الحصول على كشوف ديسمبر ويناير معًا." },
+    ],
+    standards: ["ISA 505", "ISA 501", "IFRS 7", "IFRS 9", "EAS 4"],
+  },
+
+  {
+    id: "receivables",
+    code: "AP-08",
+    group: "accounts",
+    icon: "credit-card",
+    title: { en: "Accounts Receivable (Debtors)", ar: "الذمم المدينة" },
+    scope: {
+      en: "Trade receivables, notes receivable, other receivables, and the expected credit loss (ECL) allowance under IFRS 9.",
+      ar: "الذمم المدينة التجارية والأوراق المقبوضات والذمم الأخرى ومخصص الخسائر الائتمانية المتوقعة وفق IFRS 9.",
+    },
+    objectives: [
+      { en: "Confirm receivables exist, are accurately recorded, and are collectible at their carrying value.", ar: "التأكد من وجود الذمم المدينة وتسجيلها بدقة وقابليتها للتحصيل بقيمتها الدفترية." },
+      { en: "Validate the ECL model, not just its arithmetic.", ar: "التحقق من نموذج الخسائر الائتمانية المتوقعة لا حساباته فقط." },
+    ],
+    assertions: ["EX", "C", "A", "VA", "CO", "PR"],
+    risks: [
+      { en: "Fictitious debtors propping up revenue and liquidity ratios.", ar: "مدينون وهميون لدعم الإيرادات ونسب السيولة." },
+      { en: "ECL provision based on a flat % with no aging analysis or forward-looking information.", ar: "مخصص الخسائر بنسبة ثابتة دون تحليل أعمار أو معلومات مستقبلية." },
+      { en: "Credit balances buried inside debit balances (netting hides classification errors).", ar: "أرصدة دائنة مدفونة داخل المدينة (المقاصة الشكلية تخفي أخطاء تصنيف)." },
+    ],
+    documents: [
+      { en: "Aged receivables listing reconciled to the trial balance", ar: "كشف أعمار الذمم المدينة مطابقًا لميزان المراجعة" },
+      { en: "ECL model: policy, segments, loss rates, forward-looking overlays", ar: "نموذج ECL: السياسة والقطاعات ونسب الخسارة والتعديلات المستقبلية" },
+      { en: "Post-year-end cash receipts listing (the strongest existence evidence)", ar: "كشف المقبوضات النقدية بعد نهاية السنة (أقوى دليل على الوجود)" },
+      { en: "Sales returns and credit notes issued after year-end", ar: "مرتجعات البيع وإشعارات الدائن الصادرة بعد نهاية السنة" },
+    ],
+    procedures: [
+      { id: "receivables-1", ref: "ISA/ESA 505", text: { en: "Select receivables for POSITIVE confirmation (all significant balances, a sample of the rest, and ALL overdue disputed items). Send directly and control the process.", ar: "اختيار الذمم لتأكيد إيجابي (كل الأرصدة الجوهرية وعينة من الباقي وكل البنود المتنازع عليها المتأخرة)، والإرسال مباشرة بتحكم كامل." } },
+      { id: "receivables-2", ref: "ISA/ESA 505", text: { en: "For non-replies, perform alternatives: trace subsequent cash receipts to bank statements + remittance advices, or vouch the underlying invoices and delivery documents.", ar: "لعدم الردود، تنفيذ إجراءات بديلة: تتبع المقبوضات اللاحقة إلى كشوف البنك وإشعارات التحويل، أو فحص الفواتير ومستندات التسليم." } },
+      { id: "receivables-3", ref: "ISA/ESA 330", text: { en: "Test the aging analysis: recompute, tie opening balances to prior year, and vouch a sample of individual balances to invoices.", ar: "اختبار تحليل الأعمار: إعادة الحساب، ومطابقة الأرصدة الافتتاحية بالسنة السابقة، وفحص عينة من الأرصدة إلى الفواتير." } },
+      { id: "receivables-4", ref: "IFRS 9", text: { en: "Evaluate the ECL: review segmentation, historical loss rates per aging bucket, forward-looking adjustments (sector, major customers), and recompute the provision.", ar: "تقييم مخصص الخسائر الائتمانية: فحص التقسيم إلى قطاعات ونسب الخسارة التاريخية لكل شريحة عمرية والتعديلات المستقبلية (القطاع، كبار العملاء)، وإعادة حساب المخصص." } },
+      { id: "receivables-5", ref: "IFRS 9", text: { en: "Identify credit-impaired customers (restructured, litigating, long-overdue > 180/365 days) and confirm they carry lifetime ECL, not 12-month.", ar: "تحديد العملاء متدهوري الائتمان (إعادة جدولة، تقاضٍ، تأخر كبير) والتأكد من احتساب خسائر العمر الكامل لا 12 شهرًا." } },
+      { id: "receivables-6", ref: "ISA/ESA 330", text: { en: "Review post-year-end collections: how much of the year-end balance was actually collected, and how long did it take versus terms?", ar: "مراجعة التحصيلات بعد نهاية السنة: كم من رصيد نهاية السنة حُصّل فعلًا، وكم استغرق مقابل المهلة التعاقدية؟" } },
+      { id: "receivables-7", ref: "IAS 1 / EAS 1", text: { en: "Reclassify material credit balances (advance payments from customers) to payables; investigate long-pending debit-credit pairs with the same customer.", ar: "إعادة تصنيف الأرصدة الدائنة الجوهرية (دفعات مقدمة من العملاء) إلى الدائنين؛ والتحقيق في أزواج مدين/دائن قديمة لنفس العميل." } },
+      { id: "receivables-8", ref: "IAS 36", text: { en: "For notes receivable: inspect the instruments, verify interest accrual and discounting, and assess impairment indicators.", ar: "للأوراق المقبوضات: فحص الأوراق، والتحقق من استحقاق الفوائد والخصم، وتقييم مؤشرات الانخفاض." } },
+      { id: "receivables-9", ref: "IFRS 7 / IAS 24", text: { en: "Check disclosures: ECL movement reconciliation, concentration of credit risk, fair value, and receivables from related parties and shareholders.", ar: "فحص الإفصاحات: تسوية حركة المخصص وتركز المخاطر الائتمانية والقيمة العادلة والذمم المستحقة على الأطراف ذات العلاقة والمساهمين." } },
+      { id: "receivables-10", ref: "ISA/ESA 240", text: { en: "Scan the listing for balances with no recent activity (dormant) and round amounts — potential fictitious or related-party items.", ar: "مسح الكشف بحثًا عن أرصدة بلا حركة حديثة (ساكنة) ومبالغ مقربة — بنود وهمية أو أطراف ذات علاقة محتملة." } },
+    ],
+    pitfalls: [
+      { en: "Negative confirmations used as the sole procedure for significant balances.", ar: "استخدام التأكيد السلبي كإجراء وحيد للأرصدة الجوهرية." },
+      { en: "Accepting an ECL provision simply because it increased versus last year.", ar: "قبول المخصص لمجرد أنه زاد عن السنة السابقة." },
+    ],
+    standards: ["ISA 505", "ISA 330", "IFRS 9", "IFRS 7", "IAS 24", "EAS 13"],
+  },
+
+  {
+    id: "inventory",
+    code: "AP-09",
+    group: "accounts",
+    icon: "package",
+    title: { en: "Inventory", ar: "المخزون" },
+    scope: {
+      en: "Physical existence at count, valuation (cost), and net realizable value — the account where the audit must be AT the count, not after it.",
+      ar: "الوجود المادي عند الجرد، والتقييم بالتكلفة وصافي القيمة البيعية — البند الذي يجب أن تكون فيه المراجعة وقت الجرد لا بعده.",
+    },
+    objectives: [
+      { en: "Verify quantities on hand at the reporting date.", ar: "التحقق من الكميات المتاحة في تاريخ التقرير." },
+      { en: "Confirm cost is genuine and carrying value does not exceed NRV.", ar: "التأكد من أن التكلفة حقيقية وأن القيمة الدفترية لا تتجاوز صافي القيمة البيعية." },
+    ],
+    assertions: ["EX", "C", "A", "VA", "RO", "CO", "PR"],
+    risks: [
+      { en: "Slow-moving and obsolete stock carried at full cost.", ar: "مخزون بطيء الحركة وباطل محمّل بكامل التكلفة." },
+      { en: "Cut-off manipulation — December purchase invoices recorded in January.", ar: "التلاعب بالاستقطاع — فواتير مشتريات ديسمبر تُسجل في يناير." },
+      { en: "Count instructions that let the client steer the auditor away from certain areas.", ar: "تعليمات جرد تسمح للعميل بتوجيه المراجع بعيدًا عن مناطق معينة." },
+    ],
+    documents: [
+      { en: "Count instructions and count sheets issued BEFORE the count date", ar: "تعليمات الجرد وكشوف العد الصادرة قبل تاريخ الجرد" },
+      { en: "Final inventory listing priced and extended, reconciled to the count and GL", ar: "كشف المخزون النهائي مسعرًا ومجمّعًا ومطابقًا للجرد والدفتر العام" },
+      { en: "Standard cost build-up / purchase invoices for pricing tests", ar: "مكونات التكلفة المعيارية أو فواتير الشراء لاختبارات التسعير" },
+      { en: "NRV support: selling price lists, quotations, damaged-goods reports", ar: "مستندات صافي القيمة البيعية: قوائم الأسعار والعروض وتقارير التالف" },
+    ],
+    procedures: [
+      { id: "inventory-1", ref: "ISA/ESA 501", text: { en: "Attend the physical count: review instructions first (pre-numbered sheets, counters independent of custodians, two-person counts, segregation of obsolete goods).", ar: "حضور الجرد الفعلي: مراجعة التعليمات أولًا (كشوف مرقمة مسبقًا، عدّادون مستقلون عن أمناء المخازن، عد ثنائي، فصل البضائع الباطلة)." } },
+      { id: "inventory-2", ref: "ISA/ESA 501", text: { en: "Perform test counts BOTH directions: pick items from count sheets to floor (existence) and items from floor to sheets (completeness). Record them on your own copy.", ar: "إجراء العد الاختباري في الاتجاهين: من الكشوف إلى المخزن (الوجود) ومن المخزن إلى الكشوف (الاكتمال)، وتسجيلها على نسخة المراجع." } },
+      { id: "inventory-3", ref: "ISA/ESA 501", text: { en: "Note the last receiving and shipping document numbers at the count moment for cut-off testing.", ar: "تدوين أرقام آخر مستندات استلام وصرف وقت الجرد لأغراض اختبار الاستقطاع." } },
+      { id: "inventory-4", ref: "ISA/ESA 501", text: { en: "If the count is at a date other than year-end, perform a roll-back/roll-forward: reconcile movements between count date and year-end through receiving/shipping documents.", ar: "إذا كان الجرد في تاريخ غير نهاية السنة، إجراء الإرجاع أو التدوير: مطابقة الحركات بين تاريخ الجرد ونهاية السنة عبر مستندات الاستلام والصرف." } },
+      { id: "inventory-5", ref: "ISA/ESA 330", text: { en: "Test valuation: vouch quantities on the final listing to count sheets, then price a sample (including high-value items) to standard cost build-ups or purchase invoices; foot and extend the listing.", ar: "اختبار التقييم: فحص الكميات في الكشف النهائي مع كشوف الجرد، ثم تسعير عينة (بما فيها البنود عالية القيمة) بمكونات التكلفة أو فواتير الشراء؛ وجمع الكشف وضربه." } },
+      { id: "inventory-6", ref: "IAS 2 / EAS 11", text: { en: "Verify cost inclusion: what elements are in cost (materials, direct labour, production overheads) and that selling expenses and abnormal waste are excluded.", ar: "التحقق من مكونات التكلفة: ما يدخل فيها (مواد، عمالة مباشرة، تكاليف صناعية غير مباشرة) وأن مصروفات البيع والهالك غير الطبيعي مستبعدة." } },
+      { id: "inventory-7", ref: "IAS 2", text: { en: "Test NRV: compare carrying value to recent selling prices for a sample; identify slow-moving (aging report), damaged, and technically obsolete items and check provisions.", ar: "اختبار صافي القيمة البيعية: مقارنة القيمة الدفترية بأسعار بيع حديثة لعينة؛ وتحديد البطيء (تقرير الأعمار) والتالف والمتقادم فنيًا وفحص مخصصاته." } },
+      { id: "inventory-8", ref: "ISA/ESA 330", text: { en: "Cut-off: for documents ±5 days around year-end, verify goods received are recorded as inventory AND payable in the right period, and goods shipped are recorded as revenue AND cost of sales.", ar: "الاستقطاع: للمستندات حول نهاية السنة (±5 أيام)، التأكد أن البضاعة المستلمة مسجلة كمخزون وذمة دائنة في الفترة الصحيحة، وأن المصروفة مسجلة كإيراد وتكلفة مبيعات." } },
+      { id: "inventory-9", ref: "ISA/ESA 505", text: { en: "Where inventory is held by third parties (public warehouses, consignments), obtain direct confirmations of quantities, or inspect the goods / auditor's expert report.", ar: "عند وجود مخزون لدى الغير (مخازن عامة، أمانة للبيع)، الحصول على تأكيد مباشر بالكميات أو فحص البضاعة أو تقرير خبير المراجع." } },
+      { id: "inventory-10", ref: "IAS 2 / IFRS 15", text: { en: "Consignment and customer-owned stock: confirm goods on consignment OUT are still the entity's (and revenue not booked), and goods held on consignment IN are excluded.", ar: "الأمانة والبضاعة المملوكة للعملاء: التأكد أن البضاعة المسلّمة أمانةً للبيع لدى الغير لا تزال للمنشأة (ولم تُسجل إيرادًا)، وأن الموجودة لديها أمانةً مستبعدة." } },
+      { id: "inventory-11", ref: "IFRS 7 / IAS 1", text: { en: "Check inventory pledges under liens: confirmations, loan agreements; disclose pledged amounts and inventory expensed to related-party projects.", ar: "فحص رهن المخزون: التأكيدات واتفاقيات القروض؛ والإفصاح عن المبالغ المرهونة والمخزون المصروف على مشروعات أطراف ذات علاقة." } },
+    ],
+    pitfalls: [
+      { en: "Attending the count but never testing floor-to-sheet direction.", ar: "حضور الجرد دون اختبار اتجاه المخزن إلى الكشوف." },
+      { en: "Pricing tests done on the client's spreadsheet totals instead of item-level costs.", ar: "اختبارات تسعير على مجاميع جداول العميل بدل التكلفة على مستوى البند." },
+    ],
+    standards: ["ISA 501", "ISA 505", "IAS 2", "IFRS 15", "EAS 11"],
+  },
+
+  {
+    id: "revenue",
+    code: "AP-10",
+    group: "accounts",
+    icon: "trending-up",
+    title: { en: "Revenue", ar: "الإيرادات" },
+    scope: {
+      en: "Recognition under the IFRS 15 five-step model (or EAS equivalent), completeness of recorded sales, and the fraud presumption of risk.",
+      ar: "الإثبات وفق نموذج الخطوات الخمس في IFRS 15 (أو المعيار المصري المقابل)، واكتمال المبيعات المسجلة، والافتراض الاحتيالي للمخاطر.",
+    },
+    objectives: [
+      { en: "Confirm recorded revenue actually happened, in the right period, at the right amount.", ar: "التأكد من أن الإيراد المسجل وقع فعلًا بالفترة والمبلغ الصحيحين." },
+      { en: "Confirm all sales that happened are recorded (completeness).", ar: "التأكد من تسجيل كل المبيعات التي وقعت (الاكتمال)." },
+    ],
+    assertions: ["EX", "C", "A", "CO", "CL", "PR"],
+    risks: [
+      { en: "Presumed fraud risk: premature revenue recognition (side letters, bill-and-hold, channel stuffing).", ar: "خطر احتيال مفترض: إثبات مبكر للإيراد (خطابات جانبية، فوتر وأرجِئ التسليم، حشو قنوات التوزيع)." },
+      { en: "Sales cut-off shifted between periods to meet targets.", ar: "تحريك استقطاع المبيعات بين الفترات لتحقيق المستهدفات." },
+      { en: "Variable consideration (rebates, penalties) not estimated, or principal-vs-agent grossed up.", ar: "المقابل المتغير (خصومات، غرامات) غير مقدّر، أو تضخيم الإيراد بتقديم المنشأة كأصيل وهي وكيل." },
+    ],
+    documents: [
+      { en: "Sales contracts/price lists, including side agreements and rebate terms", ar: "عقود البيع وقوائم الأسعار، بما فيها الاتفاقيات الجانبية وشروط الخصومات" },
+      { en: "Sales journal/register and monthly revenue analysis by product/customer", ar: "يومية المبيعات وتحليل الإيراد الشهري حسب المنتج والعميل" },
+      { en: "Shipping documents, invoices, and customer POs for the tested sample", ar: "مستندات الشحن والفواتير وأوامر شراء العملاء للعينة المختبرة" },
+      { en: "Credit notes and sales returns after year-end", ar: "إشعارات الدائن والمرتجعات بعد نهاية السنة" },
+    ],
+    procedures: [
+      { id: "revenue-1", ref: "ISA/ESA 240", text: { en: "Respond to the presumed fraud risk with procedures beyond inquiry: test the five-step model on a sample of contracts, inspect side letters, and involve senior team members.", ar: "الاستجابة لخطر الاحتيال المفترض بإجراءات تتجاوز الاستفسار: اختبار نموذج الخطوات الخمس على عينة من العقود، وفحص الخطابات الجانبية، وإشراك عناصر أقدم في الفريق." } },
+      { id: "revenue-2", ref: "IFRS 15 / EAS", text: { en: "Confirm the five steps for the main revenue streams: contract, performance obligations, price, allocation, and transfer of control (point-in-time vs over-time with the right measure of progress).", ar: "التأكد من الخطوات الخمس لتدفقات الإيراد الرئيسية: العقد، والالتزامات الأدائية، والسعر، وتوزيعه، وانتقال السيطرة (لحظة معينة مقابل مدة زمنية بمقياس التقدم الصحيح)." } },
+      { id: "revenue-3", ref: "ISA/ESA 330", text: { en: "Detail test — existence & accuracy: select recorded sales and vouch to contract/PO, shipping document/proof of acceptance, invoice, and posting to the AR ledger.", ar: "اختبار تفصيلي — الوجود والدقة: اختيار مبيعات مسجلة وفحصها رجوعًا إلى العقد/أمر الشراء ومستند الشحن/إثبات الاستلام والفاتورة والتسجيل في دفتر الذمم." } },
+      { id: "revenue-4", ref: "ISA/ESA 330", text: { en: "Completeness: select shipping documents before year-end and trace FORWARD to invoice and revenue journal; reconcile shipping log totals to recorded sales.", ar: "الاكتمال: اختيار مستندات شحن قبل نهاية السنة وتتبعها قُدمًا إلى الفاتورة ويومية الإيراد؛ ومطابقة مجاميع سجل الشحن بالمبيعات المسجلة." } },
+      { id: "revenue-5", ref: "ISA/ESA 330", text: { en: "Cut-off: test invoices and shipping documents ±5 days around year-end; match dates of physical transfer to the period revenue is recorded.", ar: "الاستقطاع: اختبار الفواتير ومستندات الشحن حول نهاية السنة (±5 أيام)؛ ومطابقة تاريخ النقل الفعلي للسيطرة بفترة تسجيل الإيراد." } },
+      { id: "revenue-6", ref: "IFRS 15", text: { en: "Test variable consideration: recompute rebate/penalty accruals, review post-year-end credit notes as the reality check, and confirm constraint on estimates.", ar: "اختبار المقابل المتغير: إعادة حساب مخصص الخصومات والغرامات، ومراجعة إشعارات الدائن بعد نهاية السنة كاختبار واقعي، وتأكيد تقييد التقديرات." } },
+      { id: "revenue-7", ref: "IFRS 15", text: { en: "Principal vs agent: for marketplace/commission models, verify gross vs net presentation against control of the good before transfer.", ar: "الأصيل والوكيل: لنماذج الوساطة والعمولة، التحقق من العرض بالإجمالي أو الصافي وفق من يتحكم في السلعة قبل انتقالها." } },
+      { id: "revenue-8", ref: "ISA/ESA 520", text: { en: "Substantive analytics: compare monthly revenue to prior year, budget, and production/shipping volumes; explain outliers with evidence, not stories.", ar: "تحليلات جوهرية: مقارنة الإيراد الشهري بالسنة السابقة والموازنة وأحجام الإنتاج/الشحن؛ وتفسير الشواذ بأدلة لا روايات." } },
+      { id: "revenue-9", ref: "IAS 24", text: { en: "Identify revenue from related parties: inspect pricing (arm's length), and confirm separate disclosure; investigate sales to entities with common ownership/directors.", ar: "تحديد إيرادات الأطراف ذات العلاقة: فحص التسعير (على أساس التعامل المعتاد) وتأكيد الإفصاح المستقل؛ والتحقيق في مبيعات لكيانات بملكية أو مديرين مشتركين." } },
+      { id: "revenue-10", ref: "IFRS 15 / IFRS 8", text: { en: "Check disaggregated revenue disclosure by segment/category/timing and reconcile to the notes.", ar: "فحص إفصاح الإيراد المجزأ حسب القطاع/النوع/التوقيت ومطابقته مع الإيضاحات." } },
+    ],
+    pitfalls: [
+      { en: "Testing only one direction (recorded → documents) and never completeness.", ar: "اختبار اتجاه واحد فقط (المسجل ← المستندات) دون الاكتمال أبدًا." },
+      { en: "Accepting revenue cut-off based on invoice dates rather than transfer of control.", ar: "قبول استقطاع الإيراد على أساس تاريخ الفاتورة لا انتقال السيطرة." },
+    ],
+    standards: ["ISA 240", "ISA 330", "IFRS 15", "IFRS 8", "IAS 24", "EAS 12"],
+  },
+]
