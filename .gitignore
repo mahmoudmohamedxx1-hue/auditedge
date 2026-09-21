@@ -26,3 +26,9 @@ next-env.d.ts
 
 # vercel
 .vercel/
+
+# local workspace artifacts (agent sandbox - never ship)
+worklog.md
+.restore/
+skills/
+research/

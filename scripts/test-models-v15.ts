@@ -77,7 +77,7 @@ async function main() {
   console.log("\n[3] glm-4.6v-flash — vision")
   let dataUrl = ""
   try {
-    dataUrl = readFileSync("research/vision-test-dataurl.txt", "utf-8").trim()
+    dataUrl = readFileSync("scripts/fixtures/vision-test-dataurl.txt", "utf-8").trim()
   } catch {}
   check("vision test image available", dataUrl.startsWith("data:image/png;base64,"))
   if (dataUrl) {

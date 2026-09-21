@@ -4,6 +4,17 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 18.0.1 — Dev-infrastructure hardening
+
+- Self-healing dev launcher (`scripts/dev-clean.sh`): clears the Turbopack
+  cache before every `bun run dev` — sandbox sleep/wake cycles corrupted it
+  twice, breaking the app with an "unexpected Turbopack error" overlay
+- Lockfile manifest sync (`@dnd-kit/utilities` range echo corrected)
+- Vision test fixture now ships at `scripts/fixtures/` so the models suite
+  runs 14/14 from a fresh clone
+- `worklog.md`, `research/`, `.restore/`, `skills/` ignored as local
+  workspace artifacts
+
 ## 18.0.0 — International neural voices
 
 - Microsoft Edge neural TTS integrated server-side from scratch: WSS protocol
