@@ -4,6 +4,23 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 18.0.2 — Vercel deployment support
+
+- The deployed app had no data: `db/` is gitignored and Vercel's serverless
+  filesystem is read-only, so every request hit a missing SQLite file. The
+  repo now ships a sanitized content snapshot (`prisma/auditedge-demo.db.gz`,
+  3.3 MB — 30 courses, 103 modules, 933 lessons, 146 materials and the single
+  workspace user; AI chats, progress and certificates stripped) built by
+  `scripts/make-vercel-snapshot.ts`
+- `src/lib/db.ts` provisions the snapshot into the instance temp directory on
+  first request when running on Vercel — local dev and self-hosted builds are
+  byte-for-byte untouched (the branch is gated on Vercel's `VERCEL=1` marker)
+- `vercel.json`: build command runs `prisma generate` before `next build`, and
+  pins a default `DATABASE_URL`
+- `outputFileTracingIncludes` ships the snapshot with every serverless function
+- README gains a "Deploying to Vercel" section (env vars, deployment-protection
+  toggle, ephemeral-writes caveat, snapshot refresh workflow)
+
 ## 18.0.1 — Dev-infrastructure hardening
 
 - Self-healing dev launcher (`scripts/dev-clean.sh`): clears the Turbopack

@@ -132,6 +132,25 @@ bun scripts/seed/index.ts I-UNDERSTAND-THIS-WIPES-THE-DB
 | `ZAI_OPEN_API_KEY` | for AI features | — | Z.ai open-platform API key |
 | `ZAI_OPEN_BASE_URL` | no | `https://api.z.ai/api/paas/v4` | API base URL override |
 
+## Deploying to Vercel
+
+The repo deploys as-is — [`vercel.json`](vercel.json) runs `prisma generate` before
+the build, and a sanitized content snapshot ships at `prisma/auditedge-demo.db.gz`
+(30 courses, 933 lessons, 146 materials, the single workspace user — zero personal
+runtime data). On Vercel the serverless filesystem is read-only, so on first request
+`src/lib/db.ts` unpacks that snapshot into the instance's temp directory and points
+Prisma at it there.
+
+1. Import the repo on Vercel (Next.js is auto-detected; the build command comes from `vercel.json`)
+2. Add `ZAI_OPEN_API_KEY` under Settings → Environment Variables if you want the AI tutor, analyst and KAM drafter live
+3. To make the deployment publicly reachable, set Settings → Deployment Protection to **Disabled** (by default Vercel puts deployments behind a login wall that only your account can pass)
+4. Deploy
+
+Two things to know about the deployed copy: writes (lesson progress, quiz attempts,
+AI chats) live per-instance and reset when the function recycles — the canonical
+workspace is your local database; and after changing course content locally, refresh
+the snapshot with `bun scripts/make-vercel-snapshot.ts` and push.
+
 ## Scripts
 
 | Command | What it does |
@@ -142,6 +161,7 @@ bun scripts/seed/index.ts I-UNDERSTAND-THIS-WIPES-THE-DB
 | `bun run lint` | ESLint across the repo |
 | `bun run db:push` | Sync the Prisma schema to SQLite |
 | `bun scripts/seed/index.ts I-UNDERSTAND-THIS-WIPES-THE-DB` | Re-seed the 8 in-house courses (destructive) |
+| `bun scripts/make-vercel-snapshot.ts` | Rebuild the sanitized `prisma/auditedge-demo.db.gz` deployment snapshot |
 
 ## Verification and testing
 
