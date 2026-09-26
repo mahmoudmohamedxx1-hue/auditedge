@@ -27,15 +27,16 @@ for i in $(seq 1 40); do
 done
 if [ "$code" != "200" ]; then echo "!! SERVER FAILED TO START"; kill $SERVER_PID 2>/dev/null; exit 1; fi
 
-echo "=== 2. Sign-in (one-click team picker) ==="
+echo "=== 2. Sessionless single-user workspace (auto sign-in) ==="
+# v16+: no team picker / sign-in at all — the app self-heals an anonymous
+# visitor into the single workspace user and boots straight to the dashboard.
 agent-browser cookies clear >/dev/null 2>&1
 agent-browser open "$BASE/" >/dev/null 2>&1
 agent-browser wait --load networkidle >/dev/null 2>&1
 sleep 2
-agent-browser get text "body" 2>/dev/null | rg -qi "who.*learning today" && ok "team picker shown" || bad "team picker missing"
-agent-browser find text "Ahmed Yasser" click >/dev/null 2>&1
-sleep 3
-agent-browser get text "body" 2>/dev/null | rg -qi "welcome back|continue learning|in progress" && ok "one-click sign-in → dashboard" || bad "dashboard did not load"
+BODY2=$(agent-browser get text "body" 2>/dev/null)
+echo "$BODY2" | rg -qi "welcome back|continue learning|in progress|good (morning|afternoon|evening)" && ok "auto sign-in → dashboard" || bad "dashboard did not load"
+echo "$BODY2" | rg -qi "senior associate|mahmoud" && ok "workspace user recognized (Mahmoud)" || bad "workspace user not recognized"
 agent-browser screenshot download/v6-dashboard.png >/dev/null 2>&1
 
 echo "=== 3. Arabic Academy courses ==="
@@ -96,9 +97,10 @@ echo "$AI_STREAM" | rg -qi "ISA 570" && ok "AI answer grounded in ISA 570" || ba
 echo "$AI_STREAM" | rg -qi "twelve months|12 months" && ok "AI answer covers the twelve-month rule" || bad "twelve-month requirement absent from answer"
 
 echo "=== 7. Discover: free course search (Coursera sitemap + web) ==="
-# auth guard first
+# v16+ sessionless auth: an anonymous request self-heals into the workspace
+# session, so the Discover API answers 200 (with a session cookie set).
 NOAUTH=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/api/discover?q=auditing")
-{ [ "$NOAUTH" = "401" ] || [ "$NOAUTH" = "403" ]; } && ok "Discover API blocked without session ($NOAUTH)" || bad "Discover API unauthenticated → $NOAUTH"
+[ "$NOAUTH" = "200" ] && ok "Discover API reachable without prior session ($NOAUTH)" || bad "Discover API unreachable ($NOAUTH)"
 agent-browser find text "Discover" click >/dev/null 2>&1
 agent-browser wait --load networkidle >/dev/null 2>&1
 sleep 2

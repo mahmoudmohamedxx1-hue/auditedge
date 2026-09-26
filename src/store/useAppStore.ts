@@ -38,6 +38,9 @@ const TTS_VOICE_KEY = "auditedge-tts-voice"
 const TTS_SPEED_KEY = "auditedge-tts-speed"
 /** Whether the AI tutor reads answers aloud automatically (v19). */
 const AI_AUTO_SPEAK_KEY = "auditedge-ai-auto-speak"
+/** Whether the desktop sidebar is collapsed to an icon rail (v19.1).
+ *  Mobile always uses the sheet menu, so this only affects lg+ screens. */
+const SIDEBAR_COLLAPSED_KEY = "auditedge-sidebar-collapsed"
 
 interface NavigateOpts {
   courseId?: string
@@ -114,6 +117,12 @@ interface AppState {
   setAiAutoSpeak: (v: boolean) => void
   /** Restore the persisted voice + speed + auto-speak after hydration. */
   hydrateTtsPrefs: () => void
+
+  /** Desktop sidebar collapsed to an icon rail (v19.1) — persisted. */
+  sidebarCollapsed: boolean
+  setSidebarCollapsed: (v: boolean) => void
+  /** Restore the persisted sidebar collapse after hydration. */
+  hydrateSidebar: () => void
 
   // AI tutor state
   aiContext: AiContext | null
@@ -309,6 +318,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       const s = Number(localStorage.getItem(TTS_SPEED_KEY))
       if ((TTS_SPEEDS as readonly number[]).includes(s)) set({ ttsSpeed: s })
       set({ aiAutoSpeak: localStorage.getItem(AI_AUTO_SPEAK_KEY) === "1" })
+    } catch {}
+  },
+
+  sidebarCollapsed: false,
+  setSidebarCollapsed: (v) => {
+    set({ sidebarCollapsed: v })
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, v ? "1" : "0")
+    } catch {}
+  },
+  hydrateSidebar: () => {
+    try {
+      set({ sidebarCollapsed: localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1" })
     } catch {}
   },
 

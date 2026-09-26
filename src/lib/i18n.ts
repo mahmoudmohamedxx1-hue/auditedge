@@ -84,6 +84,8 @@ export const T = {
     free: { en: "Free", ar: "مجاني" },
     openMenu: { en: "Open menu", ar: "فتح القائمة" },
     goHome: { en: "Go to home", ar: "الانتقال إلى الرئيسية" },
+    collapseSidebar: { en: "Collapse sidebar (Ctrl+B)", ar: "تصغير الشريط الجانبي (Ctrl+B)" },
+    expandSidebar: { en: "Expand sidebar (Ctrl+B)", ar: "توسيع الشريط الجانبي (Ctrl+B)" },
     adminBadge: { en: "Workspace admin", ar: "مدير مساحة العمل" },
     language: { en: "Language", ar: "اللغة" },
     workspace: { en: "Workspace", ar: "مساحة العمل" },
@@ -526,6 +528,54 @@ export const T = {
     stEgyptReg: { en: "What's new in Egyptian audit regulation?", ar: "ما الجديد في تنظيمات المراجعة المصرية؟" },
     stPracticeQ: { en: "Give me one practice question", ar: "أعطني سؤال تدريب واحد" },
     stMateriality: { en: "Explain ISA 320 materiality", ar: "اشرح الأهمية النسبية وفق ISA 320" },
+    // conversation history rail (v19.1)
+    searchConvos: { en: "Search conversations…", ar: "ابحث في المحادثات…" },
+    noConvoMatches: { en: "No conversations match your search.", ar: "لا محادثات تطابق بحثك." },
+    gToday: { en: "Today", ar: "اليوم" },
+    gYesterday: { en: "Yesterday", ar: "أمس" },
+    gLast7: { en: "Previous 7 days", ar: "آخر 7 أيام" },
+    gOlder: { en: "Older", ar: "أقدم" },
+    msgCount: { en: "messages", ar: "رسالة" },
+    you: { en: "You", ar: "أنت" },
+    exportMd: { en: "Export as Markdown", ar: "تصدير بصيغة Markdown" },
+    exportEmpty: { en: "Nothing to export yet", ar: "لا يوجد ما يُصدَّر بعد" },
+    exported: { en: "Conversation exported", ar: "تم تصدير المحادثة" },
+    // one-tap follow-ups on the latest answer (v19.1)
+    followUp: { en: "Keep going:", ar: "واصل:" },
+    fuSimpler: { en: "Explain simpler", ar: "اشرح أبسط" },
+    fuExample: { en: "Field example", ar: "مثال ميداني" },
+    fuQuiz: { en: "Quiz me", ar: "اختبرني" },
+    fuPoints: { en: "Key points", ar: "أهم النقاط" },
+    fuSimplerPrompt: {
+      en: "Explain your previous answer in simpler terms, as if teaching a new trainee — keep it accurate but easier to digest.",
+      ar: "اشرح إجابتك السابقة بأسلوب أبسط وكأنك تعلّم متدربًا جديدًا — بدقة لكن بأسهل صياغة.",
+    },
+    fuExamplePrompt: {
+      en: "Give me a practical field example from a real external-audit engagement that illustrates your previous answer.",
+      ar: "أعطني مثالًا عمليًا من مهمة مراجعة خارجية حقيقية يوضح إجابتك السابقة.",
+    },
+    fuQuizPrompt: {
+      en: "Quiz me on your previous answer: ask me ONE exam-style question, wait for my reply, then grade it and explain.",
+      ar: "اختبرني في إجابتك السابقة: اطرح سؤالًا واحدًا بأسلوب الامتحانات، وانتظر ردي ثم قيّمه واشرح.",
+    },
+    fuPointsPrompt: {
+      en: "Summarize your previous answer as the key bullet points I should memorize.",
+      ar: "لخّص إجابتك السابقة في أهم النقاط التي ينبغي أن أحفظها.",
+    },
+    regenerate: { en: "Regenerate answer", ar: "إعادة توليد الإجابة" },
+    // popup parity (v19.1)
+    attach: { en: "Attach image", ar: "إرفاق صورة" },
+    attachHint: { en: "Attach an image (vision model)", ar: "إرفاق صورة (نموذج الرؤية)" },
+    imgAttached: {
+      en: "Image attached — will be read by the GLM-4.6V Flash vision model",
+      ar: "صورة مرفقة — ستُقرأ بنموذج الرؤية GLM-4.6V Flash",
+    },
+    imgAttachedSub: {
+      en: "Ask anything about it: a document, a screen, a table…",
+      ar: "اسأل عن أي شيء فيها: مستند أو شاشة أو جدول…",
+    },
+    removeImage: { en: "Remove image", ar: "إزالة الصورة" },
+    imgFallbackQ: { en: "Analyze this image.", ar: "حلل هذه الصورة." },
     // read-aloud voice picker (v28 — neural international voices)
     voice: {
       title: { en: "Reading voice", ar: "صوت القراءة" },

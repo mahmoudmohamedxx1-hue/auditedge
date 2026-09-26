@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
-import { useAiChat } from "@/hooks/use-ai-chat"
+import { useAiChat, type AiImageAttachment } from "@/hooks/use-ai-chat"
+import { prepareImage } from "@/lib/image-attach"
 import { Markdown } from "./markdown"
 import { StatusLine } from "./ai-tutor"
 import { SpeakButton } from "./speak-button"
@@ -14,7 +15,8 @@ import { stopAllTts } from "@/lib/tts-playback"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { ArrowUp, FolderOpen, Globe, Maximize2, Sparkles, Square, X } from "lucide-react"
+import { toast } from "sonner"
+import { ArrowUp, FolderOpen, Globe, ImagePlus, Maximize2, Sparkles, Square, X } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { tt } from "@/lib/i18n"
 
@@ -30,7 +32,10 @@ export function AiAssistant() {
 
   const chat = useAiChat()
   const [input, setInput] = useState("")
+  const [forceSearch, setForceSearch] = useState(false)
+  const [attachment, setAttachment] = useState<AiImageAttachment | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const aiModel = useAppStore((s) => s.aiModel)
   // automatic read-aloud honors the same persisted pref as the full tutor
   const aiAutoSpeak = useAppStore((s) => s.aiAutoSpeak)
@@ -72,12 +77,34 @@ export function AiAssistant() {
 
   const submit = async (text?: string) => {
     const content = (text ?? input).trim()
-    if (!content || chat.busy) return
+    if ((!content && !attachment) || chat.busy) return
+    const image = attachment
     setInput("")
+    setAttachment(null)
     stopAllTts() // a new question interrupts any playing answer
-    const res = await chat.send(content, aiContext, { model: aiModel })
+    const res = await chat.send(
+      content || tt("ai.imgFallbackQ", lang),
+      aiContext,
+      { model: aiModel, forceSearch, image }
+    )
     if (res.ok && res.text?.trim() && aiAutoSpeak) {
       setSpeakSignal({ nonce: Date.now(), text: res.text })
+    }
+  }
+
+  const pickImage = async (file: File | undefined) => {
+    if (!file) return
+    const res = await prepareImage(file)
+    if (res.ok) {
+      setAttachment(res.attachment)
+      return
+    }
+    if (res.reason === "type") {
+      toast.error(lang === "ar" ? "صيغة الصورة غير مدعومة" : "Unsupported image format")
+    } else if (res.reason === "size") {
+      toast.error(lang === "ar" ? "الصورة كبيرة جدًا (الحد 12 ميجابايت)" : "Image too large (max 12MB)")
+    } else {
+      toast.error(lang === "ar" ? "تعذر قراءة الصورة" : "Could not read this image")
     }
   }
 
@@ -248,6 +275,33 @@ export function AiAssistant() {
             {/* composer */}
             <div className="border-t p-2.5">
               <div className="rounded-xl border bg-background p-1.5 transition-colors focus-within:border-primary/40">
+                {/* image attachment preview */}
+                {attachment && (
+                  <div className="mb-1 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/[0.04] p-1.5">
+                    <img src={attachment.thumb} alt="" className="h-9 w-9 rounded-md border object-cover" />
+                    <p className="min-w-0 flex-1 truncate text-[11px] font-medium">
+                      {tt("ai.imgAttached", lang)}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setAttachment(null)}
+                      aria-label={tt("ai.removeImage", lang)}
+                      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-ring"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  onChange={(e) => {
+                    void pickImage(e.target.files?.[0])
+                    e.target.value = ""
+                  }}
+                />
                 <Textarea
                   dir="auto"
                   value={input}
@@ -264,6 +318,34 @@ export function AiAssistant() {
                 />
                 <div className="flex items-center justify-between gap-1.5 px-1 pb-0.5">
                   <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      aria-label={tt("ai.attach", lang)}
+                      title={tt("ai.attachHint", lang)}
+                      className={cn(
+                        "inline-flex h-7 w-7 items-center justify-center rounded-full border transition-colors focus-ring",
+                        attachment
+                          ? "border-primary/40 bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <ImagePlus className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForceSearch((v) => !v)}
+                      aria-pressed={forceSearch}
+                      title={forceSearch ? tt("ai.webOn", lang) : tt("ai.webAuto", lang)}
+                      className={cn(
+                        "inline-flex h-7 w-7 items-center justify-center rounded-full border transition-colors focus-ring",
+                        forceSearch
+                          ? "border-primary/40 bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Globe className="h-3.5 w-3.5" />
+                    </button>
                     <MicButton
                       compact
                       onTranscript={(t) => setInput((prev) => (prev ? prev.trim() + " " + t : t))}
@@ -278,7 +360,7 @@ export function AiAssistant() {
                     <Button
                       size="sm"
                       onClick={() => void submit()}
-                      disabled={!input.trim()}
+                      disabled={!input.trim() && !attachment}
                       className="h-7 w-7 rounded-full p-0"
                       aria-label={tt("ai.send", lang)}
                     >

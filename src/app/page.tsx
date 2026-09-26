@@ -117,6 +117,8 @@ export default function Home() {
   const hydrateTheme = useAppStore((s) => s.hydrateTheme)
   const hydrateAiModel = useAppStore((s) => s.hydrateAiModel)
   const hydrateTtsPrefs = useAppStore((s) => s.hydrateTtsPrefs)
+  const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
+  const hydrateSidebar = useAppStore((s) => s.hydrateSidebar)
   const navigate = useAppStore((s) => s.navigate)
   const [menuOpen, setMenuOpen] = useState(false)
   const rtl = lang === "ar"
@@ -126,11 +128,26 @@ export default function Home() {
     hydrateTheme()
     hydrateAiModel()
     hydrateTtsPrefs()
-  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateTtsPrefs])
+    hydrateSidebar()
+  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateTtsPrefs, hydrateSidebar])
 
   useEffect(() => {
     void checkAuth()
   }, [checkAuth])
+
+  // Ctrl/Cmd+B — open/close the desktop sidebar (the mobile sheet has its
+  // own hamburger; this shortcut mirrors every major editor)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "b") {
+        e.preventDefault()
+        const s = useAppStore.getState()
+        s.setSidebarCollapsed(!s.sidebarCollapsed)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
 
   // single-user workspace: loading → app; only a server failure reaches the retry screen
   if (!data) {
@@ -180,7 +197,12 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="lg:ps-[248px] print:ps-0">
+      <main
+        className={cn(
+          "print:ps-0 transition-[padding] duration-200 ease-out",
+          sidebarCollapsed ? "lg:ps-[72px]" : "lg:ps-[248px]"
+        )}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={view + (selectedCourseId ?? "")}

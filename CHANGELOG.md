@@ -4,6 +4,35 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 19.1.0 — Collapsible sidebar + AI tutor panel upgrades
+
+- The desktop sidebar can now be opened and closed: a collapse toggle in the
+  sidebar header shrinks it to a 72 px icon rail (tooltips carry the labels,
+  active items keep their accent bar, badges become dots), the main content
+  re-flows smoothly, and the choice persists per browser. `Ctrl/Cmd+B`
+  toggles it from the keyboard anywhere in the app; mobile keeps its existing
+  hamburger sheet
+- Collapsed rail: micro theme and language buttons (single-tap squares) and
+  the avatar with the user's name on hover
+- One-tap follow-ups under the tutor's latest answer — *Explain simpler,
+  Field example, Quiz me, Key points* — each sends a tuned bilingual prompt
+  that builds on the answer above it (EN/AR)
+- Regenerate answer: re-asks the same question for a fresh response. The old
+  exchange is trimmed server-side first (`PATCH /api/ai/conversations/:id`
+  with `action: "trimLastExchange"`), so reloading the conversation never
+  shows stale duplicates
+- Export conversation as Markdown: downloads the transcript as a clean
+  `.md` study note (title, attribution header, Q/A sections)
+- Conversation history rail: live search filter (appears from five
+  conversations), recency groups (Today / Yesterday / Previous 7 days /
+  Older) and message counts on every entry — desktop rail and mobile sheet
+- Quick-ask popup parity: image attachment (vision model) and the web-search
+  toggle join the mic and voice picker in the popup composer; image intake
+  logic moved to the shared `src/lib/image-attach.ts`
+- e2e suite: the three v6-era checks that still expected the pre-v16 team
+  picker and API auth wall were updated to the sessionless single-user
+  reality — 28/28 green again
+
 ## 19.0.0 — Voice conversation with the AI tutor
 
 - Automatic answer reading: the tutor speaks every answer aloud as it

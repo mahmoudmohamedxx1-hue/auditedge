@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { useAiChat, useAiConversations, type AiImageAttachment } from "@/hooks/use-ai-chat"
+import { prepareImage } from "@/lib/image-attach"
 import { Markdown } from "./markdown"
 import { SpeakButton } from "./speak-button"
 import { MicButton } from "./mic-button"
@@ -23,51 +24,49 @@ import {
   BookOpen,
   Check,
   Copy,
+  Download,
   FolderOpen,
   Globe,
+  GraduationCap,
   History,
   ImagePlus,
+  Lightbulb,
+  ListChecks,
   Loader2,
   MessageSquarePlus,
+  RefreshCw,
+  Search,
+  Shapes,
   Sparkles,
   Square,
   Trash2,
   Volume2,
   X,
+  type LucideIcon,
 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { tt } from "@/lib/i18n"
 
-/** Downscale an image file for the vision model (max 1024px) + a small
- *  thumbnail (max 160px) persisted with the conversation history. */
-async function prepareImage(file: File): Promise<AiImageAttachment | null> {
-  const img = await new Promise<HTMLImageElement | null>((resolve) => {
-    const url = URL.createObjectURL(file)
-    const el = new Image()
-    el.onload = () => {
-      URL.revokeObjectURL(url)
-      resolve(el)
-    }
-    el.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve(null)
-    }
-    el.src = url
-  })
-  if (!img) return null
-
-  const draw = (source: HTMLImageElement, max: number, quality: number) => {
-    const scale = Math.min(1, max / Math.max(source.width, source.height))
-    const w = Math.max(1, Math.round(source.width * scale))
-    const h = Math.max(1, Math.round(source.height * scale))
-    const canvas = document.createElement("canvas")
-    canvas.width = w
-    canvas.height = h
-    canvas.getContext("2d")?.drawImage(source, 0, 0, w, h)
-    return canvas.toDataURL("image/jpeg", quality)
-  }
-
-  return { dataUrl: draw(img, 1024, 0.85), thumb: draw(img, 160, 0.7) }
+/** A single one-tap follow-up action under the latest tutor answer. */
+function FollowUpChip({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: LucideIcon
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-2.5 py-1 text-[11.5px] text-foreground/75 transition-all hover:-translate-y-px hover:border-primary/35 hover:bg-card hover:text-foreground hover:shadow-soft focus-ring"
+    >
+      <Icon className="h-3 w-3 text-primary/70" />
+      {label}
+    </button>
+  )
 }
 
 /** Full-page AI tutor — the chat fills the whole viewport:
@@ -88,6 +87,7 @@ export function AiTutor() {
   const [atBottom, setAtBottom] = useState(true)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [attachment, setAttachment] = useState<AiImageAttachment | null>(null)
+  const [convoQuery, setConvoQuery] = useState("")
   // voice: automatic answer reading (persisted pref) + hands-free conversation
   // mode (session-only — the mic must never surprise-open after a reload)
   const aiAutoSpeak = useAppStore((s) => s.aiAutoSpeak)
@@ -204,7 +204,7 @@ export function AiTutor() {
     // a new question interrupts whatever answer is still being read aloud
     stopAllTts()
     const res = await chat.send(
-      content || (lang === "ar" ? "حلل هذه الصورة." : "Analyze this image."),
+      content || tt("ai.imgFallbackQ", lang),
       aiContext,
       {
         forceSearch,
@@ -221,16 +221,18 @@ export function AiTutor() {
 
   const pickImage = async (file: File | undefined) => {
     if (!file) return
-    if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
+    const res = await prepareImage(file)
+    if (res.ok) {
+      setAttachment(res.attachment)
+      return
+    }
+    if (res.reason === "type") {
       toast.error(lang === "ar" ? "صيغة الصورة غير مدعومة" : "Unsupported image format")
-      return
-    }
-    if (file.size > 12 * 1024 * 1024) {
+    } else if (res.reason === "size") {
       toast.error(lang === "ar" ? "الصورة كبيرة جدًا (الحد 12 ميجابايت)" : "Image too large (max 12MB)")
-      return
+    } else {
+      toast.error(lang === "ar" ? "تعذر قراءة الصورة" : "Could not read this image")
     }
-    const prepared = await prepareImage(file)
-    if (prepared) setAttachment(prepared)
   }
 
   const newConversation = () => {
@@ -260,53 +262,182 @@ export function AiTutor() {
     }
   }
 
+  /** Re-ask the same question for a fresh answer. The old exchange is
+   *  trimmed server-side first (PATCH trimLastExchange) so reloading the
+   *  conversation never shows stale duplicates. */
+  const regenerate = async () => {
+    if (chat.busy) return
+    const lastUser = [...chat.messages].reverse().find((m) => m.role === "user")
+    if (!lastUser) return
+    stopAllTts()
+    if (chat.conversationId) {
+      const trimmed = await fetch(`/api/ai/conversations/${chat.conversationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "trimLastExchange" }),
+      }).catch(() => null)
+      if (!trimmed?.ok) {
+        toast.error(lang === "ar" ? "تعذر إعادة التوليد — حاول مجددًا" : "Could not regenerate — try again")
+        return
+      }
+    }
+    // drop the trailing Q/A pair locally, then re-send the same question
+    chat.setMessages((prev) => {
+      let cut = prev.length
+      if (cut > 0 && prev[cut - 1].role === "assistant") cut--
+      if (cut > 0 && prev[cut - 1].role === "user") cut--
+      return prev.slice(0, cut)
+    })
+    setAtBottom(true)
+    const res = await chat.send(lastUser.content, aiContext, {
+      forceSearch,
+      forceLibrary,
+      model: aiModel,
+    })
+    if (res.ok && res.text?.trim() && (aiAutoSpeak || handsFree)) {
+      setSpeakSignal({ nonce: Date.now(), text: res.text })
+    }
+  }
+
+  /** Download the current transcript as a Markdown file — study notes the
+   *  learner can keep, print or paste into revision docs. */
+  const exportMarkdown = () => {
+    if (chat.messages.length === 0) {
+      toast(tt("ai.exportEmpty", lang))
+      return
+    }
+    const title =
+      conversations?.find((c) => c.id === chat.conversationId)?.title ??
+      chat.messages.find((m) => m.role === "user")?.content.slice(0, 60) ??
+      tt("ai.title", lang)
+    const lines = [
+      `# ${title}`,
+      "",
+      `> AuditEdge Academy — ${tt("ai.title", lang)} · ${new Date().toLocaleDateString()}`,
+      "",
+      ...chat.messages.map((m) =>
+        m.role === "user" ? `## ${tt("ai.you", lang)}\n\n${m.content}` : `## ${tt("ai.title", lang)}\n\n${m.content}`
+      ),
+    ]
+    const blob = new Blob([lines.join("\n\n")], { type: "text/markdown;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `auditedge-${title.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "conversation"}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success(tt("ai.exported", lang))
+  }
+
+  /** Bucket a conversation by recency for the history rail groups. */
+  const convoBucket = (iso: string): 0 | 1 | 2 | 3 => {
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return 3
+    const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+    const diffDays = Math.round((startOfDay(new Date()) - startOfDay(d)) / 86400000)
+    if (diffDays <= 0) return 0
+    if (diffDays === 1) return 1
+    if (diffDays <= 7) return 2
+    return 3
+  }
+
+  const filteredConversations = useMemo(() => {
+    if (!conversations) return null
+    const q = convoQuery.trim().toLowerCase()
+    if (!q) return conversations
+    return conversations.filter((c) => c.title.toLowerCase().includes(q))
+  }, [conversations, convoQuery])
+
   const ConversationList = (
-    <div className="space-y-1">
+    <div>
+      {/* search box — desktop rail + mobile sheet share it */}
+      {conversations !== null && conversations.length > 4 && (
+        <div className="relative px-2 pb-2 pt-2">
+          <Search className="pointer-events-none absolute start-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={convoQuery}
+            onChange={(e) => setConvoQuery(e.target.value)}
+            placeholder={tt("ai.searchConvos", lang)}
+            aria-label={tt("ai.searchConvos", lang)}
+            className="h-8 w-full rounded-lg border bg-background/60 ps-8 pe-7 text-[12.5px] text-foreground placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none"
+          />
+          {convoQuery && (
+            <button
+              onClick={() => setConvoQuery("")}
+              aria-label={tt("ai.clearContext", lang)}
+              className="absolute end-4 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      )}
       {conversations === null ? (
         <div className="space-y-2 px-2 pt-2">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-9 animate-pulse rounded-lg bg-secondary/60" />
           ))}
         </div>
-      ) : conversations.length === 0 ? (
+      ) : filteredConversations !== null && filteredConversations.length === 0 ? (
         <p className="px-3 pt-3 text-[12px] leading-relaxed text-muted-foreground">
-          {tt("ai.noConversations", lang)}
+          {convoQuery.trim() ? tt("ai.noConvoMatches", lang) : tt("ai.noConversations", lang)}
         </p>
       ) : (
-        conversations.map((c) => (
-          <div key={c.id} className="group relative">
-            <button
-              onClick={() => {
-                stopAllTts()
-                void chat.load(c.id)
-                setHistoryOpen(false)
-                setAtBottom(true)
-              }}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 pr-8 text-left transition-colors focus-ring",
-                chat.conversationId === c.id
-                  ? "bg-card font-medium text-foreground shadow-soft ring-1 ring-border"
-                  : "text-foreground/70 hover:bg-secondary/70"
-              )}
-            >
-              <MessageSquarePlus className="h-3.5 w-3.5 shrink-0 rotate-45 text-muted-foreground" />
-              <span dir="auto" className="min-w-0 truncate text-[12.5px]">
-                {c.title}
-              </span>
-            </button>
-            <button
-              aria-label={`Delete ${c.title}`}
-              onClick={async () => {
-                await remove(c.id)
-                if (chat.conversationId === c.id) void chat.load(null)
-                toast.success(tt("ai.deleted", lang))
-              }}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive focus-ring lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ))
+        ([0, 1, 2, 3] as const).map((bucket) => {
+          const group = (filteredConversations ?? []).filter((c) => convoBucket(c.updatedAt) === bucket)
+          if (group.length === 0) return null
+          return (
+            <div key={bucket} className="mb-1">
+              <div className="px-4 pb-1 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
+                {bucket === 0
+                  ? tt("ai.gToday", lang)
+                  : bucket === 1
+                    ? tt("ai.gYesterday", lang)
+                    : bucket === 2
+                      ? tt("ai.gLast7", lang)
+                      : tt("ai.gOlder", lang)}
+              </div>
+              {group.map((c) => (
+                <div key={c.id} className="group relative">
+                  <button
+                    onClick={() => {
+                      stopAllTts()
+                      void chat.load(c.id)
+                      setHistoryOpen(false)
+                      setAtBottom(true)
+                    }}
+                    title={`${c.title} — ${c.messageCount} ${tt("ai.msgCount", lang)}`}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 pe-8 text-start transition-colors focus-ring",
+                      chat.conversationId === c.id
+                        ? "bg-card font-medium text-foreground shadow-soft ring-1 ring-border"
+                        : "text-foreground/70 hover:bg-secondary/70"
+                    )}
+                  >
+                    <MessageSquarePlus className="h-3.5 w-3.5 shrink-0 rotate-45 text-muted-foreground" />
+                    <span dir="auto" className="min-w-0 truncate text-[12.5px]">
+                      {c.title}
+                    </span>
+                    <span className="ms-auto me-1 shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+                      {c.messageCount}
+                    </span>
+                  </button>
+                  <button
+                    aria-label={`Delete ${c.title}`}
+                    onClick={async () => {
+                      await remove(c.id)
+                      if (chat.conversationId === c.id) void chat.load(null)
+                      toast.success(tt("ai.deleted", lang))
+                    }}
+                    className="absolute end-1.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive focus-ring lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
+        })
       )}
     </div>
   )
@@ -395,6 +526,16 @@ export function AiTutor() {
           </button>
           <ModelPicker lang={lang} />
           <VoicePicker lang={lang} />
+          <button
+            type="button"
+            onClick={exportMarkdown}
+            aria-label={tt("ai.exportMd", lang)}
+            title={tt("ai.exportMd", lang)}
+            disabled={chat.messages.length === 0}
+            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-ring disabled:opacity-40 disabled:hover:bg-transparent lg:inline-flex"
+          >
+            <Download className="h-4 w-4" />
+          </button>
           <Button
             variant="outline"
             size="sm"
@@ -553,6 +694,43 @@ export function AiTutor() {
                             <SpeakButton text={m.content} className="p-0" /> {tt("ai.listen", lang)}
                           </span>
                         </div>
+                        {/* one-tap follow-ups + regenerate — the latest answer only,
+                            so the transcript stays clean while scrolling */}
+                        {!chat.busy && i === chat.messages.length - 1 && i > 0 && (
+                          <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-dashed pt-2.5">
+                            <span className="me-1 text-[10.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">
+                              {tt("ai.followUp", lang)}
+                            </span>
+                            <FollowUpChip
+                              icon={Shapes}
+                              label={tt("ai.fuSimpler", lang)}
+                              onClick={() => void submit(tt("ai.fuSimplerPrompt", lang))}
+                            />
+                            <FollowUpChip
+                              icon={Lightbulb}
+                              label={tt("ai.fuExample", lang)}
+                              onClick={() => void submit(tt("ai.fuExamplePrompt", lang))}
+                            />
+                            <FollowUpChip
+                              icon={GraduationCap}
+                              label={tt("ai.fuQuiz", lang)}
+                              onClick={() => void submit(tt("ai.fuQuizPrompt", lang))}
+                            />
+                            <FollowUpChip
+                              icon={ListChecks}
+                              label={tt("ai.fuPoints", lang)}
+                              onClick={() => void submit(tt("ai.fuPointsPrompt", lang))}
+                            />
+                            <button
+                              onClick={() => void regenerate()}
+                              title={tt("ai.regenerate", lang)}
+                              className="ms-auto inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/[0.05] px-2.5 py-1 text-[11.5px] text-primary transition-all hover:-translate-y-px hover:border-primary/45 hover:bg-primary/10 hover:shadow-soft focus-ring"
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                              {tt("ai.regenerate", lang)}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       chat.busy &&
@@ -596,24 +774,19 @@ export function AiTutor() {
               {/* image attachment preview */}
               {attachment && (
                 <div className="mb-1 flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/[0.04] p-2">
-                  { }
                   <img
                     src={attachment.thumb}
                     alt=""
                     className="h-12 w-12 rounded-lg border object-cover"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-medium">
-                      {lang === "ar" ? "صورة مرفقة — ستُقرأ بنموذج الرؤية GLM-4.6V Flash" : "Image attached — will be read by the GLM-4.6V Flash vision model"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {lang === "ar" ? "اسأل عن أي شيء في الصورة: مستند، شاشة، جدول…" : "Ask anything about it: a document, a screen, a table…"}
-                    </p>
+                    <p className="text-[12px] font-medium">{tt("ai.imgAttached", lang)}</p>
+                    <p className="text-[11px] text-muted-foreground">{tt("ai.imgAttachedSub", lang)}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setAttachment(null)}
-                    aria-label={lang === "ar" ? "إزالة الصورة" : "Remove image"}
+                    aria-label={tt("ai.removeImage", lang)}
                     className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-ring"
                   >
                     <X className="h-4 w-4" />
@@ -653,8 +826,8 @@ export function AiTutor() {
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    aria-label={lang === "ar" ? "إرفاق صورة" : "Attach image"}
-                    title={lang === "ar" ? "إرفاق صورة (نموذج الرؤية)" : "Attach an image (vision model)"}
+                    aria-label={tt("ai.attach", lang)}
+                    title={tt("ai.attachHint", lang)}
                     className={cn(
                       "inline-flex h-7 w-7 items-center justify-center rounded-full border transition-colors focus-ring",
                       attachment
