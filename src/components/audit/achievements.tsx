@@ -10,11 +10,16 @@ import { cn } from "@/lib/utils"
 import {
   Award,
   BookOpen,
+  Briefcase,
+  ClipboardCheck,
   Clock,
   Flame,
+  GraduationCap,
+  Layers,
   Medal,
   Sparkles,
   Target,
+  Trophy,
   Zap,
 } from "lucide-react"
 
@@ -25,6 +30,11 @@ const BADGE_ICONS: Record<string, typeof Sparkles> = {
   clock: Clock,
   book: BookOpen,
   award: Award,
+  clipboard: ClipboardCheck,
+  briefcase: Briefcase,
+  trophy: Trophy,
+  layers: Layers,
+  graduation: GraduationCap,
 }
 
 const levelName = (name: string, lang: "en" | "ar") =>
@@ -108,6 +118,55 @@ export function Achievements() {
       icon: "award",
       earned: certificates.length >= 1,
       progress: { value: Math.min(certificates.length, 1), max: 1 },
+    },
+    /* ---------- v20.1 — exam / simulation / review engagement badges ---------- */
+    {
+      id: "exam-sitter",
+      name: tt("ach.badgeExamSitter", lang),
+      description: tt("ach.badgeExamSitterD", lang),
+      icon: "clipboard",
+      earned: (data?.examCount ?? 0) >= 1,
+      progress: { value: Math.min(data?.examCount ?? 0, 1), max: 1 },
+    },
+    {
+      id: "exam-ready",
+      name: tt("ach.badgeExamReady", lang),
+      description: tt("ach.badgeExamReadyD", lang),
+      icon: "target",
+      earned: (data?.examBest ?? 0) >= 70,
+      progress: { value: data?.examBest ?? 0, max: 70 },
+    },
+    {
+      id: "sim-engagement",
+      name: tt("ach.badgeSimEngagement", lang),
+      description: tt("ach.badgeSimEngagementD", lang),
+      icon: "briefcase",
+      earned: (data?.simCompleted ?? 0) >= 1,
+      progress: { value: Math.min(data?.simCompleted ?? 0, 1), max: 1 },
+    },
+    {
+      id: "sim-partner",
+      name: tt("ach.badgeSimPartner", lang),
+      description: tt("ach.badgeSimPartnerD", lang),
+      icon: "trophy",
+      earned: (data?.simBest ?? 0) >= 80,
+      progress: { value: data?.simBest ?? 0, max: 80 },
+    },
+    {
+      id: "review-habit",
+      name: tt("ach.badgeReviewHabit", lang),
+      description: tt("ach.badgeReviewHabitD", lang),
+      icon: "layers",
+      earned: (data?.reviewGraded ?? 0) >= 25,
+      progress: { value: Math.min(data?.reviewGraded ?? 0, 25), max: 25 },
+    },
+    {
+      id: "bank-driller",
+      name: tt("ach.badgeBankDriller", lang),
+      description: tt("ach.badgeBankDrillerD", lang),
+      icon: "graduation",
+      earned: (data?.practiceAnswered ?? 0) >= 100,
+      progress: { value: Math.min(data?.practiceAnswered ?? 0, 100), max: 100 },
     },
   ]
 

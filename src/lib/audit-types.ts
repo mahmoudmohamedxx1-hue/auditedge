@@ -235,6 +235,14 @@ export type BootstrapData = {
   reviewDue: number
   /** Last opened lesson id (resume card, quick win). */
   lastLessonId: string | null
+  /** v20.1 — engagement stats that feed the achievement badges. */
+  simCompleted: number
+  simBest: number
+  examCount: number
+  examBest: number
+  reviewTotal: number
+  reviewGraded: number
+  practiceAnswered: number
 }
 
 /* ================================================================== */

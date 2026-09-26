@@ -4,6 +4,35 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 20.1.0 — Roadmap completion pass
+
+Closes every remaining acceptance criterion from the improvement roadmap that
+v20.0.0 left partially met. **959 automated checks green.**
+
+- **P1-8 completed to the letter**: the last two in-house lessons pushed past
+  1,500 body characters — the Covenant Winter capstone gains the examiner's
+  marking-rubric section; archival discipline gains the digital-file variant.
+  All 46 core lessons now clear the roadmap's threshold
+- **P0-1 completed**: the Exam Center hub now shows **Past sittings** — the
+  sitting history (date, length, score, per-sitting correct counts) with
+  pass/fail tinting, bilingual
+- **P1-5 completed to the letter**: exam, simulation and review discipline
+  now **score into achievements** — six new bilingual badges (Exam Sitter,
+  Exam Ready 70%+, Engagement Senior, Partner's Judgment 80%+,
+  Review Habit 25 cards, Bank Driller 100 practice answers) fed by seven new
+  engagement stats in the bootstrap payload
+- **P0-3 completed**: the review streak is now really computed — consecutive
+  days with at least one graded card — instead of the placeholder zero
+- **P2-11 completed**: **Queue whole course** buttons drain an entire course
+  through the podcast engine one episode at a time (EN + Arabic for lessons
+  with Arabic editions), status visible in the download queue; the Arabic
+  episode route live-verified (Salma voice, 745 KB for a full lesson)
+- **P1-6 at 100% quiz parity**: all **142 course-quiz questions** now carry
+  Arabic variants (88 core-8 incl. checkpoints + 54 spine), and the bilingual
+  bank grew to **103 Arabic questions** (+38)
+- **P1-7 verified end-to-end**: the export → import round-trip confirmed
+  idempotent (upserts, no duplicates) across all nine data families
+
 ## 20.0.0 — The Exam-Readiness Release: all 19 roadmap initiatives shipped
 
 Every P0, P1 and P2 initiative from the v19.2 improvement roadmap, in one

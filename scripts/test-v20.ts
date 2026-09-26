@@ -32,7 +32,7 @@ async function main() {
     db.bankQuestion.count({ where: { area: "ethics" } }),
   ])
   check("bank size ≥ 500", total >= 500, `${total} questions`)
-  check("with Arabic ≥ 60", withAr >= 60, `${withAr}`)
+  check("with Arabic ≥ 100 (v20.1 expansion)", withAr >= 100, `${withAr}`)
   check("all four exam sections covered", auditing > 150 && accounting > 50 && egypt > 30 && ethics > 20, `aud ${auditing} · acc ${accounting} · egy ${egypt} · eth ${ethics}`)
   const tags = await db.bankQuestion.groupBy({ by: ["standardTag"], _count: true })
   check("≥ 25 distinct standard tags", tags.length >= 25, `${tags.length} tags`)
@@ -165,7 +165,15 @@ async function main() {
     (a, z) => a + (JSON.parse(z.questions) as { questionAr?: string }[]).filter((q) => q.questionAr).length,
     0
   )
-  check("48 in-house quiz questions have Arabic variants", arQ >= 48, `${arQ}`)
+  check("all 88 core-8 quiz questions have Arabic variants", arQ >= 88, `${arQ}`)
+  // v20.1: spine quizzes are bilingual too — platform-wide course-quiz AR parity
+  const spineIds = (await db.course.findMany({ where: { code: { in: spineCodes } }, select: { id: true } })).map((c) => c.id)
+  const spineQuizzes2 = await db.quiz.findMany({ where: { courseId: { in: spineIds } } })
+  const spineAr = spineQuizzes2.reduce(
+    (a, z) => a + (JSON.parse(z.questions) as { questionAr?: string }[]).filter((q) => q.questionAr).length,
+    0
+  )
+  check("all 54 spine quiz questions have Arabic variants", spineAr >= 54, `${spineAr}`)
   const checkpoints = await db.quiz.count({ where: { title: { contains: "Mid-course Checkpoint" } } })
   check("8 mid-course checkpoint quizzes", checkpoints === 8, `${checkpoints}`)
   const supplementary = await db.course.count({ where: { supplementary: true } })
@@ -186,9 +194,9 @@ async function main() {
   })
   const stillThin = thinAfter.filter((l) => {
     const c = JSON.parse(l.content) as { sections: { body?: string }[] }
-    return (c.sections ?? []).reduce((a, s) => a + (s.body || "").length, 0) < 1000
+    return (c.sections ?? []).reduce((a, s) => a + (s.body || "").length, 0) < 1500
   })
-  check("every in-house lesson ≥ 1000 body chars after depth pass", stillThin.length === 0, stillThin.length ? stillThin.map((l) => l.title).join(" | ") : "clean")
+  check("every in-house lesson ≥ 1500 body chars after v20.1 depth pass", stillThin.length === 0, stillThin.length ? stillThin.map((l) => l.title).join(" | ") : "clean")
 
   console.log("── 7. Workpaper templates (P2-10) ─────────────")
   const { TEMPLATES, findTemplate } = await import("../src/lib/templates")

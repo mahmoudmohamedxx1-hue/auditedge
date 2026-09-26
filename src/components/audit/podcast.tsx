@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Download,
   Headphones,
+  ListVideo,
   Loader2,
   Trash2,
 } from "lucide-react"
@@ -34,6 +35,7 @@ export function Podcast() {
   const [courseId, setCourseId] = useState<string>("")
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [current, setCurrent] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   const courses = useMemo(
     () =>
@@ -75,6 +77,41 @@ export function Podcast() {
 
   const inQueue = (lessonId: string) => queue.some((q) => q.lessonId === lessonId && q.status !== "done")
 
+  /** v20.1 (P2-11 completion): queue the whole course, then drain it
+   *  sequentially — one download at a time, status visible in the queue. */
+  const downloadAll = async (lang: "en" | "ar") => {
+    if (!course || bulkBusy) return
+    setBulkBusy(true)
+    const targets = lessons.filter((l) => !queue.some((q) => q.lessonId === l.id && q.status === "done"))
+    for (const lesson of targets) {
+      setQueue((q) => [
+        ...q.filter((x) => x.lessonId !== lesson.id),
+        { lessonId: lesson.id, title: lesson.title, courseCode: course.code, status: "waiting" },
+      ])
+      setQueue((q) => q.map((x) => (x.lessonId === lesson.id ? { ...x, status: "preparing" } : x)))
+      try {
+        const res = await fetch(`/api/podcast/lesson/${lesson.id}${lang === "ar" ? "?lang=ar" : ""}`)
+        if (res.ok) {
+          const blob = await res.blob()
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement("a")
+          a.href = url
+          a.download = `auditedge-${course.code.toLowerCase()}-${lesson.id.slice(-6)}${lang === "ar" ? "-ar" : ""}.mp3`
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          URL.revokeObjectURL(url)
+          setQueue((q) => q.map((x) => (x.lessonId === lesson.id ? { ...x, status: "done" } : x)))
+        } else {
+          setQueue((q) => q.filter((x) => x.lessonId !== lesson.id))
+        }
+      } catch {
+        setQueue((q) => q.filter((x) => x.lessonId !== lesson.id))
+      }
+    }
+    setBulkBusy(false)
+  }
+
   return (
     <div className="mx-auto max-w-4xl">
       <header className="mb-8">
@@ -103,6 +140,31 @@ export function Podcast() {
               ))}
             </SelectContent>
           </Select>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={bulkBusy || !course}
+              onClick={() => void downloadAll("en")}
+            >
+              {bulkBusy ? <Loader2 className="me-1.5 h-3.5 w-3.5 animate-spin" /> : <ListVideo className="me-1.5 h-3.5 w-3.5" />}
+              {tt("podcast.queueAll", lang)} (EN)
+            </Button>
+            {lang === "ar" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                disabled={bulkBusy || !course}
+                onClick={() => void downloadAll("ar")}
+              >
+                {bulkBusy ? <Loader2 className="me-1.5 h-3.5 w-3.5 animate-spin" /> : <ListVideo className="me-1.5 h-3.5 w-3.5" />}
+                {tt("podcast.queueAll", lang)} (العربية)
+              </Button>
+            )}
+          </div>
 
           <div className="mt-4 space-y-1.5">
             {lessons.map((l, i) => {

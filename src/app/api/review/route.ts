@@ -25,6 +25,24 @@ export async function GET(req: Request) {
     }),
   ])
 
+  // consecutive-day review streak: days (ending today/yesterday) on which the
+  // learner graded at least one card — the "do it daily" motivator
+  const graded = await db.reviewItem.findMany({
+    where: { userId: me.id, lastGrade: { not: null } },
+    select: { updatedAt: true },
+  })
+  const dayKey = (d: Date) => d.toISOString().slice(0, 10)
+  const days = new Set(graded.map((g) => dayKey(g.updatedAt)))
+  const today = new Date()
+  let streak = 0
+  const cursorDate = new Date(today)
+  // allow the streak to be "alive" if yesterday was the last graded day
+  if (!days.has(dayKey(cursorDate))) cursorDate.setDate(cursorDate.getDate() - 1)
+  while (days.has(dayKey(cursorDate))) {
+    streak++
+    cursorDate.setDate(cursorDate.getDate() - 1)
+  }
+
   return NextResponse.json({
     cards: due.map((c) => ({
       id: c.id,
@@ -41,7 +59,7 @@ export async function GET(req: Request) {
       reps: c.reps,
       lapses: c.lapses,
     })),
-    stats: { due: due.length, total, todayNew: newToday, streakOfReviews: 0 },
+    stats: { due: due.length, total, todayNew: newToday, streakOfReviews: streak },
   })
 }
 

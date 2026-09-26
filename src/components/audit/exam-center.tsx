@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
-import { tt } from "@/lib/i18n"
+import { tt, dateLocaleOf } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -17,6 +17,7 @@ import type {
   BankQuestionClient,
   BankStats,
   ExamSessionClient,
+  ExamSummaryRow,
 } from "@/lib/audit-types"
 import {
   AlarmClock,
@@ -24,6 +25,7 @@ import {
   ChevronLeft,
   ClipboardCheck,
   FileWarning,
+  History,
   Flag,
   Layers,
   ListChecks,
@@ -53,6 +55,21 @@ export function ExamCenter() {
     const res = await fetch("/api/bank")
     if (res.ok) setStats((await res.json()) as BankStats)
   }
+
+  /* ---------- past sittings (v20.1) ---------- */
+  const [history, setHistory] = useState<ExamSummaryRow[]>([])
+  useEffect(() => {
+    let alive = true
+    void (async () => {
+      const res = await fetch("/api/bank/exam")
+      if (!res.ok || !alive) return
+      const data = (await res.json()) as { sessions: ExamSummaryRow[] }
+      if (alive) setHistory(data.sessions.filter((x) => x.completedAt))
+    })()
+    return () => {
+      alive = false
+    }
+  }, [phase])
   useEffect(() => {
     let alive = true
     void (async () => {
@@ -394,6 +411,38 @@ export function ExamCenter() {
             </div>
           </section>
         </div>
+
+        {/* past sittings (v20.1 — P0-1 completion) */}
+        {history.length > 0 && (
+          <section className="mt-6 rounded-2xl border bg-card p-6 shadow-soft" aria-label={tt("exam.examHistory", lang)}>
+            <h2 className="flex items-center gap-2 font-serif text-[16px] font-semibold">
+              <History className="h-4 w-4 text-primary" /> {tt("exam.examHistory", lang)}
+            </h2>
+            <div className="mt-4 space-y-2">
+              {history.slice(0, 8).map((h) => (
+                <div key={h.id} className="flex items-center justify-between gap-3 rounded-xl border bg-secondary/25 px-4 py-2.5 text-[13px]">
+                  <span className="text-muted-foreground">
+                    {h.mode === "exam90" ? "90 min" : "60 min"} ·{" "}
+                    {new Date(h.startedAt).toLocaleDateString(dateLocaleOf(lang))}
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <span className="text-muted-foreground">
+                      {h.correct ?? 0}/{h.total} {tt("exam.correctAns", lang)}
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-full px-2.5 py-0.5 text-[12px] font-semibold tabular-nums",
+                        (h.score ?? 0) >= 70 ? "bg-sage/15 text-sage-deep" : "bg-primary/10 text-primary"
+                      )}
+                    >
+                      {h.score}%
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     )
   }

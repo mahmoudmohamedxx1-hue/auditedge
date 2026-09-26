@@ -406,6 +406,19 @@ export const T = {
     badgeIsaScholarD: { en: "Complete any ISA standards course", ar: "أكمل أي دورة في معايير المراجعة الدولية" },
     badgeCertified: { en: "Certified", ar: "معتمد" },
     badgeCertifiedD: { en: "Earn your first course certificate", ar: "احصل على شهادتك الأولى" },
+    // v20.1 — exam / simulation / review engagement badges
+    badgeExamSitter: { en: "Exam Sitter", ar: "أديب الامتحان" },
+    badgeExamSitterD: { en: "Complete your first timed mock exam", ar: "أدِّ أول اختبار تجريبي محدد الوقت" },
+    badgeExamReady: { en: "Exam Ready", ar: "جاهز للامتحان" },
+    badgeExamReadyD: { en: "Score 70% or higher on a mock exam", ar: "حقق 70% أو أكثر في اختبار تجريبي" },
+    badgeSimEngagement: { en: "Engagement Senior", ar: "أول المهمة" },
+    badgeSimEngagementD: { en: "Complete the Nile Textiles engagement simulation", ar: "أكمل محاكاة مهمة نيل تكستايلز" },
+    badgeSimPartner: { en: "Partner's Judgment", ar: "حكم الشريك" },
+    badgeSimPartnerD: { en: "Score 80%+ on the engagement simulation", ar: "حقق 80% أو أكثر في المحاكاة" },
+    badgeReviewHabit: { en: "Review Habit", ar: "عادة المراجعة" },
+    badgeReviewHabitD: { en: "Grade 25 spaced-repetition cards", ar: "قيّم 25 بطاقة مراجعة متباعدة" },
+    badgeBankDriller: { en: "Bank Driller", ar: "منقّب البنك" },
+    badgeBankDrillerD: { en: "Answer 100 practice questions", ar: "أجب عن 100 سؤال تدريب" },
   },
 
   /* ---------- certificate ---------- */
@@ -960,6 +973,7 @@ export const T = {
     arAvailable: { en: "Arabic episode available", ar: "تتوفر حلقة عربية" },
     enOnly: { en: "English only", ar: "بالإنجليزية فقط" },
     clear: { en: "Clear", ar: "تفريغ" },
+    queueAll: { en: "Queue whole course", ar: "جهّز الدورة كاملة" },
   },
   notes: {
     title: { en: "Notes & Highlights", ar: "الملاحظات والتظليلات" },

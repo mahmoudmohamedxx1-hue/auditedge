@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 })
   }
 
-  const [courses, materials, enrollments, progress, attempts, certificates, users, reviewDue, meRow] =
+  const [courses, materials, enrollments, progress, attempts, certificates, users, reviewDue, meRow, v20stats] =
     await Promise.all([
       coursesForClient(),
       materialsForClient(),
@@ -32,6 +32,31 @@ export async function GET() {
       }),
       db.reviewItem.count({ where: { userId: user.id, dueAt: { lte: new Date() } } }),
       db.user.findUnique({ where: { id: user.id } }),
+      // v20.1 — achievement stats: simulation, exams, review discipline, drills
+      (async () => {
+        const [sims, exams, reviewTotal, reviewGraded, practiceAnswered] = await Promise.all([
+          db.simRun.findMany({
+            where: { userId: user.id, status: "completed" },
+            select: { score: true },
+          }),
+          db.examSession.findMany({
+            where: { userId: user.id, completedAt: { not: null }, score: { not: null } },
+            select: { score: true },
+          }),
+          db.reviewItem.count({ where: { userId: user.id } }),
+          db.reviewItem.count({ where: { userId: user.id, lastGrade: { not: null } } }),
+          db.bankAttempt.count({ where: { userId: user.id, mode: "practice" } }),
+        ])
+        return {
+          simCompleted: sims.length,
+          simBest: sims.length ? Math.max(...sims.map((x) => x.score)) : 0,
+          examCount: exams.length,
+          examBest: exams.length ? Math.max(...exams.map((x) => x.score ?? 0)) : 0,
+          reviewTotal,
+          reviewGraded,
+          practiceAnswered,
+        }
+      })(),
     ])
 
   return NextResponse.json({
@@ -45,5 +70,6 @@ export async function GET() {
     certificates,
     reviewDue,
     lastLessonId: meRow?.lastLessonId ?? null,
+    ...v20stats,
   })
 }
