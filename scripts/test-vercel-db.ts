@@ -9,7 +9,8 @@
  *
  * Run: bun scripts/test-vercel-db.ts
  * Passes when the provisioned /tmp database serves the full content set
- * (30 courses, 933 lessons) and a write round-trips (user chat persists).
+ * (40 courses, 985 lessons, 502 bank questions) and a write round-trips
+ * (user chat persists).
  */
 import { existsSync, mkdirSync, rmSync } from "fs"
 import { join } from "path"
@@ -37,8 +38,8 @@ const courses = await db.course.count()
 const lessons = await db.lesson.count()
 const materials = await db.material.count()
 const users = await db.user.count()
-check("courses served", courses === 30, `${courses} courses`)
-check("lessons served", lessons === 933, `${lessons} lessons`)
+check("courses served", courses === 40, `${courses} courses`)
+check("lessons served", lessons === 985, `${lessons} lessons`)
 check("materials served", materials === 146, `${materials} materials`)
 check("single workspace user", users === 1, `${users} user`)
 
