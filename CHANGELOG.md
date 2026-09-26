@@ -4,6 +4,22 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 19.2.0 — Tutor conversations rail: closed by default
+
+- The AI Tutor's conversations rail is now collapsible and **closed by default**,
+  giving the chat the full width until the learner pins it open: a panel toggle
+  at the start of the tutor header (PanelLeft icons, RTL-mirrored in Arabic,
+  `aria-expanded` + bilingual tooltips) opens and closes the rail with a smooth
+  width animation
+- The choice persists per browser (`auditedge-tutor-rail`, hydrated at app
+  load); first visits and cleared storage start closed
+- Collapsed rail content is `inert` — excluded from the tab order and the
+  accessibility tree while hidden; mobile keeps its existing history sheet
+- Product deep-dive: a content/platform census script
+  (`scripts/survey-analysis-v192.ts`) captured the ground-truth numbers behind
+  the v19.2 improvement roadmap (assessment coverage, curriculum gaps, content
+  depth, library and voice inventory)
+
 ## 19.1.0 — Collapsible sidebar + AI tutor panel upgrades
 
 - The desktop sidebar can now be opened and closed: a collapse toggle in the

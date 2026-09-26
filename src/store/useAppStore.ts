@@ -41,6 +41,10 @@ const AI_AUTO_SPEAK_KEY = "auditedge-ai-auto-speak"
 /** Whether the desktop sidebar is collapsed to an icon rail (v19.1).
  *  Mobile always uses the sheet menu, so this only affects lg+ screens. */
 const SIDEBAR_COLLAPSED_KEY = "auditedge-sidebar-collapsed"
+/** Whether the AI tutor's conversations rail is pinned open (v19.2).
+ *  CLOSED by default — the chat gets the full width until the learner
+ *  pins the rail open; "1" = open, anything else = closed. */
+const TUTOR_RAIL_KEY = "auditedge-tutor-rail"
 
 interface NavigateOpts {
   courseId?: string
@@ -123,6 +127,13 @@ interface AppState {
   setSidebarCollapsed: (v: boolean) => void
   /** Restore the persisted sidebar collapse after hydration. */
   hydrateSidebar: () => void
+
+  /** AI tutor conversations rail pinned open (v19.2) — closed by
+   *  default, persisted; mobile keeps its own history sheet. */
+  tutorRailOpen: boolean
+  setTutorRailOpen: (v: boolean) => void
+  /** Restore the persisted tutor rail state after hydration. */
+  hydrateTutorRail: () => void
 
   // AI tutor state
   aiContext: AiContext | null
@@ -331,6 +342,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   hydrateSidebar: () => {
     try {
       set({ sidebarCollapsed: localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1" })
+    } catch {}
+  },
+
+  tutorRailOpen: false,
+  setTutorRailOpen: (v) => {
+    set({ tutorRailOpen: v })
+    try {
+      localStorage.setItem(TUTOR_RAIL_KEY, v ? "1" : "0")
+    } catch {}
+  },
+  hydrateTutorRail: () => {
+    try {
+      // absence of the key (first visit) means CLOSED — only a stored "1" opens it
+      set({ tutorRailOpen: localStorage.getItem(TUTOR_RAIL_KEY) === "1" })
     } catch {}
   },
 

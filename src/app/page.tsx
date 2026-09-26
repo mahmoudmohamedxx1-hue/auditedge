@@ -119,6 +119,7 @@ export default function Home() {
   const hydrateTtsPrefs = useAppStore((s) => s.hydrateTtsPrefs)
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
   const hydrateSidebar = useAppStore((s) => s.hydrateSidebar)
+  const hydrateTutorRail = useAppStore((s) => s.hydrateTutorRail)
   const navigate = useAppStore((s) => s.navigate)
   const [menuOpen, setMenuOpen] = useState(false)
   const rtl = lang === "ar"
@@ -129,7 +130,8 @@ export default function Home() {
     hydrateAiModel()
     hydrateTtsPrefs()
     hydrateSidebar()
-  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateTtsPrefs, hydrateSidebar])
+    hydrateTutorRail()
+  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateTtsPrefs, hydrateSidebar, hydrateTutorRail])
 
   useEffect(() => {
     void checkAuth()

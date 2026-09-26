@@ -438,6 +438,8 @@ export const T = {
     newShort: { en: "New", ar: "جديد" },
     history: { en: "History", ar: "السجل" },
     conversations: { en: "Conversations", ar: "المحادثات" },
+    showConvos: { en: "Show conversations", ar: "إظهار المحادثات" },
+    hideConvos: { en: "Hide conversations", ar: "إخفاء المحادثات" },
     close: { en: "Close", ar: "إغلاق" },
     poweredBy: {
       en: "Powered by GLM — free for your office, with live web search.",
