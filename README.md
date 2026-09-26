@@ -153,6 +153,23 @@ AI chats) live per-instance and reset when the function recycles — the canonic
 workspace is your local database; and after changing course content locally, refresh
 the snapshot with `bun scripts/make-vercel-snapshot.ts` and push.
 
+### Durable data on Vercel (P1-7)
+
+The snapshot mode above is the zero-config demo. For a deployment where user data
+**survives redeploys**, attach a managed Postgres database:
+
+1. Create a free Postgres database (Neon, Supabase or Vercel Postgres) and copy its
+   connection string
+2. On Vercel → Settings → Environment Variables, set `DATABASE_URL` to that
+   `postgres://…` string (replacing the default `file:./db/custom.db`)
+3. Redeploy — `scripts/db-deploy.ts` runs during the build, switches the Prisma
+   provider to postgresql, pushes the schema, and the app then reads and writes
+   the managed database directly
+
+Until you do this, treat the deployment as read-mostly: use **Library → Your data →
+Export** before a redeploy and **Import** afterwards to carry your progress over
+(the JSON carries progress, notes, review queue, exam history and AI conversations).
+
 ## Scripts
 
 | Command | What it does |

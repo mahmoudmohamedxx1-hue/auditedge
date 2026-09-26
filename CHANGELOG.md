@@ -4,6 +4,119 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 20.0.0 — The Exam-Readiness Release: all 19 roadmap initiatives shipped
+
+Every P0, P1 and P2 initiative from the v19.2 improvement roadmap, in one
+release. **956 automated checks** (912 legacy + 44 new v20 battery).
+
+### P0 — the exam-readiness core
+
+- **P0-1 Question Bank + Exam Simulation Center.** A seeded bank of **502
+  questions** (65 bilingual EN/AR) across ISA, Egyptian standards, IFRS and
+  ethics — every item with four options, an answer key, an explanation, a
+  standard tag, a difficulty and an area. Practice mode filters by area,
+  standard and difficulty with instant server-side grading and explanations;
+  misses automatically join the review queue. Mock exams: 40Q/60-min and
+  60Q/90-min sittings sampled on a SOXE/EEC-style blueprint (45% auditing ·
+  30% accounting · 15% Egyptian framework · 10% ethics), difficulty-stratified,
+  with a live countdown, question navigator, flag-for-review and a results
+  screen with section breakdown, per-question answer key and XP. The answer
+  key never ships to the browser mid-sitting — grading is server-side only
+- **P0-2 Complete the ISA spine.** Nine compact courses (33 lessons, 9
+  quizzes) covering the reporting cluster (ISA 700/701/705/706), ISA 505,
+  ISA 520/530, ISA 550, ISA 560, ISA 580, ISA 600, ISQM 1 and the IESBA
+  ethics code — each lesson with worked Egyptian examples; each course quiz
+  mirrors into the bank so curriculum and bank grow together
+- **P0-3 Spaced-repetition review engine.** An SM-2-lite scheduler
+  (src/lib/srs.ts) over lesson key points and missed bank questions:
+  completing a lesson seeds its key points as flashcards (due the next
+  morning), wrong practice/exam answers become question cards, and the daily
+  Review view + Home card grade on a four-button ladder (Again / Hard / Good
+  / Easy) with ease, interval and lapse tracking. The nav shows a due-count
+  badge
+
+### P1 — retention and differentiation
+
+- **P1-4 Mastery & coverage analytics.** Per-standard mastery scores
+  (recency-decayed accuracy damped by confidence), a weakest-first mastery
+  heatmap, exam-section readiness meters (accuracy x coverage), practice
+  accuracy, exam history and simulation runs — plus AI study plans that are
+  generated from the measured weak spots, persisted and tracked with
+  per-item completion checkboxes
+- **P1-5 Case-based engagement simulation.** Nile Textiles FY2026: a full
+  statutory-audit walkthrough (client acceptance -> risk assessment ->
+  response -> completion -> reporting) with 15 judgment calls — 13 scored
+  decisions with partner-level feedback and 2 free-text judgments graded
+  live by the AI against rubrics — engagement documents (PBC excerpts,
+  covenant letters, trial-balance extracts), a final scored debrief from
+  the AI partner, and XP that scores into the workspace
+- **P1-6 Arabic curriculum parity.** All 45 lessons of the 8 in-house courses
+  now carry full Arabic editions (46 with the new capstone workshop), all 48
+  in-house quiz questions have Arabic variants, the bank ships 65 bilingual
+  questions, the lesson player auto-renders the Arabic edition in the Arabic
+  UI with a manual AR/EN toggle, and the 23 external video imports are
+  flagged as Supplementary and ordered after the core curriculum
+- **P1-7 Production data persistence.** Vercel deployments can now attach a
+  managed Postgres database: scripts/db-deploy.ts runs at build time, flips
+  the Prisma provider and pushes the schema, and the app talks to the
+  managed DB directly — user data survives redeploys. The zero-config
+  snapshot mode remains the fallback, with a full export/import escape hatch
+  (Library -> Your data): one JSON download carries progress, notes, review
+  queue, exam history, study plans and AI conversations. README documents
+  both modes
+- **P1-8 Lesson depth pass.** The four thinnest in-house lessons gained
+  "Field notes from Egyptian practice" sections; every in-house lesson now
+  clears 1,000+ body characters; a new ISA-570 capstone workshop (The
+  Covenant Winter) integrates the going-concern case end-to-end; the 8
+  near-empty video-wrapper lessons in the Arabic Excel-audit course gained
+  authored Arabic study notes
+
+### P2 — quality of life
+
+- **P2-9 Lesson notes & highlights.** A per-lesson Notes drawer (create,
+  list, delete) plus text selection -> floating Highlight button; saved
+  highlights quote the passage; per-section Ask-the-tutor buttons deep-link
+  the AI tutor with the section text
+- **P2-10 Workpaper template library.** Four field-ready downloads generated
+  server-side: lead schedule, bank reconciliation and confirmations control
+  sheet (Excel) and the going-concern memo (Word) — bilingual headers,
+  print-formatted, from the Library
+- **P2-11 Podcast mode.** Any lesson becomes a listenable episode: the
+  per-lesson route synthesizes the full text with an Edge neural voice
+  (Salma for Arabic, Ryan for English) and downloads an MP3; the Podcast
+  view queues downloads per course with progress states
+- **P2-12 Global command palette.** Ctrl/Cmd+K opens a bilingual search
+  across views, courses, lessons, library standards and quick actions —
+  arrow-key navigation, grouped results, direct deep-links into lessons
+- **P2-13 CPE log.** Completed-lesson hours plus certificate hours aggregate
+  into a CPE evidence log per course with a one-click CSV export (BOM-encoded
+  for Arabic-safe Excel) for license renewals
+- **P2-14 Analytics home.** The Team view rebrands into a personal analytics
+  home (stat strip, heatmap, readiness, study plan, CPE, exam and simulation
+  history) with member management preserved for admins in a collapsible
+  section
+
+### Quick wins
+
+- Assessment badges on course cards (quiz counts visible at a glance)
+- Continue-where-you-left-off card on Home (last-opened lesson, one tap)
+- 8 mid-course checkpoint quizzes (40 new questions, mirrored into the bank)
+- The census script runs before each release to catch assessment-free
+  courses and empty lessons automatically
+- README deploy runbook carries the ephemeral-data warning and the Postgres
+  route
+
+### Infrastructure
+
+- Schema additions (additive, no data loss): BankQuestion, BankAttempt,
+  ExamSession, ReviewItem, SimRun, LessonNote, StudyPlan +
+  lastLessonId/lastLessonAt on User, contentAr on Lesson, supplementary on
+  Course — SQLite locally, Postgres-ready for Vercel
+- The Vercel snapshot now includes the question bank and all v20 content
+  (40 courses · 985 lessons · 26 quizzes · 502 bank questions · 3.5 MB gz)
+  with the six new personal-data tables wiped on every rebuild
+- exceljs + docx dependencies for real server-side file generation
+
 ## 19.2.0 — Tutor conversations rail: closed by default
 
 - The AI Tutor's conversations rail is now collapsible and **closed by default**,

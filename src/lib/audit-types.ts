@@ -14,6 +14,10 @@ export type ViewName =
   | "studio-course"
   | "discover"
   | "ai"
+  | "exam"
+  | "review"
+  | "simulation"
+  | "podcast"
 
 export type AiSource = {
   url: string
@@ -62,6 +66,10 @@ export type QuizQuestion = {
   options: string[]
   correctIndex: number
   explanation: string
+  /** Arabic rendition (P1-6) — optional per question. */
+  questionAr?: string
+  optionsAr?: string[]
+  explanationAr?: string
 }
 
 export type Quiz = {
@@ -81,6 +89,8 @@ export type Lesson = {
   durationMin: number
   xp: number
   content: LessonContent
+  /** Arabic rendition (P1-6) — parsed JSON or "" when unavailable. */
+  contentAr: string
   attachments: string[] // material ids
   videoUrl: string // optional YouTube link
   externalUrl: string // optional external link (MOOC platform lesson)
@@ -119,6 +129,8 @@ export type Course = {
   order: number
   sourcePlatform: string // youtube | coursera | edx | mit-ocw | openstax | "" (in-house)
   sourceUrl: string // original URL when imported from a free external source
+  /** true = curated external import used as a supplement (P1-6). */
+  supplementary: boolean
   enrolledCount: number
   modules: Module[]
 }
@@ -219,6 +231,177 @@ export type BootstrapData = {
   completedLessonIds: string[]
   quizAttempts: QuizAttempt[]
   certificates: CertificateInfo[]
+  /** Count of review cards due now (P0-3) — powers the nav badge. */
+  reviewDue: number
+  /** Last opened lesson id (resume card, quick win). */
+  lastLessonId: string | null
+}
+
+/* ================================================================== */
+/* v20 — exam-readiness client types (P0-1 / P0-3 / P1-4 / P1-5)       */
+/* ================================================================== */
+
+/** A bank question as delivered to the client — the answer key never ships. */
+export type BankQuestionClient = {
+  id: string
+  code: string
+  stem: string
+  stemAr: string | null
+  options: string[]
+  optionsAr: string[] | null
+  standardTag: string
+  area: string
+  difficulty: number
+}
+
+export type BankStats = {
+  total: number
+  byArea: Record<string, number>
+  byDifficulty: Record<string, number>
+  withArabic: number
+  tags: { tag: string; area: string; count: number }[]
+}
+
+export type ExamSessionClient = {
+  id: string
+  mode: string
+  durationMin: number
+  total: number
+  startedAt: string
+  completedAt: string | null
+  score: number | null
+  correct: number | null
+  sectionScores: Record<string, { correct: number; total: number }>
+  questions: BankQuestionClient[]
+  /** answered picks so far: {questionId: picked} */
+  answered: Record<string, number>
+  flagged: string[]
+  blueprint: { area: string; count: number; picked: number }[]
+}
+
+export type ExamSummaryRow = {
+  id: string
+  mode: string
+  total: number
+  correct: number | null
+  score: number | null
+  startedAt: string
+  completedAt: string | null
+}
+
+export type ReviewCardClient = {
+  id: string
+  kind: string
+  refId: string
+  title: string
+  front: string
+  back: string
+  frontAr: string | null
+  backAr: string | null
+  dueAt: string
+  intervalDays: number
+  ease: number
+  reps: number
+  lapses: number
+}
+
+export type ReviewStats = {
+  due: number
+  total: number
+  todayNew: number
+  streakOfReviews: number
+}
+
+export type TagMasteryClient = {
+  tag: string
+  area: string
+  attempts: number
+  mastery: number
+  accuracy: number
+  confidence: number
+}
+
+export type AreaReadinessClient = {
+  area: string
+  bankSize: number
+  attempted: number
+  coverage: number
+  accuracy: number
+  readiness: number
+}
+
+export type AnalyticsPayload = {
+  tags: TagMasteryClient[]
+  readiness: AreaReadinessClient[]
+  examHistory: ExamSummaryRow[]
+  practiceAccuracy: { correct: number; total: number }
+  simRuns: { id: string; scenario: string; score: number; completedAt: string | null }[]
+  cpeHours: number
+}
+
+export type StudyPlanItem = { label: string; done: boolean }
+export type StudyPlanWeek = { focus: string; items: StudyPlanItem[] }
+export type StudyPlanClient = {
+  id: string
+  title: string
+  goal: string
+  horizonWeeks: number
+  weeks: StudyPlanWeek[]
+  progress: number
+  createdAt: string
+}
+
+export type SimOptionClient = { id: string; label: string }
+export type SimDecisionClient = {
+  id: string
+  prompt: string
+  context?: string
+  options?: SimOptionClient[]
+  freeText?: boolean
+}
+export type SimStageClient = {
+  id: string
+  title: string
+  brief: string
+  docs: { label: string; body: string }[]
+  decisions: SimDecisionClient[]
+}
+export type SimScenarioClient = {
+  slug: string
+  title: string
+  company: string
+  sector: string
+  summary: string
+  stages: SimStageClient[]
+  maxScore: number
+}
+export type SimRunClient = {
+  id: string
+  scenario: string
+  status: string
+  stage: number
+  decisions: {
+    stageId: string
+    decisionId: string
+    picked?: string
+    text?: string
+    judged?: boolean
+    score?: number
+    feedback?: string
+  }[]
+  score: number
+  startedAt: string
+  completedAt: string | null
+}
+
+export type LessonNoteClient = {
+  id: string
+  lessonId: string
+  kind: "note" | "highlight"
+  text: string
+  quote: string
+  color: string
+  createdAt: string
 }
 
 export const LEVELS = [

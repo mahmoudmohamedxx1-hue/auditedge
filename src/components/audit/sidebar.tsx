@@ -7,11 +7,16 @@ import { LangToggle } from "./lang-toggle"
 import { ThemeToggle } from "./theme-toggle"
 import { tt } from "@/lib/i18n"
 import {
+  BarChart3,
   BookOpen,
+  Briefcase,
   ClipboardCheck,
   Compass,
   Factory,
   FolderOpen,
+  GraduationCap,
+  Headphones,
+  Layers,
   Medal,
   Moon,
   PanelLeftClose,
@@ -209,6 +214,28 @@ function SidebarContent({
         />
         <NavItem
           collapsed={collapsed}
+          icon={GraduationCap}
+          label={tt("nav20.exam", lang)}
+          active={view === "exam"}
+          onClick={() => go("exam")}
+        />
+        <NavItem
+          collapsed={collapsed}
+          icon={Layers}
+          label={tt("nav20.review", lang)}
+          active={view === "review"}
+          badge={data?.reviewDue ? String(data.reviewDue) : undefined}
+          onClick={() => go("review")}
+        />
+        <NavItem
+          collapsed={collapsed}
+          icon={Briefcase}
+          label={tt("nav20.simulation", lang)}
+          active={view === "simulation"}
+          onClick={() => go("simulation")}
+        />
+        <NavItem
+          collapsed={collapsed}
           icon={FolderOpen}
           label={tt("nav.library", lang)}
           active={view === "library"}
@@ -217,7 +244,8 @@ function SidebarContent({
         />
         <NavItem collapsed={collapsed} icon={ClipboardCheck} label={tt("nav.program", lang)} active={view === "program"} onClick={() => go("program")} />
         <NavItem collapsed={collapsed} icon={Factory} label={tt("nav.sectors", lang)} active={view === "sectors"} onClick={() => go("sectors")} />
-        <NavItem collapsed={collapsed} icon={Users} label={tt("nav.team", lang)} active={view === "team"} onClick={() => go("team")} />
+        <NavItem collapsed={collapsed} icon={BarChart3} label={tt("nav20.analytics", lang)} active={view === "team"} onClick={() => go("team")} />
+        <NavItem collapsed={collapsed} icon={Headphones} label={tt("nav20.podcast", lang)} active={view === "podcast"} onClick={() => go("podcast")} />
         <NavItem
           collapsed={collapsed}
           icon={Medal}

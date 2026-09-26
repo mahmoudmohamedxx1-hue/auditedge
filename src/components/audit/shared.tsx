@@ -7,6 +7,7 @@ import {
   BookOpenCheck,
   Crown,
   Crosshair,
+  FileQuestion,
   FolderSearch,
   Landmark,
   Layers,
@@ -208,6 +209,24 @@ export function CourseCard({ course, compact = false }: { course: Course; compac
             {PLATFORM_BADGES[course.sourcePlatform].label}
           </Badge>
         )}
+        {course.supplementary && (
+          <Badge variant="outline" className="border-dashed text-[10px] font-normal text-muted-foreground">
+            {tt("misc20.supplementary", lang)}
+          </Badge>
+        )}
+        {(() => {
+          // assessment badge (v20 quick win): how many quizzes this course carries
+          const quizzes = course.modules
+            .flatMap((m) => m.lessons)
+            .filter((l) => l.type === "quiz" || l.quiz).length
+          if (!quizzes) return null
+          return (
+            <Badge variant="outline" className="border-sage/40 text-[10px] font-normal text-sage-deep">
+              <FileQuestion className="me-1 h-3 w-3" />
+              {quizzes} {quizzes === 1 ? tt("misc20.quizCount", lang) : tt("misc20.quizCountPlural", lang)}
+            </Badge>
+          )
+        })()}
       </div>
 
       <h3

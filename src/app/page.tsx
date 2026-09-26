@@ -11,7 +11,6 @@ import { QuizPlayer } from "@/components/audit/quiz-player"
 import { Library } from "@/components/audit/library"
 import { AuditProgram } from "@/components/audit/program"
 import { SectorLibrary } from "@/components/audit/sectors"
-import { Team } from "@/components/audit/team"
 import { Achievements } from "@/components/audit/achievements"
 import { CertificateView } from "@/components/audit/certificate-view"
 import { Studio } from "@/components/audit/studio"
@@ -19,6 +18,12 @@ import { CourseBuilder } from "@/components/audit/course-builder"
 import { Discover } from "@/components/audit/discover"
 import { AiTutor } from "@/components/audit/ai-tutor"
 import { AiAssistant } from "@/components/audit/ai-assistant"
+import { ExamCenter } from "@/components/audit/exam-center"
+import { ReviewSession } from "@/components/audit/review"
+import { Simulation } from "@/components/audit/simulation"
+import { Podcast } from "@/components/audit/podcast"
+import { Analytics } from "@/components/audit/analytics"
+import { CommandPalette } from "@/components/audit/command-palette"
 import { Wordmark } from "@/components/audit/shared"
 import { LangToggle } from "@/components/audit/lang-toggle"
 import { ThemeToggle } from "@/components/audit/theme-toggle"
@@ -86,12 +91,20 @@ function viewTitleOf(view: string, lang: "en" | "ar"): string {
       return tt("nav.courses", lang)
     case "library":
       return tt("nav.library", lang)
+    case "exam":
+      return tt("nav20.exam", lang)
+    case "review":
+      return tt("nav20.review", lang)
+    case "simulation":
+      return tt("nav20.simulation", lang)
+    case "podcast":
+      return tt("nav20.podcast", lang)
     case "program":
       return tt("nav.program", lang)
     case "sectors":
       return tt("nav.sectors", lang)
     case "team":
-      return tt("nav.team", lang)
+      return tt("nav20.analytics", lang)
     case "achievements":
     case "certificate":
       return tt("nav.achievements", lang)
@@ -165,6 +178,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
+      <CommandPalette />
 
       {/* mobile top bar */}
       <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur lg:hidden print:hidden">
@@ -233,7 +247,11 @@ export default function Home() {
                 {view === "library" && <Library />}
                 {view === "program" && <AuditProgram />}
                 {view === "sectors" && <SectorLibrary />}
-                {view === "team" && <Team />}
+                {view === "team" && <Analytics />}
+                {view === "exam" && <ExamCenter />}
+                {view === "review" && <ReviewSession />}
+                {view === "simulation" && <Simulation />}
+                {view === "podcast" && <Podcast />}
                 {view === "achievements" && <Achievements />}
                 {view === "certificate" && <CertificateView />}
                 {view === "studio" && <Studio />}

@@ -38,6 +38,7 @@ import {
   Search,
   Trash2,
   UploadCloud,
+  Download,
   X,
 } from "lucide-react"
 
@@ -292,6 +293,76 @@ export function Library() {
           onDone={() => void bootstrap()}
         />
       )}
+
+      {/* v20: workpaper templates (P2-10) + data export/import (P1-7) */}
+      <section className="mt-10 rounded-2xl border bg-card p-6 shadow-soft" aria-label={tt("misc20.workpapers", lang)}>
+        <h2 className="font-serif text-[17px] font-semibold">{tt("misc20.workpapers", lang)}</h2>
+        <p className="mt-1 text-[13px] text-muted-foreground">{tt("misc20.workpapersDesc", lang)}</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { slug: "lead-schedule", name: "Lead Schedule", nameAr: "جدول قائد", icon: FileSpreadsheet },
+            { slug: "bank-reconciliation", name: "Bank Reconciliation", nameAr: "تسوية بنكية", icon: FileSpreadsheet },
+            { slug: "confirmations-control", name: "Confirmations Control", nameAr: "متابعة التأكيدات", icon: FileSpreadsheet },
+            { slug: "going-concern-memo", name: "Going-Concern Memo", nameAr: "مذكرة الاستمرارية", icon: FileText },
+          ].map((t) => (
+            <a
+              key={t.slug}
+              href={`/api/templates/${t.slug}`}
+              className="group flex flex-col rounded-xl border bg-secondary/25 p-4 transition-colors hover:border-primary/40 focus-ring"
+            >
+              <t.icon className="h-5 w-5 text-primary" />
+              <span dir="auto" className="mt-2.5 text-[13.5px] font-semibold">
+                {lang === "ar" ? t.nameAr : t.name}
+              </span>
+              <span className="mt-1 inline-flex items-center gap-1 text-[12px] text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                <Download className="h-3.5 w-3.5" /> {tt("misc20.download", lang)}
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-5 rounded-2xl border border-dashed p-6" aria-label={tt("misc20.dataTitle", lang)}>
+        <h2 className="font-serif text-[15px] font-semibold">{tt("misc20.dataTitle", lang)}</h2>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{tt("misc20.dataDesc", lang)}</p>
+        <div className="mt-3.5 flex flex-wrap gap-2.5">
+          <a
+            href="/api/user-data"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border px-4 text-[13px] font-medium transition-colors hover:bg-secondary/60 focus-ring"
+          >
+            <Download className="h-4 w-4" /> {tt("misc20.exportData", lang)}
+          </a>
+          <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border px-4 text-[13px] font-medium transition-colors hover:bg-secondary/60 focus-ring">
+            <UploadCloud className="h-4 w-4" /> {tt("misc20.importData", lang)}
+            <input
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files?.[0]
+                if (!f) return
+                try {
+                  const payload = JSON.parse(await f.text())
+                  const res = await fetch("/api/user-data", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ payload }),
+                  })
+                  if (res.ok) {
+                    toast.success(tt("misc20.imported", lang))
+                    await bootstrap()
+                  } else {
+                    toast.error((await res.json().catch(() => ({ error: "Import failed" }))).error ?? "Import failed")
+                  }
+                } catch {
+                  toast.error("Invalid JSON file")
+                }
+                e.target.value = ""
+              }}
+            />
+          </label>
+        </div>
+      </section>
     </div>
   )
 }

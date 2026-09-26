@@ -22,6 +22,10 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  /** Last lesson opened — powers the continue-where-you-left-off card (v20). */
+  lastLessonId     String?
+  lastLessonAt     DateTime?
+
   enrollments      Enrollment[]
   lessonProgress   LessonProgress[]
   quizAttempts     QuizAttempt[]
@@ -29,6 +33,12 @@ model User {
   materials        Material[]
   sessions         Session[]
   aiConversations  AiConversation[]
+  bankAttempts     BankAttempt[]
+  reviewItems      ReviewItem[]
+  simRuns          SimRun[]
+  lessonNotes      LessonNote[]
+  studyPlans       StudyPlan[]
+  examSessions     ExamSession[]
 
   @@index([xp])
 }
@@ -107,6 +117,9 @@ model Course {
   order          Int     @default(0)
   sourcePlatform String  @default("") // youtube | coursera | edx | mit-ocw | openstax | "" (built in-house)
   sourceUrl      String  @default("") // original URL when imported from a free external source
+  /** true = curated external video import used as a supplement to the
+   *  in-house curriculum — shown with a badge and ordered after core courses (P1-6). */
+  supplementary  Boolean @default(false)
 
   modules       Module[]
   enrollments   Enrollment[]
@@ -133,6 +146,8 @@ model Lesson {
   durationMin Int    @default(12)
   xp         Int     @default(10)
   content     String  @default("{}") // JSON blob: sections, keyPoints, example, takeaway
+  /** Arabic rendition of the same content JSON (empty = no AR version yet) (v20 / P1-6). */
+  contentAr   String  @default("")
   attachments String  @default("[]") // JSON array of material ids
   videoUrl    String  @default("") // optional YouTube video for this lesson
   externalUrl String  @default("") // optional external link (MOOC platform lesson)
@@ -140,6 +155,7 @@ model Lesson {
 
   quiz         Quiz?
   progress     LessonProgress[]
+  notes        LessonNote[]
 }
 
 model Quiz {
@@ -200,4 +216,153 @@ model Certificate {
   issuedAt  DateTime @default(now())
 
   @@unique([userId, courseId])
+}
+
+/* ================================================================== */
+/* v20 — Exam-readiness core (P0-1 / P0-3)                            */
+/* ================================================================== */
+
+/** One item in the seeded question bank (P0-1). Options/answer live in
+ *  JSON columns so the bank stays portable across SQLite and Postgres. */
+model BankQuestion {
+  id            String   @id @default(cuid())
+  code          String   @unique // stable slug, e.g. "ISA315-RISK-01"
+  stem          String
+  stemAr        String? // Arabic rendition (P1-6) — null = EN only
+  options       String // JSON array of option strings (EN)
+  optionsAr     String? // JSON array (AR)
+  answerIndex   Int // 0..3
+  explanation   String
+  explanationAr String?
+  standardTag   String // e.g. "ISA 315" | "EAS 1" | "IFRS 15" | "Ethics"
+  area          String // exam section: auditing | accounting | ethics | egypt
+  difficulty    Int      @default(2) // 1 easy · 2 medium · 3 hard
+  source        String   @default("AuditEdge bank")
+  courseId      String? // set when the item mirrors a course quiz
+  createdAt     DateTime @default(now())
+
+  attempts BankAttempt[]
+
+  @@index([area])
+  @@index([standardTag])
+}
+
+/** A single graded answer against a bank question (server-graded). */
+model BankAttempt {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+  question   BankQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  picked     Int
+  correct    Boolean
+  mode       String // practice | exam | review
+  examId     String? // ExamSession id when answered inside an exam
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([questionId])
+}
+
+/** A timed mock-exam sitting (60/90 min) or a practice set (P0-1). */
+model ExamSession {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode          String // exam60 | exam90 | practice
+  blueprint     String    @default("[]") // JSON: [{area, tag?, count, picked}]
+  questionIds   String // JSON array of bank question ids in sitting order
+  answered      String    @default("{}") // JSON {questionId: picked}
+  flagged       String    @default("[]") // JSON [questionId]
+  durationMin   Int
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  score         Int? // percent (set on submit)
+  correct       Int?
+  total         Int
+  sectionScores String    @default("{}") // JSON {area: {correct, total}}
+
+  @@index([userId, startedAt])
+}
+
+/** A spaced-repetition card (P0-3) — lesson key points and missed bank
+ *  questions scheduled with an SM-2-lite algorithm. */
+model ReviewItem {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        String // keypoint | question
+  refId       String // lessonId (keypoint) or BankQuestion id (question)
+  refKey      String // "lesson:<lessonId>:<index>" or "bank:<questionId>"
+  title       String
+  front       String // prompt side of the flashcard
+  back        String // answer side
+  frontAr     String?
+  backAr     String?
+  ease        Float    @default(2.5)
+  intervalDays Int    @default(0)
+  dueAt       DateTime @default(now())
+  reps        Int      @default(0)
+  lapses      Int      @default(0)
+  lastGrade   Int? // 0 again · 1 hard · 2 good · 3 easy
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, refKey])
+  @@index([userId, dueAt])
+}
+
+/* ================================================================== */
+/* v20 — Retention & differentiation (P1-5 / P1-4 / P2-9)             */
+/* ================================================================== */
+
+/** One run of the case-based engagement simulation (P1-5). */
+model SimRun {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenario    String // scenario slug, e.g. "nile-textiles-fy26"
+  status      String    @default("active") // active | completed
+  stage       Int       @default(0)
+  decisions   String    @default("[]") // JSON [{stageId, decisionId, picked, judged, score, feedback}]
+  score       Int       @default(0) // 0-100 when completed
+  startedAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  @@index([userId, startedAt])
+}
+
+/** A learner note or text highlight attached to a lesson (P2-9). */
+model LessonNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  kind      String // note | highlight
+  text      String
+  quote     String   @default("") // highlighted source text (highlights)
+  color     String   @default("amber")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, lessonId])
+}
+
+/** A persisted, trackable AI study plan (P1-4). */
+model StudyPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  goal        String   @default("")
+  horizonWeeks Int     @default(4)
+  plan        String // JSON: { weeks: [{ focus, items: [{ label, ref?, done }] }] }
+  progress    Int      @default(0) // percent of items done
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
 }

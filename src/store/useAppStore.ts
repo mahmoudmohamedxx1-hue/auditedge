@@ -135,6 +135,10 @@ interface AppState {
   /** Restore the persisted tutor rail state after hydration. */
   hydrateTutorRail: () => void
 
+  /** Global command palette (Ctrl+K, v20 / P2-12) — transient, not persisted. */
+  paletteOpen: boolean
+  setPaletteOpen: (v: boolean) => void
+
   // AI tutor state
   aiContext: AiContext | null
   aiPopupOpen: boolean
@@ -358,6 +362,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ tutorRailOpen: localStorage.getItem(TUTOR_RAIL_KEY) === "1" })
     } catch {}
   },
+
+  paletteOpen: false,
+  setPaletteOpen: (v) => set({ paletteOpen: v }),
 
   // single-user workspace: no sign-in — just load the app
   checkAuth: async () => {

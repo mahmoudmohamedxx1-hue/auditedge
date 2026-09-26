@@ -1,0 +1,95 @@
+import { NextResponse } from "next/server"
+import { db } from "@/lib/db"
+import { getSessionUser } from "@/lib/auth"
+import { questionForClient } from "@/lib/bank"
+import { sampleExam, EXAM_MODES, type ExamMode } from "@/lib/exam-blueprint"
+
+/** GET /api/bank/exam — past sittings (most recent first). */
+export async function GET() {
+  const me = await getSessionUser()
+  if (!me) return NextResponse.json({ error: "unauthenticated" }, { status: 401 })
+  const sessions = await db.examSession.findMany({
+    where: { userId: me.id },
+    orderBy: { startedAt: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      mode: true,
+      total: true,
+      correct: true,
+      score: true,
+      startedAt: true,
+      completedAt: true,
+    },
+  })
+  return NextResponse.json({ sessions })
+}
+
+/** POST /api/bank/exam — start a timed sitting: {mode: "exam60" | "exam90"}. */
+export async function POST(req: Request) {
+  const me = await getSessionUser()
+  if (!me) return NextResponse.json({ error: "unauthenticated" }, { status: 401 })
+
+  let body: { mode?: unknown }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+  }
+  const mode = String(body?.mode) as ExamMode
+  if (!(mode in EXAM_MODES)) {
+    return NextResponse.json({ error: "mode must be exam60 or exam90" }, { status: 400 })
+  }
+
+  // only one active sitting at a time — a fresh start abandons the old one
+  await db.examSession.updateMany({
+    where: { userId: me.id, completedAt: null },
+    data: { completedAt: new Date() },
+  })
+
+  const pool = await db.bankQuestion.findMany({
+    select: { id: true, area: true, difficulty: true },
+  })
+  if (pool.length < 20) {
+    return NextResponse.json({ error: "question bank is too small to sit an exam" }, { status: 503 })
+  }
+
+  const seed = Math.floor(Math.random() * 1e9)
+  const { questionIds, plan } = sampleExam(pool, mode, seed)
+  const config = EXAM_MODES[mode]
+
+  const session = await db.examSession.create({
+    data: {
+      userId: me.id,
+      mode,
+      blueprint: JSON.stringify(plan),
+      questionIds: JSON.stringify(questionIds),
+      durationMin: config.durationMin,
+      total: questionIds.length,
+    },
+  })
+
+  const questions = await db.bankQuestion.findMany({
+    where: { id: { in: questionIds } },
+  })
+  const order = new Map(questionIds.map((id, i) => [id, i]))
+  questions.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+
+  return NextResponse.json({
+    session: {
+      id: session.id,
+      mode: session.mode,
+      durationMin: session.durationMin,
+      total: session.total,
+      startedAt: session.startedAt.toISOString(),
+      completedAt: null,
+      score: null,
+      correct: null,
+      sectionScores: {},
+      questions: questions.map(questionForClient),
+      answered: {},
+      flagged: [],
+      blueprint: plan,
+    },
+  })
+}

@@ -11,6 +11,7 @@ import {
   COURSE_ICONS,
   PageHeader,
 } from "./shared"
+import { ReviewHomeCard } from "./review"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -22,6 +23,7 @@ import {
   BookOpenCheck,
   Clock,
   Flame,
+  History,
   Medal,
   PlayCircle,
   Users,
@@ -36,6 +38,60 @@ function greeting(lang: "en" | "ar") {
 
 const levelName = (name: string, lang: "en" | "ar") =>
   lang === "ar" ? (XP_LEVEL_AR[name] ?? name) : name
+
+/** Continue-where-you-left-off card (v20 quick win) — one tap back into the
+ *  last lesson the learner opened, wherever it lives. */
+function ResumeCard() {
+  const data = useAppStore((s) => s.data)
+  const navigate = useAppStore((s) => s.navigate)
+  const lang = useAppStore((s) => s.lang)
+
+  const last = data?.lastLessonId
+    ? (() => {
+        for (const c of data.courses)
+          for (const m of c.modules) {
+            const l = m.lessons.find((x) => x.id === data.lastLessonId)
+            if (l) return { course: c, lesson: l }
+          }
+        return null
+      })()
+    : null
+
+  if (!last) return null
+  const accent = accentOf(last.course.accent)
+  const Icon = COURSE_ICONS[last.course.icon] ?? BookOpenCheck
+  const done = data?.completedLessonIds.includes(last.lesson.id)
+
+  return (
+    <div className="rounded-2xl border bg-card p-5 shadow-soft">
+      <div className="flex items-center gap-3">
+        <span className={cn("flex h-9 w-9 items-center justify-center rounded-lg", accent.icon)}>
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-semibold">{tt("misc20.resume", lang)}</p>
+          <p dir="auto" className="truncate text-[12.5px] text-muted-foreground">
+            {last.lesson.title} · {last.course.code}
+            {done ? " ✓" : ""}
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 shrink-0"
+          onClick={() =>
+            navigate(last.lesson.type === "quiz" ? "quiz" : "lesson", {
+              courseId: last.course.id,
+              lessonId: last.lesson.id,
+            })
+          }
+        >
+          <History className="me-1 h-3.5 w-3.5" /> {tt("misc20.resumeLesson", lang)}
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function Dashboard() {
   const data = useAppStore((s) => s.data)
@@ -207,6 +263,12 @@ export function Dashboard() {
           </div>
         </section>
       )}
+
+      {/* v20: review queue + resume cards (P0-3 + quick win) */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <ReviewHomeCard />
+        <ResumeCard />
+      </div>
 
       {/* in progress list */}
       {inProgress.length > 0 && (

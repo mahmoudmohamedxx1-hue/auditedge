@@ -10,20 +10,35 @@ const globalForPrisma = globalThis as unknown as {
 /**
  * Vercel serverless provisioning.
  *
- * The bundle filesystem on Vercel is read-only and recycled on cold start,
- * so the repo ships a sanitized content snapshot at
- * prisma/auditedge-demo.db.gz (built by scripts/make-vercel-snapshot.ts —
- * courses, modules, lessons, quizzes, materials and the single workspace
- * user; zero personal runtime data). On first use it is gunzipped into
- * TMPDIR, the one writable directory, and Prisma points at it there.
+ * Two supported modes (P1-7):
  *
- * Writes (lesson progress, quiz attempts, AI chats) live for the life of
- * the instance and reset on recycle — the public demo is read-mostly by
- * design. Local dev and self-hosted production are untouched: this branch
+ * 1. MANAGED POSTGRES (recommended for real use): when the Vercel project
+ *    sets DATABASE_URL to a postgres:// connection string (Neon, Supabase,
+ *    Vercel Postgres …), this module does nothing special — Prisma talks to
+ *    the managed database directly and user data SURVIVES redeploys. The
+ *    schema is applied at build time by scripts/db-deploy.ts (`prisma db
+ *    push` after switching the schema provider to postgresql).
+ *
+ * 2. SNAPSHOT FALLBACK (zero-config demo): with the default SQLite
+ *    DATABASE_URL, the repo ships a sanitized content snapshot at
+ *    prisma/auditedge-demo.db.gz (built by scripts/make-vercel-snapshot.ts).
+ *    On first use it is gunzipped into TMPDIR, the one writable directory,
+ *    and Prisma points at it there. Writes live for the life of the
+ *    instance and reset on recycle — the demo is read-mostly by design.
+ *    Users can export their data (Library → Your data) before a redeploy
+ *    and import it back afterwards.
+ *
+ * Local dev and self-hosted production are untouched: the snapshot branch
  * only runs when Vercel's own VERCEL=1 marker is present.
  */
+function isPostgresUrl(url: string | undefined): boolean {
+  return typeof url === 'string' && /^postgres(ql)?:\/\//.test(url)
+}
+
 function provisionVercelDatabase(): string | undefined {
   if (process.env.VERCEL !== '1') return undefined
+  // a managed Postgres database needs no snapshot — use it directly
+  if (isPostgresUrl(process.env.DATABASE_URL)) return undefined
 
   try {
     const tmpDir = process.env.TMPDIR || '/tmp'

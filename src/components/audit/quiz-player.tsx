@@ -173,6 +173,13 @@ export function QuizPlayer() {
   }
 
   /* ---------- question flow ---------- */
+  const showArQ =
+    lang === "ar" && question.questionAr && question.optionsAr?.length === question.options.length
+  const qText = showArQ ? question.questionAr! : question.question
+  const qOptions = showArQ ? question.optionsAr! : question.options
+  const qExplanation =
+    lang === "ar" && question.explanationAr ? question.explanationAr : question.explanation
+
   return (
     <div className="mx-auto max-w-2xl">
       <button
@@ -199,11 +206,11 @@ export function QuizPlayer() {
 
       <div className="mt-6 rounded-2xl border bg-card p-6 shadow-soft sm:p-8">
         <h1 dir="auto" className="font-serif text-[20px] font-semibold leading-snug tracking-tight">
-          {question.question}
+          {qText}
         </h1>
 
         <div className="mt-6 space-y-2.5" role="listbox" aria-label={tt("quiz.answersLabel", lang)}>
-          {question.options.map((opt, i) => {
+          {qOptions.map((opt, i) => {
             const isPicked = picked === i
             const isCorrect = i === question.correctIndex
             return (
@@ -262,7 +269,7 @@ export function QuizPlayer() {
                 </>
               )}
             </div>
-            <p dir="auto" className="mt-2 text-[13.5px] leading-[1.7] text-foreground/80">{question.explanation}</p>
+            <p dir="auto" className="mt-2 text-[13.5px] leading-[1.7] text-foreground/80">{qExplanation}</p>
           </div>
         )}
 

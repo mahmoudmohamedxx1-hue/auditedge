@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 })
   }
 
-  const [courses, materials, enrollments, progress, attempts, certificates, users] =
+  const [courses, materials, enrollments, progress, attempts, certificates, users, reviewDue, meRow] =
     await Promise.all([
       coursesForClient(),
       materialsForClient(),
@@ -30,6 +30,8 @@ export async function GET() {
           streakDays: true,
         },
       }),
+      db.reviewItem.count({ where: { userId: user.id, dueAt: { lte: new Date() } } }),
+      db.user.findUnique({ where: { id: user.id } }),
     ])
 
   return NextResponse.json({
@@ -41,5 +43,7 @@ export async function GET() {
     completedLessonIds: progress.map((p) => p.lessonId),
     quizAttempts: attempts,
     certificates,
+    reviewDue,
+    lastLessonId: meRow?.lastLessonId ?? null,
   })
 }

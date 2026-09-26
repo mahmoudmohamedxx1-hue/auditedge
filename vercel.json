@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "bun run db:generate && bun run build",
+  "buildCommand": "bun run db:deploy && bun run db:generate && bun run build",
   "env": {
     "DATABASE_URL": "file:./db/custom.db"
   }

@@ -59,6 +59,12 @@ async function main() {
     courses: await db.course.count(),
     lessons: await db.lesson.count(),
     materials: await db.material.count(),
+    bankAttempts: await db.bankAttempt.count(),
+    examSessions: await db.examSession.count(),
+    reviewItems: await db.reviewItem.count(),
+    simRuns: await db.simRun.count(),
+    lessonNotes: await db.lessonNote.count(),
+    studyPlans: await db.studyPlan.count(),
   }
 
   // --- wipe every table that holds personal / runtime data ----------------
@@ -71,6 +77,13 @@ async function main() {
   await db.quizAttempt.deleteMany()
   await db.lessonProgress.deleteMany()
   await db.enrollment.deleteMany()
+  // v20 personal-data tables (P0/P1 features) — progress must not ship
+  await db.bankAttempt.deleteMany()
+  await db.examSession.deleteMany()
+  await db.reviewItem.deleteMany()
+  await db.simRun.deleteMany()
+  await db.lessonNote.deleteMany()
+  await db.studyPlan.deleteMany()
   // keep exactly the canonical workspace user (single-user app identity)
   await db.user.deleteMany({ where: { email: { not: WORKSPACE_EMAIL } } })
 
@@ -84,6 +97,7 @@ async function main() {
     materials: await db.material.count(),
     modules: await db.module.count(),
     quizzes: await db.quiz.count(),
+    bankQuestions: await db.bankQuestion.count(),
   }
 
   // reclaim free pages so the snapshot stays small
@@ -104,8 +118,14 @@ async function main() {
   console.log(`lesson progress  ${before.progress} → 0`)
   console.log(`quiz attempts    ${before.attempts} → 0`)
   console.log(`certificates     ${before.certificates} → 0`)
+  console.log(`bank attempts    ${before.bankAttempts} → 0`)
+  console.log(`exam sessions    ${before.examSessions} → 0`)
+  console.log(`review items     ${before.reviewItems} → 0`)
+  console.log(`sim runs         ${before.simRuns} → 0`)
+  console.log(`lesson notes     ${before.lessonNotes} → 0`)
+  console.log(`study plans      ${before.studyPlans} → 0`)
   console.log("── content kept ───────────────────────────────")
-  console.log(`courses ${after.courses} · modules ${after.modules} · lessons ${after.lessons} · quizzes ${after.quizzes} · materials ${after.materials}`)
+  console.log(`courses ${after.courses} · modules ${after.modules} · lessons ${after.lessons} · quizzes ${after.quizzes} · materials ${after.materials} · bank ${after.bankQuestions}q`)
   console.log("───────────────────────────────────────────────")
   console.log(
     `✓ ${OUT_FILE} — raw ${(statSync(SOURCE).size / 1024 / 1024).toFixed(1)} MB → gz ${(gz.length / 1024 / 1024).toFixed(1)} MB`

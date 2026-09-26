@@ -81,7 +81,7 @@ export function sanitizeQuiz(
 
 export async function coursesForClient(): Promise<Course[]> {
   const courses = await db.course.findMany({
-    orderBy: { order: "asc" },
+    orderBy: [{ supplementary: "asc" }, { order: "asc" }],
     include: {
       modules: {
         orderBy: { order: "asc" },
@@ -103,6 +103,7 @@ export async function coursesForClient(): Promise<Course[]> {
       lessons: m.lessons.map((l) => ({
         ...l,
         content: parseLessonContent(l.content),
+        contentAr: typeof l.contentAr === "string" ? l.contentAr : "",
         attachments: parseAttachments(l.attachments),
         quiz: l.quiz
           ? { ...l.quiz, questions: parseQuizQuestions(l.quiz.questions) }
@@ -223,6 +224,15 @@ export async function markLessonComplete(userId: string, lessonId: string) {
       return { created: false, certificate: null }
     }
     throw e
+  }
+
+  // P0-3: completion seeds the lesson's key points into the review queue
+  // (fire-and-forget — a seeding failure must never fail the completion)
+  try {
+    const { seedReviewFromLesson } = await import("@/lib/review")
+    await seedReviewFromLesson(userId, lessonId)
+  } catch (e) {
+    console.error("review seeding failed:", e instanceof Error ? e.message : e)
   }
 
   // certificate check: all lessons of the course completed?
