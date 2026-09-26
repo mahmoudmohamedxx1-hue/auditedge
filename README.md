@@ -55,6 +55,8 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 - **Auto mode** routes each text to a native voice by language — Arabic answers are read by Salma, English by Jenny
 - Searchable grouped picker with per-voice previews and speed control (0.75x - 1.5x)
 - Speech-to-text dictation in the composer
+- **Automatic answer reading** — the tutor speaks every answer as it finishes (persisted toggle)
+- **Hands-free voice conversation** — after each spoken answer the mic opens, transcribes your next question and sends it: a zero-click speak/listen loop
 
 ### Engagement workspace
 - **Audit Program** — the full external audit cycle as a working tool: risk core, materiality calculator, PBC lists, findings, signoffs

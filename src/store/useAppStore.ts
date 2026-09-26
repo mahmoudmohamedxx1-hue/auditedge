@@ -36,6 +36,8 @@ const AI_MODEL_KEY = "auditedge-ai-model"
 /** localStorage keys for the TTS reading voice + speed (v17). */
 const TTS_VOICE_KEY = "auditedge-tts-voice"
 const TTS_SPEED_KEY = "auditedge-tts-speed"
+/** Whether the AI tutor reads answers aloud automatically (v19). */
+const AI_AUTO_SPEAK_KEY = "auditedge-ai-auto-speak"
 
 interface NavigateOpts {
   courseId?: string
@@ -106,7 +108,11 @@ interface AppState {
   /** Read-aloud playback speed (one of TTS_SPEEDS). */
   ttsSpeed: number
   setTtsSpeed: (s: number) => void
-  /** Restore the persisted voice + speed after hydration. */
+  /** Read the tutor's answers aloud automatically as they finish (v19);
+   *  the voice itself is the ttsVoice above. */
+  aiAutoSpeak: boolean
+  setAiAutoSpeak: (v: boolean) => void
+  /** Restore the persisted voice + speed + auto-speak after hydration. */
   hydrateTtsPrefs: () => void
 
   // AI tutor state
@@ -289,12 +295,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       localStorage.setItem(TTS_SPEED_KEY, String(s))
     } catch {}
   },
+  aiAutoSpeak: false,
+  setAiAutoSpeak: (v) => {
+    set({ aiAutoSpeak: v })
+    try {
+      localStorage.setItem(AI_AUTO_SPEAK_KEY, v ? "1" : "0")
+    } catch {}
+  },
   hydrateTtsPrefs: () => {
     try {
       const v = localStorage.getItem(TTS_VOICE_KEY)
       if (isTtsVoiceId(v)) set({ ttsVoice: v })
       const s = Number(localStorage.getItem(TTS_SPEED_KEY))
       if ((TTS_SPEEDS as readonly number[]).includes(s)) set({ ttsSpeed: s })
+      set({ aiAutoSpeak: localStorage.getItem(AI_AUTO_SPEAK_KEY) === "1" })
     } catch {}
   },
 

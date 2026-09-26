@@ -6,8 +6,10 @@ import { useAiChat, useAiConversations, type AiImageAttachment } from "@/hooks/u
 import { Markdown } from "./markdown"
 import { SpeakButton } from "./speak-button"
 import { MicButton } from "./mic-button"
+import { AutoSpeaker } from "./auto-speaker"
 import { ModelPicker } from "./model-picker"
 import { VoicePicker } from "./voice-picker"
+import { stopAllTts } from "@/lib/tts-playback"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -17,6 +19,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpRight,
+  AudioLines,
   BookOpen,
   Check,
   Copy,
@@ -29,6 +32,7 @@ import {
   Sparkles,
   Square,
   Trash2,
+  Volume2,
   X,
 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
@@ -84,6 +88,15 @@ export function AiTutor() {
   const [atBottom, setAtBottom] = useState(true)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [attachment, setAttachment] = useState<AiImageAttachment | null>(null)
+  // voice: automatic answer reading (persisted pref) + hands-free conversation
+  // mode (session-only — the mic must never surprise-open after a reload)
+  const aiAutoSpeak = useAppStore((s) => s.aiAutoSpeak)
+  const setAiAutoSpeak = useAppStore((s) => s.setAiAutoSpeak)
+  const [handsFree, setHandsFree] = useState(false)
+  const handsFreeRef = useRef(false)
+  handsFreeRef.current = handsFree
+  const [speakSignal, setSpeakSignal] = useState<{ nonce: number; text: string } | null>(null)
+  const [micSignal, setMicSignal] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -188,12 +201,22 @@ export function AiTutor() {
     setAttachment(null)
     if (textareaRef.current) textareaRef.current.style.height = "auto"
     setAtBottom(true)
-    await chat.send(content || (lang === "ar" ? "حلل هذه الصورة." : "Analyze this image."), aiContext, {
-      forceSearch,
-      forceLibrary,
-      model: aiModel,
-      image,
-    })
+    // a new question interrupts whatever answer is still being read aloud
+    stopAllTts()
+    const res = await chat.send(
+      content || (lang === "ar" ? "حلل هذه الصورة." : "Analyze this image."),
+      aiContext,
+      {
+        forceSearch,
+        forceLibrary,
+        model: aiModel,
+        image,
+      }
+    )
+    // automatic read-aloud: speak the finished answer (voice from the picker)
+    if (res.ok && res.text?.trim() && (aiAutoSpeak || handsFree)) {
+      setSpeakSignal({ nonce: Date.now(), text: res.text })
+    }
   }
 
   const pickImage = async (file: File | undefined) => {
@@ -211,10 +234,20 @@ export function AiTutor() {
   }
 
   const newConversation = () => {
+    stopAllTts()
     void chat.load(null)
     setAiConversationId(null)
     setHistoryOpen(false)
     setAtBottom(true)
+  }
+
+  /** A spoken answer just finished — in hands-free mode, open the mic for
+   *  the next question (also after a TTS failure, so the loop never stalls;
+   *  but not when another playback took over — the user is busy elsewhere). */
+  const onSpeakDone = (completed: boolean, hadError: boolean) => {
+    if (handsFreeRef.current && (completed || hadError)) {
+      setMicSignal((n) => n + 1)
+    }
   }
 
   const copyMessage = async (m: AiChatMessage) => {
@@ -244,6 +277,7 @@ export function AiTutor() {
           <div key={c.id} className="group relative">
             <button
               onClick={() => {
+                stopAllTts()
                 void chat.load(c.id)
                 setHistoryOpen(false)
                 setAtBottom(true)
@@ -314,6 +348,51 @@ export function AiTutor() {
               {tt("ai.subtitle", lang)}
             </p>
           </div>
+          {/* voice controls: automatic answer reading + hands-free conversation */}
+          <button
+            type="button"
+            onClick={() => setAiAutoSpeak(!aiAutoSpeak)}
+            disabled={handsFree}
+            aria-pressed={aiAutoSpeak || handsFree}
+            aria-label={aiAutoSpeak || handsFree ? tt("ai.autoReadOn", lang) : tt("ai.autoReadOff", lang)}
+            title={
+              handsFree
+                ? tt("ai.voiceChatHint", lang)
+                : aiAutoSpeak
+                  ? tt("ai.autoReadOn", lang)
+                  : tt("ai.autoReadOff", lang)
+            }
+            className={cn(
+              "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors focus-ring",
+              aiAutoSpeak || handsFree
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+              handsFree && "opacity-60"
+            )}
+          >
+            <Volume2 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !handsFree
+              setHandsFree(next)
+              // leaving voice mode stops any playing answer; the mic stops
+              // itself because the key change remounts (and cleans up) it
+              if (!next) stopAllTts()
+            }}
+            aria-pressed={handsFree}
+            aria-label={handsFree ? tt("ai.voiceChatOn", lang) : tt("ai.voiceChatOff", lang)}
+            title={handsFree ? tt("ai.voiceChatOn", lang) : tt("ai.voiceChatHint", lang)}
+            className={cn(
+              "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors focus-ring",
+              handsFree
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            )}
+          >
+            <AudioLines className={cn("h-4 w-4", handsFree && "animate-pulse")} />
+          </button>
           <ModelPicker lang={lang} />
           <VoicePicker lang={lang} />
           <Button
@@ -585,7 +664,19 @@ export function AiTutor() {
                   >
                     <ImagePlus className="h-3.5 w-3.5" />
                   </button>
-                  <MicButton onTranscript={(t) => setInput((prev) => (prev ? prev.trim() + " " + t : t))} />
+                  <MicButton
+                    key={handsFree ? "hands-free" : "manual"}
+                    autoStartSignal={micSignal}
+                    onTranscript={(t) => {
+                      if (handsFreeRef.current) {
+                        // hands-free: the transcribed question goes straight out
+                        void submit(t)
+                      } else {
+                        setInput((prev) => (prev ? prev.trim() + " " + t : t))
+                        requestAnimationFrame(() => textareaRef.current?.focus())
+                      }
+                    }}
+                  />
                   <button
                     type="button"
                     onClick={() => setForceSearch((v) => !v)}
@@ -639,6 +730,9 @@ export function AiTutor() {
           </div>
         </div>
       </section>
+
+      {/* automatic answer reading (+ hands-free mic loop) — renders nothing */}
+      <AutoSpeaker signal={speakSignal} onDone={onSpeakDone} />
 
       {/* mobile history sheet */}
       <AnimatePresence>

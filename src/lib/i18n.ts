@@ -485,6 +485,16 @@ export const T = {
     },
     stop: { en: "Stop", ar: "إيقاف" },
     send: { en: "Send message", ar: "إرسال الرسالة" },
+    autoRead: { en: "Read answers aloud", ar: "قراءة الإجابات تلقائيًا" },
+    autoReadOn: { en: "Auto-read: on", ar: "القراءة التلقائية: مفعلة" },
+    autoReadOff: { en: "Auto-read: off", ar: "القراءة التلقائية: متوقفة" },
+    voiceChat: { en: "Voice conversation", ar: "محادثة صوتية" },
+    voiceChatOn: { en: "Voice chat: on — speak after each answer", ar: "المحادثة الصوتية: مفعلة — تحدث بعد كل إجابة" },
+    voiceChatOff: { en: "Voice chat: off", ar: "المحادثة الصوتية: متوقفة" },
+    voiceChatHint: {
+      en: "Hands-free: the tutor reads each answer, then opens your mic for the next question",
+      ar: "بدون استخدام اليدين: يقرأ المساعد كل إجابة ثم يفتح الميكروفون لسؤالك التالي",
+    },
     disclaimer: {
       en: "The tutor auto-searches the web for current topics. Verify critical guidance against the standards themselves.",
       ar: "يبحث المساعد تلقائيًا في الويب للموضوعات الحديثة. تحقق من الإرشادات الحرجة من نصوص المعايير نفسها.",

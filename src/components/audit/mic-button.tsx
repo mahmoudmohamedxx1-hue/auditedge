@@ -9,15 +9,20 @@ import { AudioLines, Mic, Square } from "lucide-react"
 const MAX_MS = 60_000 // hard cap: one minute per recording
 
 /** Microphone button for the AI tutor composers: click to record, click to
- *  stop — the clip is converted to WAV and transcribed into the composer. */
+ *  stop — the clip is converted to WAV and transcribed into the composer.
+ *  `autoStartSignal` lets a parent start recording programmatically (hands-
+ *  free voice mode bumps a counter after the spoken answer finishes); it is
+ *  ignored while recording/transcribing so it can never interrupt itself. */
 export function MicButton({
   onTranscript,
   disabled,
   compact,
+  autoStartSignal,
 }: {
   onTranscript: (text: string) => void
   disabled?: boolean
   compact?: boolean
+  autoStartSignal?: number
 }) {
   const [state, setState] = useState<"idle" | "recording" | "transcribing">("idle")
   const [seconds, setSeconds] = useState(0)
@@ -25,6 +30,9 @@ export function MicButton({
   const chunksRef = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const stateRef = useRef(state)
+  const startRef = useRef<(() => Promise<void>) | null>(null)
+  stateRef.current = state
 
   const cleanup = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current)
@@ -36,6 +44,20 @@ export function MicButton({
   }, [])
 
   useEffect(() => () => cleanup(), [cleanup])
+
+  // hands-free voice mode: the parent bumps autoStartSignal to open the mic
+  // (e.g. right after a spoken answer finishes). Ignored while recording or
+  // transcribing so it can never interrupt an in-flight capture.
+  const lastSignalRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (autoStartSignal == null || autoStartSignal === lastSignalRef.current) return
+    lastSignalRef.current = autoStartSignal
+    if (stateRef.current === "idle" && startRef.current) {
+      setTimeout(() => {
+        if (stateRef.current === "idle") void startRef.current?.()
+      }, 350) // let the spoken answer's audio tail die down first
+    }
+  }, [autoStartSignal])
 
   const transcribe = async (blob: Blob) => {
     setState("transcribing")
@@ -111,6 +133,7 @@ export function MicButton({
       setState("idle")
     }
   }
+  startRef.current = () => start()
 
   const size = compact ? "h-7 w-7" : "h-8 w-8"
 

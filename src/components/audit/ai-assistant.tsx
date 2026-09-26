@@ -7,8 +7,10 @@ import { Markdown } from "./markdown"
 import { StatusLine } from "./ai-tutor"
 import { SpeakButton } from "./speak-button"
 import { MicButton } from "./mic-button"
+import { AutoSpeaker } from "./auto-speaker"
 import { ModelPicker } from "./model-picker"
 import { VoicePicker } from "./voice-picker"
+import { stopAllTts } from "@/lib/tts-playback"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -30,6 +32,9 @@ export function AiAssistant() {
   const [input, setInput] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const aiModel = useAppStore((s) => s.aiModel)
+  // automatic read-aloud honors the same persisted pref as the full tutor
+  const aiAutoSpeak = useAppStore((s) => s.aiAutoSpeak)
+  const [speakSignal, setSpeakSignal] = useState<{ nonce: number; text: string } | null>(null)
 
   const data = useAppStore((s) => s.data)
 
@@ -69,10 +74,15 @@ export function AiAssistant() {
     const content = (text ?? input).trim()
     if (!content || chat.busy) return
     setInput("")
-    await chat.send(content, aiContext, { model: aiModel })
+    stopAllTts() // a new question interrupts any playing answer
+    const res = await chat.send(content, aiContext, { model: aiModel })
+    if (res.ok && res.text?.trim() && aiAutoSpeak) {
+      setSpeakSignal({ nonce: Date.now(), text: res.text })
+    }
   }
 
   const expandToFullChat = () => {
+    // keep any in-flight speech playing — the full tutor picks up the thread
     if (chat.conversationId) setAiConversationId(chat.conversationId)
     closeAiPopup()
     navigate("ai")
@@ -80,6 +90,9 @@ export function AiAssistant() {
 
   return (
     <>
+      {/* automatic answer reading — same pipeline + voice as the tutor */}
+      <AutoSpeaker signal={speakSignal} />
+
       {/* floating button */}
       <AnimatePresence>
         {!open && (

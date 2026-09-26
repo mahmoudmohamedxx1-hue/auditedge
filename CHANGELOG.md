@@ -4,6 +4,30 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 19.0.0 — Voice conversation with the AI tutor
+
+- Automatic answer reading: the tutor speaks every answer aloud as it
+  finishes streaming (header toggle, persisted per browser; the voice and
+  speed still come from the voice picker — 23 voices, 16 of them Edge
+  neural)
+- Hands-free voice conversation mode: after each spoken answer the tutor
+  opens the microphone, transcribes the next question and sends it
+  automatically — a speak/listen loop with zero clicks. Any new question
+  or manual playback interrupts cleanly through the app-wide
+  single-playback registry; the mic auto-starts only after playback ends
+  (a 350 ms tail guard prevents the answer's echo from being transcribed)
+- The TTS playback pipeline moved into `useTtsQueue`, now shared by the
+  manual SpeakButton, automatic reading and the voice loop, with
+  completion callbacks; manual read-aloud behavior is unchanged
+- Voice input polish: transcribed text lands focused in the composer for
+  review before sending (manual mode)
+- The tutor's persona gained a learning-coach layer calibrated to a senior
+  associate's development: level diagnosis before teaching, objective-first
+  lessons, working-paper review and fieldwork supervision coaching,
+  interactive engagement simulations (one decision at a time with debriefs),
+  exam-board-style drilling marked against model answers, day-by-day study
+  plans and spaced retrieval
+
 ## 18.0.2 — Vercel deployment support
 
 - The deployed app had no data: `db/` is gitignored and Vercel's serverless

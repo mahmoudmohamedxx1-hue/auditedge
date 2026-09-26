@@ -48,7 +48,7 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
         model?: AiModelId
         image?: AiImageAttachment | null
       }
-    ): Promise<{ ok: boolean; conversationId?: string }> => {
+    ): Promise<{ ok: boolean; conversationId?: string; text?: string }> => {
       const message = text.trim()
       if (!message || abortRef.current) return { ok: false }
 
@@ -97,6 +97,7 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
         const decoder = new TextDecoder()
         let buffer = ""
         let finalConversationId: string | undefined
+        let finalText = "" // the full answer, returned for auto-read-aloud
 
         while (true) {
           const { done, value } = await reader.read()
@@ -150,6 +151,7 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
               })
             } else if (evt.type === "delta") {
               const chunk = evt.text as string
+              finalText += chunk
               setMessages((prev) => {
                 const next = [...prev]
                 const last = next[next.length - 1]
@@ -172,7 +174,7 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
         }
 
         opts?.conversationsRefresh?.()
-        return { ok: true, conversationId: finalConversationId }
+        return { ok: true, conversationId: finalConversationId, text: finalText }
       } catch (e) {
         const aborted = e instanceof DOMException && e.name === "AbortError"
         if (!aborted) {
