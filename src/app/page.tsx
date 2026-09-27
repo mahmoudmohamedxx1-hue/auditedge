@@ -152,6 +152,7 @@ export default function Home() {
   const hydrateLang = useAppStore((s) => s.hydrateLang)
   const hydrateTheme = useAppStore((s) => s.hydrateTheme)
   const hydrateAiModel = useAppStore((s) => s.hydrateAiModel)
+  const hydrateAiThinking = useAppStore((s) => s.hydrateAiThinking)
   const hydrateTtsPrefs = useAppStore((s) => s.hydrateTtsPrefs)
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
   const hydrateSidebar = useAppStore((s) => s.hydrateSidebar)
@@ -165,11 +166,12 @@ export default function Home() {
     hydrateLang()
     hydrateTheme()
     hydrateAiModel()
+    hydrateAiThinking()
     hydrateTtsPrefs()
     hydrateSidebar()
     hydrateTutorRail()
     hydrateBookmarks()
-  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateTtsPrefs, hydrateSidebar, hydrateTutorRail, hydrateBookmarks])
+  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateAiThinking, hydrateTtsPrefs, hydrateSidebar, hydrateTutorRail, hydrateBookmarks])
 
   useEffect(() => {
     void checkAuth()

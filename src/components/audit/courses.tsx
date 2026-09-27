@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { tt, arOr, COURSE_CATEGORY_AR } from "@/lib/i18n"
-import { Plus, Search, SlidersHorizontal } from "lucide-react"
+import { FREE_COURSES } from "@/lib/free-courses"
+import { Award, ExternalLink, GraduationCap, Plus, Search, SlidersHorizontal } from "lucide-react"
 
 export function Courses() {
   const data = useAppStore((s) => s.data)
@@ -19,6 +20,12 @@ export function Courses() {
   const category = useAppStore((s) => s.catalogCategory)
   const setCategory = useAppStore((s) => s.setCatalogCategory)
   const isAdmin = data?.user.role === "admin"
+  // v22 — free-courses catalog section filter
+  const [freeCat, setFreeCat] = useState<string>("all")
+  const freeFiltered = useMemo(
+    () => (freeCat === "all" ? FREE_COURSES : FREE_COURSES.filter((c) => c.category === freeCat)),
+    [freeCat]
+  )
 
   const categories = useMemo(() => {
     if (!data) return []
@@ -116,6 +123,74 @@ export function Courses() {
           </div>
         )}
       </div>
+
+      {/* v22 — pro free courses anyone can access (ACCA / MIT / OU / Edraak…) */}
+      <section className="rounded-2xl border border-olive/25 bg-olive/[0.04] p-5 shadow-soft">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-olive/15 text-olive-deep">
+              <GraduationCap className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="font-serif text-[17px] font-semibold">{tt("courses.freeTitle", lang)}</h2>
+              <p className="text-[12.5px] text-muted-foreground">{tt("courses.freeDesc", lang)}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {["all", "accounting", "ifrs", "reference", "arabic"].map((c) => (
+              <button
+                key={c}
+                onClick={() => setFreeCat(c)}
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                  freeCat === c
+                    ? "border-olive/40 bg-olive/15 font-medium text-olive-deep"
+                    : "bg-card/60 text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {tt(`courses.freeCat_${c}` as never, lang)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+          {freeFiltered.map((c) => (
+            <a
+              key={c.id}
+              href={c.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col rounded-xl border bg-card/80 p-4 transition-all hover:-translate-y-px hover:border-olive/40 hover:shadow-soft"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <h3 dir="auto" className="text-[13.5px] font-semibold leading-snug">
+                  {lang === "ar" ? c.titleAr : c.titleEn}
+                </h3>
+                {c.certificate && (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-gold-deep">
+                    <Award className="h-2.5 w-2.5" /> {tt("courses.freeCert", lang)}
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-[11.5px] font-medium text-olive-deep">{c.provider}</p>
+              <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
+                {lang === "ar" ? c.descAr : c.descEn}
+              </p>
+              <div className="mt-3 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <span className="rounded bg-secondary/70 px-1.5 py-0.5">{c.level}</span>
+                  <span className="rounded bg-secondary/70 px-1.5 py-0.5">{c.hours}</span>
+                  <span className="rounded bg-secondary/70 px-1.5 py-0.5 font-mono">{c.language}</span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-muted-foreground transition-colors group-hover:text-foreground">
+                  <ExternalLink className="h-3 w-3" /> {tt("courses.freeOpen", lang)}
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
 
       {courses.length ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

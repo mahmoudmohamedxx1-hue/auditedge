@@ -19,7 +19,7 @@ import {
   searchWeb,
   tutorSystemPrompt,
 } from "@/lib/ai"
-import { DEFAULT_MODEL, isAiModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { DEFAULT_MODEL, getAiModel, isAiModelId, resolveModel, type AiModelId } from "@/lib/models"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
     forceSearch?: boolean
     forceLibrary?: boolean
     model?: string
+    /** v22: show the model's thinking process (default: on for reasoning engines) */
+    thinking?: boolean
     image?: { dataUrl?: string; thumb?: string }
   }
   try {
@@ -77,6 +79,9 @@ export async function POST(req: NextRequest) {
   let model: AiModelId = DEFAULT_MODEL
   if (isAiModelId(body.model)) model = body.model
   model = resolveModel(model, !!dataUrl)
+  // v22 thinking: on by default for reasoning-capable engines (the visible
+  // thinking process), overridable per request from the tutor header toggle
+  const wantThinking = typeof body.thinking === "boolean" ? body.thinking : getAiModel(model).reasoning
 
   // load or create conversation (must belong to the session user)
   let conversationId = typeof body.conversationId === "string" ? body.conversationId : null
@@ -306,35 +311,37 @@ ${summary}`,
         }
 
         try {
-          const { stream: upstream, modelUsed, notice } = await generateStream({
+          const { stream: upstream, modelUsed, engine, notice } = await generateStream({
             model,
             messages,
-            thinking: false, // snappy conversational answers; deep reasoning lives in the Industry Analyst
+            thinking: wantThinking,
           })
-          send({
-            type: "meta",
-            model: modelUsed,
-            notice:
-              notice ??
-              // v21: be honest when the built-in SDK engine served the answer
-              (modelUsed === "sdk"
-                ? "Answered by the built-in workspace engine — add a Z.ai API key (ZAI_OPEN_API_KEY) to use the selected GLM models."
-                : undefined),
-          })
+          send({ type: "meta", model: modelUsed, engine, notice })
 
           if (upstream) {
-            full = await consumeSSEStream(upstream, (text) => {
-              send({ type: "delta", text })
-            }, () => {
-              // v21 stop-honesty: when the learner hits Stop, the client abort
-              // propagates through req.signal — stop consuming, persist the
-              // partial answer, and stop burning upstream tokens.
-              if (req.signal.aborted) {
-                stopped = true
-                return true
+            full = await consumeSSEStream(
+              upstream,
+              (text) => {
+                send({ type: "delta", text })
+              },
+              {
+                // v21 stop-honesty: when the learner hits Stop, the client abort
+                // propagates through req.signal — stop consuming, persist the
+                // partial answer, and stop burning upstream tokens.
+                shouldStop: () => {
+                  if (req.signal.aborted) {
+                    stopped = true
+                    return true
+                  }
+                  return false
+                },
+                // v22: the visible thinking process (GLM reasoning_content /
+                // pool reasoning tokens) — streamed live before the answer
+                onReasoning: (text) => {
+                  send({ type: "reasoning", text })
+                },
               }
-              return false
-            })
+            )
           }
         } catch (streamErr) {
           // upstream failed mid-stream — keep whatever we have

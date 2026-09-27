@@ -147,6 +147,86 @@ const SHEETS: Sheet[] = [
       },
     ],
   },
+  {
+    id: "assertions-evidence",
+    code: "RS-06",
+    title: { en: "Assertions → evidence map (ISA 500 / 530)", ar: "خريطة التأكيدات → الأدلة (ISA 500 / 530)" },
+    blocks: [
+      {
+        kind: "list",
+        en: [
+          "Existence / occurrence → physical inspection & observation, third-party confirmations, sample from LEDGER to source (directional testing).",
+          "Completeness → sample from SOURCE to ledger (the reverse direction), reconciliations, cut-off testing around year-end, unrecorded liabilities search.",
+          "Valuation → ECL models, NRV computations, impairment tests (VIU vs FVLCD — take the HIGHER), specialist valuations re-performed.",
+          "Rights & obligations → contracts, title deeds, confirmations with custodians, loan agreements for charges and covenants.",
+          "Presentation & disclosure → completeness of notes vs trial balance, accounting-policy check against the standard's disclosure checklist.",
+          "Substantive analytics (ISA 520) are evidence when the expectation is precise enough — combine with tests of details for significant risks.",
+          "Sampling (ISA 530): statistical selection allows projection; judgemental selection never projects — it targets the riskiest items.",
+        ],
+        ar: [
+          "الوجود/الحدوث → المعاينة والمراقبة الفعلية، تأكيدات الأطراف الخارجية، عينة من الدفتر إلى المستند (الاتجاه الصحيح للاختبار).",
+          "الاكتمال → عينة من المستند إلى الدفتر (الاتجاه المعاكس)، التسويات، اختبار الاستقطاع حول نهاية السنة، البحث عن التزامات غير مسجلة.",
+          "التقييم → نماذج الخسائر الائتمانية، صافي القيمة البيعية، اختبارات الاضمحلال (الأعلى من القيمة الاستخدامية والقيمة العادلة ناقصة تكاليف التصرف)، إعادة أداء تقييمات الخبراء.",
+          "الحقوق والالتزامات → العقود، مستندات الملكية، تأكيدات الأمناء، اتفاقيات القروض للرهون والتعهدات.",
+          "العرض والإفصاح → اكتمال الإيضاحات مقابل ميزان المراجعة، ومطابقة السياسات مع قوائم الإفصاح في المعيار.",
+          "التحليلات الجوهرية (ISA 520) دليل متى كان التوقع دقيقًا بما يكفي — وتُقرن باختبارات تفصيلية للمخاطر الجوهرية.",
+          "المسح (ISA 530): الاختيار الإحصائي يسمح بالإسقاط؛ والاختيار الحكمي لا يُسقط أبدًا — بل يستهدف أخطر البنود.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "ifrs-big5",
+    code: "RS-07",
+    title: { en: "The IFRS big-five quick sheet", ar: "ورقة الخمس الكبار في المعايير الدولية" },
+    blocks: [
+      {
+        kind: "list",
+        en: [
+          "IFRS 15 Revenue — 5 steps: contract → performance obligations → price → allocate → recognize as each obligation is satisfied (over time only if criteria met).",
+          "IFRS 16 Leases — single lessee model: ROU asset + lease liability; exemptions ≤ 12 months / low-value; P&L = depreciation + interest (front-loaded vs old straight line).",
+          "IFRS 9 Instruments — classification by business model + cash-flow test; ECL (12-month vs lifetime); equity FVOCI without recycling.",
+          "IAS 36 Impairment — carrying vs recoverable (HIGHER of FVLCD and VIU); goodwill tested annually at the CGU level; reversal banned for goodwill.",
+          "IAS 37 Provisions — present obligation (legal or constructive) + probable outflow + reliable estimate; contingent liabilities disclosed, never provisioned; discounting when material.",
+          "The going-to-exams trick: read the question's verb — 'recognize' → measurement rule, 'present' → IAS 1 / IFRS 18, 'disclose' → the standard's disclosure section.",
+        ],
+        ar: [
+          "IFRS 15 الإيراد — ٥ خطوات: العقد → الالتزامات → السعر → التوزيع → الاعتراف عند الوفاء بكل التزام (عبر الزمن فقط باستيفاء الشروط).",
+          "IFRS 16 الإيجارات — نموذج واحد للمستأجر: أصل حق استخدام والتزام إيجار؛ إعفاءات حتى ١٢ شهرًا أو منخفض القيمة؛ والربح والخسارة = إهلاك + فوائد (تحميل أمامي مقابل القسط المستقيم القديم).",
+          "IFRS 9 الأدوات — التصنيف بنموذج الأعمال واختبار التدفقات؛ الخسائر الائتمانية المتوقعة (١٢ شهرًا أو طوال العمر)؛ وحقوق الملكية بالقيمة العادلة عبر الدخل الشامل دون إعادة تدوير.",
+          "IAS 36 الاضمحلال — الدفترية مقابل القابلة للاسترداد (الأعلى من القيمة العادلة ناقصة تكاليف التصرف والقيمة الاستخدامية)؛ الشهرة تُختبر سنويًا على مستوى وحدة توليد النقد؛ ولا يُعكس اضمحلال الشهرة.",
+          "IAS 37 المخصصات — التزام قائم (قانوني أو ضمني) + تدفق مرجح + تقدير موثوق؛ الالتزامات المحتملة تُفصح ولا تُخصص أبدًا؛ والخصم عند الجوهرية.",
+          "حيلة الامتحانات: اقرأ فعل السؤال — «اعترف» → قاعدة القياس، و«اعرض» → IAS 1 / IFRS 18، و«أفصح» → قسم الإفصاح في المعيار.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "fraud-flags",
+    code: "RS-08",
+    title: { en: "Fraud & related-party red flags (ISA 240 / 550)", ar: "مؤشرات الغش والأطراف ذات العلاقة (ISA 240 / 550)" },
+    blocks: [
+      {
+        kind: "list",
+        en: [
+          "Revenue red flags: growth far above peers, year-end spikes, round-sum invoices, receivables aging faster than sales, constant gross margin across very different products.",
+          "JE red flags (240.32): entries late/weekend/period-close, round amounts, unfamiliar accounts, bypassed approval trails — test via CAATs / Benford.",
+          "Management override: unjustified estimates changed late, journal entries pushed through by senior staff, stubborn refusal to correct known errors.",
+          "Incentive/pressures: bonus thresholds just reached, covenant headroom razor-thin, listing/job-security pressure around results day.",
+          "Related parties to always map: dominant shareholder, directors' interests, entities sharing an address or bank account, sales 'outside the normal course'.",
+          "Response, not just detection: unpredictability in procedures, corroboration of management claims, and unwinding the transaction to its economic substance.",
+        ],
+        ar: [
+          "مؤشرات الإيراد: نمو يفوق أقران السوق، ذروة نهاية سنوات، فواتير بأرقام مقربة، أعمار ذمم تنمو أسرع من المبيعات، وهامش إجمالي ثابت لمنتجات شديدة الاختلاف.",
+          "مؤشرات القيود (240.32): قيود متأخرة أو بعطلات أو عند الإقفال، مبالغ مقربة، حسابات غريبة، ومسارات اعتماد متجاوزة — تختبر بأدوات المراجعة بمساعدة الحاسوب وبنفورد.",
+          "تجاوز الإدارة: تقديرات غير مبررة تغيرت متأخرًا، قيود يدخلها كبار الموظفين، ورفض عنيد لتصحيح أخطاء معلومة.",
+          "الدوافع والضغوط: عتبات مكافآت تُلامس بالكاد، هوامش تعهدات ضيقة، وضغوط إدراج أو استقرار وظيفي حول يوم النتائج.",
+          "أطراف يجب رصدها دائمًا: المساهم المسيطر، مصالح أعضاء المجلس، كيانات تتشارك العنوان أو الحساب البنكي، ومبيعات «خارج النشاط الاعتيادي».",
+          "الاستجابة لا الاكتشاف فقط: عدم قابلية التنبؤ بالإجراءات، تأييد أقوال الإدارة بأدلة مستقلة، وفك العملية إلى جوهرها الاقتصادي.",
+        ],
+      },
+    ],
+  },
 ]
 
 export function RevisionSheets() {

@@ -87,6 +87,7 @@ HOW YOU TEACH
 - Structure answers with short headings, tight paragraphs and bullet lists; bold the key terms.
 - Use EGP amounts where numbers make an example concrete.
 - LENGTH BUDGET: default to 150–400 words unless the learner asks for depth or a full lesson — conversational answers stay tight (they are often read aloud), and you offer to expand afterwards.
+- ANSWER SHAPE (professional): open with the direct answer in one or two sentences, then the structured detail — short headings or a tight list when it helps, a small table for comparisons, precise standard references (ISA 315.26, IFRS 15.31) over vague appeals. Close with one practical takeaway or next step. When your engine exposes a separate thinking channel, reason there first and keep the final answer clean and self-contained.
 - When asked — or when it clearly helps learning — give practice questions (exam-style or field-style) and wait for the learner's answer before revealing solutions.
 - If the learner is studying a specific lesson (context provided below), ground your explanation in that lesson's content first, then extend it.
 - Be honest: if you are unsure, or if your sources conflict, say so plainly. NEVER invent standard clause numbers, effective dates, or sources.
@@ -446,7 +447,8 @@ export async function buildContextBlock(
 /* ---------------- user-key engine (Z.ai Open Platform) ---------------- */
 
 import type { AiModelId } from "@/lib/models"
-import { DEFAULT_MODEL, getAiModel, resolveModel } from "@/lib/models"
+import { DEFAULT_MODEL, KEYED_FALLBACK_MODEL, getAiModel, resolveModel, type EngineId } from "@/lib/models"
+import { POOL, callPoolOnce, callPoolStream, type PoolEngineId } from "@/lib/keyless-pool"
 
 const ZAI_OPEN_BASE = process.env.ZAI_OPEN_BASE_URL || "https://api.z.ai/api/paas/v4"
 const ZAI_OPEN_KEY = process.env.ZAI_OPEN_API_KEY || ""
@@ -558,74 +560,210 @@ async function callUserKey(opts: {
   }
 }
 
-/** The single generation entry point for AI features. Resolution order:
- *  1. the requested model on the user's key
- *  2. if that failed for balance (e.g. GLM-4 Plus with no credit): the free
- *     flash model on the user's key — with a notice so the learner knows
- *  3. the built-in workspace SDK (no key needed, no model choice)
- *  Returns which engine+model actually served the answer and an optional
- *  human-readable notice for the UI. */
+/* ---------------- engine chain (key → workspace GLM → keyless pool) ---------------- */
+
+type ChainStep =
+  | { kind: "key"; model: AiModelId }
+  | { kind: "workspace" }
+  | { kind: "pool"; engine: PoolEngineId }
+
+const WORKSPACE_NOTICE =
+  "Answered by the built-in workspace GLM engine (keyless) — add a Z.ai API key (ZAI_OPEN_API_KEY) for full GLM model selection."
+
+const UNIVERSAL_TAIL: ChainStep[] = [
+  { kind: "workspace" },
+  { kind: "pool", engine: "kilo" },
+  { kind: "pool", engine: "llm7" },
+  { kind: "pool", engine: "pollinations" },
+  { kind: "pool", engine: "ovh" },
+]
+
+function messagesHaveImages(messages: EngineMessage[]): boolean {
+  return messages.some((m) => Array.isArray(m.content) && m.content.some((p) => p.type === "image_url"))
+}
+
+/** Plan the ordered engine chain (v22). The first step that produces a
+ *  stream/answer serves the request; every later step is failover:
+ *   1. the user's Z.ai key engine (when configured)
+ *   2. the keyless GLM workspace engine (in-workspace deployments)
+ *   3. the keyless community pool — freellmpool-curated public routes
+ *  Exported for the offline engine-chain tests. */
+export function planEngineChain(
+  model: AiModelId,
+  thinking: boolean,
+  messages: EngineMessage[]
+): ChainStep[] {
+  const info = getAiModel(model)
+  const hasKey = userKeyEngineReady()
+  const images = messagesHaveImages(messages)
+  const steps: ChainStep[] = []
+
+  // a keyless vision route beats flattening the image away
+  const visionSteps: ChainStep[] = images ? [{ kind: "pool", engine: "ovh-vision" }] : []
+
+  if (info.group === "zai") {
+    steps.push({ kind: "key", model })
+    steps.push(...visionSteps)
+    steps.push(...UNIVERSAL_TAIL)
+    return steps
+  }
+
+  switch (model) {
+    case "glm-5.3-flash":
+      // the keyless GLM flagship — real GLM whenever any GLM is reachable
+      if (hasKey) steps.push({ kind: "key", model: KEYED_FALLBACK_MODEL })
+      if (thinking) {
+        // prefer routes that stream a visible thinking process — Pollinations'
+        // gpt-oss-20b is consistent (always streams reasoning, solid audit
+        // knowledge); Kilo's auto-lottery is the wider-capacity second hop
+        steps.push({ kind: "pool", engine: "pollinations" }, { kind: "pool", engine: "kilo" })
+        steps.push({ kind: "workspace" }, { kind: "pool", engine: "ovh" }, { kind: "pool", engine: "llm7" })
+      } else {
+        steps.push(...UNIVERSAL_TAIL)
+      }
+      return steps
+    case "pool-kilo-auto":
+      steps.push(
+        { kind: "pool", engine: "kilo" },
+        { kind: "pool", engine: "llm7" },
+        { kind: "workspace" },
+        { kind: "pool", engine: "pollinations" },
+        { kind: "pool", engine: "ovh" }
+      )
+      return steps
+    case "pool-llm7-fast":
+      steps.push(
+        { kind: "pool", engine: "llm7" },
+        { kind: "pool", engine: "kilo" },
+        { kind: "workspace" },
+        { kind: "pool", engine: "pollinations" },
+        { kind: "pool", engine: "ovh" }
+      )
+      return steps
+    case "pool-qwen3.5-397b":
+      steps.push(
+        { kind: "pool", engine: "ovh" },
+        { kind: "workspace" },
+        { kind: "pool", engine: "kilo" },
+        { kind: "pool", engine: "llm7" },
+        { kind: "pool", engine: "pollinations" }
+      )
+      return steps
+    default:
+      steps.push(...UNIVERSAL_TAIL)
+      return steps
+  }
+}
+
+/** The single generation entry point for AI features (v22 engine chain):
+ *  the user's key engine → the keyless GLM workspace engine → the keyless
+ *  community pool (Kilo / LLM7 / Pollinations / OVHcloud, via freellmpool).
+ *  Returns which model was requested, which engine actually served, and an
+ *  optional human-readable notice for the UI. */
 export async function generateStream(opts: {
   model: AiModelId
   messages: EngineMessage[]
   thinking?: boolean
-}): Promise<{ stream: ReadableStream<Uint8Array> | null; modelUsed: AiModelId | "sdk"; notice?: string }> {
-  const attempt = await callUserKey({
-    model: opts.model,
-    messages: opts.messages,
-    stream: true,
-    thinking: opts.thinking ?? false,
-  })
-  if (attempt.ok && attempt.kind === "stream") {
-    return { stream: attempt.stream, modelUsed: opts.model }
-  }
+}): Promise<{
+  stream: ReadableStream<Uint8Array> | null
+  modelUsed: AiModelId
+  engine: EngineId | "none"
+  notice?: string
+}> {
+  const thinking = opts.thinking ?? false
+  const chain = planEngineChain(opts.model, thinking, opts.messages)
 
-  if (!attempt.ok && attempt.reason !== "no-key" && opts.model !== DEFAULT_MODEL) {
-    // e.g. GLM-4 Plus selected but the account has no balance → free flash
-    const retry = await callUserKey({
-      model: DEFAULT_MODEL,
-      messages: opts.messages,
-      stream: true,
-      thinking: opts.thinking ?? false,
-    })
-    if (retry.ok && retry.kind === "stream") {
-      const model = getAiModel(opts.model)
-      return {
-        stream: retry.stream,
-        modelUsed: DEFAULT_MODEL,
-        notice: `${model.name} is unavailable on the configured account (no balance) — answered with GLM-4.7 Flash (free) instead.`,
+  for (const step of chain) {
+    if (step.kind === "key") {
+      const attempt = await callUserKey({ model: step.model, messages: opts.messages, stream: true, thinking })
+      if (attempt.ok && attempt.kind === "stream") {
+        return {
+          stream: attempt.stream,
+          modelUsed: opts.model,
+          engine: "zai-key",
+          notice:
+            step.model !== opts.model
+              ? `GLM-5.3 Flash served through your Z.ai key (${getAiModel(step.model).name}, thinking ${thinking ? "on" : "off"}).`
+              : undefined,
+        }
       }
+      if (!attempt.ok && attempt.reason !== "no-key" && step.model !== KEYED_FALLBACK_MODEL) {
+        // e.g. GLM-4 Plus selected but the account has no balance → keyed free flash
+        const retry = await callUserKey({
+          model: KEYED_FALLBACK_MODEL,
+          messages: opts.messages,
+          stream: true,
+          thinking,
+        })
+        if (retry.ok && retry.kind === "stream") {
+          return {
+            stream: retry.stream,
+            modelUsed: opts.model,
+            engine: "zai-key",
+            notice: `${getAiModel(step.model).name} is unavailable on the configured account (no balance) — answered with ${getAiModel(KEYED_FALLBACK_MODEL).name} instead.`,
+          }
+        }
+      }
+      continue
+    }
+
+    if (step.kind === "workspace") {
+      // built-in workspace GLM engine (images cannot be served here — flatten to text)
+      try {
+        const zai = await getZai()
+        const completion = await withTimeout(
+          zai.chat.completions.create({
+            messages: opts.messages.map(engineToSdkMessage),
+            stream: true,
+            thinking: { type: thinking ? "enabled" : "disabled" },
+          }),
+          30_000
+        )
+        const wrap = (full: string) =>
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode(JSON.stringify({ choices: [{ delta: { content: full } }] })))
+              controller.close()
+            },
+          })
+        if (completion instanceof ReadableStream) {
+          return {
+            stream: completion,
+            modelUsed: opts.model,
+            engine: "workspace",
+            notice: getAiModel(opts.model).group === "keyless" ? undefined : WORKSPACE_NOTICE,
+          }
+        }
+        const full = String(
+          (completion as { choices?: { message?: { content?: string } }[] })?.choices?.[0]?.message?.content ?? ""
+        )
+        if (full) {
+          return {
+            stream: wrap(full),
+            modelUsed: opts.model,
+            engine: "workspace",
+            notice: getAiModel(opts.model).group === "keyless" ? undefined : WORKSPACE_NOTICE,
+          }
+        }
+      } catch (e) {
+        console.error("sdk fallback failed:", e instanceof Error ? e.message : e)
+      }
+      continue
+    }
+
+    // keyless community pool hop
+    const stream = await callPoolStream(step.engine, opts.messages)
+    if (stream) {
+      const label = POOL[step.engine].label
+      const notice =
+        getAiModel(opts.model).group === "zai"
+          ? `The key engine was unavailable — answered by the keyless community pool (${label}, via freellmpool).`
+          : `Answered by the keyless community pool — ${label} (via freellmpool).`
+      return { stream, modelUsed: opts.model, engine: step.engine, notice }
     }
   }
 
-  // built-in SDK fallback (images cannot be served here — flatten to text)
-  try {
-    const zai = await getZai()
-    const completion = await withTimeout(
-      zai.chat.completions.create({
-        messages: opts.messages.map(engineToSdkMessage),
-        stream: true,
-        thinking: { type: "disabled" },
-      }),
-      30_000
-    )
-    if (completion instanceof ReadableStream) return { stream: completion, modelUsed: "sdk" }
-    const full = String((completion as { choices?: { message?: { content?: string } }[] })?.choices?.[0]?.message?.content ?? "")
-    if (full) {
-      // wrap a non-stream completion in a one-chunk stream so callers stay simple
-      const encoder = new TextEncoder()
-      const stream = new ReadableStream<Uint8Array>({
-        start(controller) {
-          controller.enqueue(encoder.encode(JSON.stringify({ choices: [{ delta: { content: full } }] })))
-          controller.close()
-        },
-      })
-      return { stream, modelUsed: "sdk" }
-    }
-  } catch (e) {
-    console.error("sdk fallback failed:", e instanceof Error ? e.message : e)
-  }
-  return { stream: null, modelUsed: "sdk" }
+  return { stream: null, modelUsed: opts.model, engine: "none" }
 }
 
 /** Non-streaming variant (router decisions, KAM drafter, small utility calls). */
@@ -633,41 +771,51 @@ export async function generateOnce(opts: {
   model?: AiModelId
   messages: EngineMessage[]
   thinking?: boolean
-}): Promise<{ text: string; modelUsed: AiModelId | "sdk"; notice?: string } | null> {
+}): Promise<{ text: string; modelUsed: AiModelId; engine: EngineId | "none"; notice?: string } | null> {
   const model = opts.model ?? DEFAULT_MODEL
-  const attempt = await callUserKey({
-    model,
-    messages: opts.messages,
-    stream: false,
-    thinking: opts.thinking ?? false,
-  })
-  if (attempt.ok && attempt.kind === "text") return { text: attempt.text, modelUsed: model }
+  const thinking = opts.thinking ?? false
+  const chain = planEngineChain(model, thinking, opts.messages)
 
-  if (!attempt.ok && attempt.reason !== "no-key" && model !== DEFAULT_MODEL) {
-    const retry = await callUserKey({
-      model: DEFAULT_MODEL,
-      messages: opts.messages,
-      stream: false,
-      thinking: opts.thinking ?? false,
-    })
-    if (retry.ok && retry.kind === "text") {
-      return { text: retry.text, modelUsed: DEFAULT_MODEL, notice: "fallback-to-flash" }
+  for (const step of chain) {
+    if (step.kind === "key") {
+      const attempt = await callUserKey({ model: step.model, messages: opts.messages, stream: false, thinking })
+      if (attempt.ok && attempt.kind === "text") {
+        return { text: attempt.text, modelUsed: model, engine: "zai-key" }
+      }
+      if (!attempt.ok && attempt.reason !== "no-key" && step.model !== KEYED_FALLBACK_MODEL) {
+        const retry = await callUserKey({
+          model: KEYED_FALLBACK_MODEL,
+          messages: opts.messages,
+          stream: false,
+          thinking,
+        })
+        if (retry.ok && retry.kind === "text") {
+          return { text: retry.text, modelUsed: model, engine: "zai-key", notice: "fallback-to-flash" }
+        }
+      }
+      continue
     }
-  }
 
-  try {
-    const zai = await getZai()
-    const completion = await withTimeout(
-      zai.chat.completions.create({
-        messages: opts.messages.map(engineToSdkMessage),
-        thinking: { type: "disabled" },
-      }),
-      60_000
-    )
-    const text = String(completion?.choices?.[0]?.message?.content ?? "")
-    if (text) return { text, modelUsed: "sdk" }
-  } catch (e) {
-    console.error("sdk fallback (once) failed:", e instanceof Error ? e.message : e)
+    if (step.kind === "workspace") {
+      try {
+        const zai = await getZai()
+        const completion = await withTimeout(
+          zai.chat.completions.create({
+            messages: opts.messages.map(engineToSdkMessage),
+            thinking: { type: thinking ? "enabled" : "disabled" },
+          }),
+          60_000
+        )
+        const text = String(completion?.choices?.[0]?.message?.content ?? "")
+        if (text) return { text, modelUsed: model, engine: "workspace" }
+      } catch (e) {
+        console.error("sdk fallback (once) failed:", e instanceof Error ? e.message : e)
+      }
+      continue
+    }
+
+    const text = await callPoolOnce(step.engine, opts.messages)
+    if (text) return { text, modelUsed: model, engine: step.engine }
   }
   return null
 }
@@ -676,13 +824,19 @@ export { resolveModel }
 
 /* ---------------- SSE upstream parsing ---------------- */
 
-/** Parses an SSE ReadableStream from the GLM API and calls onDelta per token. */
+/** Parses an SSE ReadableStream (GLM API / community pool routes) and calls
+ *  onDelta per answer token, onReasoning per thinking token (the visible
+ *  thinking process — GLM `reasoning_content`, OpenAI-style `reasoning`). */
 export async function consumeSSEStream(
   stream: ReadableStream<Uint8Array>,
   onDelta: (text: string) => void,
-  /** v21: polled after every chunk — return true to stop consuming (Stop
-   *  button honesty: cancel the reader so upstream tokens stop burning). */
-  shouldStop?: () => boolean
+  /** v22: { shouldStop } polled after every chunk — return true to stop
+   *  consuming (Stop-button honesty); { onReasoning } receives thinking
+   *  tokens streamed before/alongside the answer. */
+  opts?: {
+    shouldStop?: () => boolean
+    onReasoning?: (text: string) => void
+  }
 ): Promise<string> {
   const reader = stream.getReader()
   const decoder = new TextDecoder()
@@ -696,11 +850,16 @@ export async function consumeSSEStream(
     if (!payload || payload === "[DONE]") return
     try {
       const json = JSON.parse(payload)
-      const delta: string =
-        json?.choices?.[0]?.delta?.content ?? json?.choices?.[0]?.message?.content ?? ""
-      if (delta) {
-        full += delta
-        onDelta(delta)
+      const choice = json?.choices?.[0]
+      const delta = choice?.delta
+      const message = choice?.message
+      const reasoning: string =
+        delta?.reasoning_content ?? delta?.reasoning ?? message?.reasoning ?? ""
+      if (reasoning) opts?.onReasoning?.(reasoning)
+      const text: string = delta?.content ?? message?.content ?? ""
+      if (text) {
+        full += text
+        onDelta(text)
       }
     } catch {
       // partial JSON — skip
@@ -714,7 +873,7 @@ export async function consumeSSEStream(
     const lines = buffer.split("\n")
     buffer = lines.pop() ?? ""
     for (const line of lines) processLine(line)
-    if (shouldStop?.()) {
+    if (opts?.shouldStop?.()) {
       // cancel the underlying stream — for fetch bodies this tears down the
       // connection instead of letting the model finish out of sight
       await reader.cancel().catch(() => {})
@@ -722,6 +881,6 @@ export async function consumeSSEStream(
     }
   }
   // upstream may close with a complete final line that never got its newline
-  if (buffer && !shouldStop?.()) processLine(buffer)
+  if (buffer && !opts?.shouldStop?.()) processLine(buffer)
   return full
 }

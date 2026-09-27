@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
 
         /* 2. stream the deep analysis (thinking enabled for reasoning models) */
         send({ type: "status", status: "writing" })
-        const { stream: upstream, modelUsed, notice } = await generateStream({
+        const { stream: upstream, modelUsed, engine, notice } = await generateStream({
           model,
           thinking: true,
           messages: [
@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
             },
           ],
         })
-        send({ type: "meta", model: modelUsed, notice })
+        send({ type: "meta", model: modelUsed, engine, notice })
 
         let full = ""
         if (upstream) {

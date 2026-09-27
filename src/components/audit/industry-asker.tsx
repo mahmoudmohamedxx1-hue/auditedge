@@ -6,7 +6,7 @@ import { useIndustryAnalysis } from "@/hooks/use-industry-analysis"
 import { Markdown } from "@/components/audit/markdown"
 import { SpeakButton } from "@/components/audit/speak-button"
 import { VoicePicker } from "@/components/audit/voice-picker"
-import { SELECTABLE_MODELS, getAiModel, type AiModelId } from "@/lib/models"
+import { SELECTABLE_MODELS, getAiModel, describeEngine, type AiModelId } from "@/lib/models"
 import type { Lang } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -302,7 +302,7 @@ export function IndustryAsker({
                 <div className="flex items-center gap-1.5">
                   {a.modelUsed && (
                     <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-medium text-primary">
-                      {a.modelUsed === "sdk" ? "Workspace engine" : getAiModel(a.modelUsed as AiModelId).name}
+                      {describeEngine(a.modelUsed).label}
                     </span>
                   )}
                   {!!a.content && !a.busy && (

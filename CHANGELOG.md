@@ -4,6 +4,25 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 22.0.0 — The keyless AI + exam-readiness release
+
+The AI stack now works with **zero setup**: a keyless community engine pool
+(curated from freellmpool — Kilo Gateway, LLM7, Pollinations, OVHcloud) backs
+the new **GLM-5.3 Flash** default engine and fails over automatically from
+the Z.ai key engine and the workspace GLM engine — so the tutor, analyst and
+drafters work on any deployment, Vercel included, with no environment
+variables. Reasoning engines stream a visible **thinking process** above
+every answer (🧠 toggle in the tutor header), with honest engine badges.
+
+- **Keyless GLM-5.3 Flash engine** (default) + Kilo Auto / Qwen3.5 397B / LLM7 Fast pool models in a grouped switcher; vision requests fall back to OVH's keyless Qwen2.5-VL before flattening.
+- **Thinking process** — reasoning tokens (GLM reasoning_content / pool `reasoning` streams) render in a collapsible panel above answers; per-request toggle persisted.
+- **Previous exam papers** — five timed adapted papers in the Exam Center: ACCA AA, AAA, FR, SBR styles plus an Egyptian SOE paper — 60 new bilingual scenario questions (bank: 579).
+- **AI custom-exam builder** — describe a topic, pick section/difficulty/count/language, and the AI writes fresh exam-style MCQs (chunked, serverless-safe generation with salvage parsing) into a timed sitting that feeds mistakes + spaced repetition.
+- **Podcasts from YouTube — بالعربي** — 23 curated episodes across CPA Talks, Mahmoud Hamouda, ESAA, Hany Sayed, Yazan Makdah and more, with category filters and click-to-play embeds.
+- **Pro free courses** — a 13-entry catalog anyone can access (ACCA/edX, MIT OCW, Open University, Khan Academy, IFRS Foundation, iasplus, Alison, Edraak, EKB) with free-certificate badges.
+- **Library** — three new revision sheets: assertions→evidence map, the IFRS big-five, and fraud/related-party red flags (8 total).
+- Engine badges everywhere (tutor, analyst), `examGen` rate limit, SW cache `auditedge-v22`.
+
 ## 21.0.0 — The deep-improvement release
 
 Born from a four-lens deep audit (tutor/voice UX, content & learning flow,

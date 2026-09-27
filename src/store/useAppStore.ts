@@ -33,6 +33,7 @@ const THEME_KEY = "auditedge-theme"
 export type ThemeMode = "light" | "dark"
 /** localStorage key for the selected AI engine model (v15). */
 const AI_MODEL_KEY = "auditedge-ai-model"
+const AI_THINKING_KEY = "auditedge-ai-thinking"
 /** localStorage keys for the TTS reading voice + speed (v17). */
 const TTS_VOICE_KEY = "auditedge-tts-voice"
 const TTS_SPEED_KEY = "auditedge-tts-speed"
@@ -113,6 +114,13 @@ interface AppState {
   setAiModel: (m: AiModelId) => void
   /** Restore the persisted model choice after hydration. */
   hydrateAiModel: () => void
+
+  /** v22: show the model's thinking process above answers (reasoning
+   *  engines stream it live) — persisted, on by default. */
+  aiThinking: boolean
+  setAiThinking: (v: boolean) => void
+  /** Restore the persisted thinking-process preference after hydration. */
+  hydrateAiThinking: () => void
 
   /** The read-aloud voice for AI answers (v17) — "auto" matches the
    *  answer's language; any of the 7 catalog voices can be pinned. */
@@ -343,6 +351,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (isAiModelId(saved)) {
         set({ aiModel: saved })
       }
+    } catch {}
+  },
+
+  aiThinking: true,
+  setAiThinking: (v) => {
+    set({ aiThinking: v })
+    try {
+      localStorage.setItem(AI_THINKING_KEY, v ? "1" : "0")
+    } catch {}
+  },
+  hydrateAiThinking: () => {
+    try {
+      const saved = localStorage.getItem(AI_THINKING_KEY)
+      if (saved !== null) set({ aiThinking: saved === "1" })
     } catch {}
   },
 

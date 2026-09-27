@@ -35,6 +35,11 @@ export type AiChatMessage = {
   imageUrl?: string | null
   /** Which engine model answered (assistant messages, when known) */
   modelUsed?: string | null
+  /** v22: the actual engine that served the answer (workspace / kilo / llm7 / …) */
+  engine?: string | null
+  /** v22: the model's thinking process streamed before the answer (ephemeral,
+   *  not persisted server-side — live streaming artifact) */
+  reasoning?: string | null
   /** Informational engine notice (e.g. fallback to the free model) */
   notice?: string | null
 }

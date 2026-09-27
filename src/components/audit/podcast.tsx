@@ -12,14 +12,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { YT_CATEGORIES, YT_EPISODES, type PodcastEpisode } from "@/lib/podcast-episodes"
 import { courseLessons } from "./shared"
 import {
   CheckCircle2,
   Download,
+  ExternalLink,
   Headphones,
   ListVideo,
   Loader2,
+  Play,
   Trash2,
+  Youtube,
 } from "lucide-react"
 
 type QueueItem = {
@@ -36,6 +40,14 @@ export function Podcast() {
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [current, setCurrent] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
+
+  // v22 — curated Arabic YouTube podcast section
+  const [ytCat, setYtCat] = useState<(typeof YT_CATEGORIES)[number]["id"]>("all")
+  const [playing, setPlaying] = useState<string | null>(null)
+  const ytEpisodes = useMemo(
+    () => (ytCat === "all" ? YT_EPISODES : YT_EPISODES.filter((e) => e.category === ytCat)),
+    [ytCat]
+  )
 
   const courses = useMemo(
     () =>
@@ -249,6 +261,116 @@ export function Podcast() {
             </div>
           )}
         </section>
+      </div>
+
+      {/* v22 — curated Arabic YouTube podcasts (CPA Talks and friends) */}
+      <section className="mt-8 rounded-2xl border bg-card p-6 shadow-soft">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-clay/15 text-clay-deep">
+            <Youtube className="h-[18px] w-[18px]" />
+          </span>
+          <div>
+            <h2 className="font-serif text-[17px] font-semibold">{tt("podcast.youtubeTitle", lang)}</h2>
+            <p className="text-[12.5px] text-muted-foreground">{tt("podcast.youtubeDesc", lang)}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {YT_CATEGORIES.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => {
+                setYtCat(c.id)
+                setPlaying(null)
+              }}
+              className={cn(
+                "rounded-full border px-3 py-1 text-[11.5px] transition-colors",
+                ytCat === c.id
+                  ? "border-primary/40 bg-primary/10 font-medium text-primary"
+                  : "bg-secondary/40 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {lang === "ar" ? c.labelAr : c.labelEn}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          {ytEpisodes.map((ep) => (
+            <YtEpisodeCard
+              key={ep.id}
+              ep={ep}
+              lang={lang}
+              playing={playing === ep.id}
+              onPlay={() => setPlaying(playing === ep.id ? null : ep.id)}
+            />
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+/** One curated YouTube episode: thumbnail with click-to-play inline embed,
+ *  channel/length/views line, a short blurb and an open-on-YouTube link. */
+function YtEpisodeCard({
+  ep,
+  lang,
+  playing,
+  onPlay,
+}: {
+  ep: PodcastEpisode
+  lang: "en" | "ar"
+  playing: boolean
+  onPlay: () => void
+}) {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-xl border bg-secondary/20">
+      {playing ? (
+        <div className="aspect-video w-full bg-black">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${ep.id}?autoplay=1&rel=0`}
+            title={ep.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="h-full w-full"
+          />
+        </div>
+      ) : (
+        <button type="button" onClick={onPlay} className="group relative aspect-video w-full" aria-label={ep.title}>
+          <img
+            src={`https://i.ytimg.com/vi/${ep.id}/hqdefault.jpg`}
+            alt={ep.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
+          />
+          <span className="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors group-hover:bg-black/40">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-red-600/90 text-white shadow-soft">
+              <Play className="ms-0.5 h-5 w-5 fill-current" />
+            </span>
+          </span>
+          <span className="absolute bottom-1.5 end-1.5 rounded bg-black/75 px-1.5 py-0.5 font-mono text-[10.5px] text-white">
+            {ep.length}
+          </span>
+        </button>
+      )}
+      <div className="flex flex-1 flex-col p-3.5">
+        <p dir="auto" className="text-[13px] font-semibold leading-snug">{ep.title}</p>
+        <p className="mt-1 text-[11.5px] text-muted-foreground">
+          {ep.channel} · {ep.views} {tt("podcast.views", lang)}
+        </p>
+        <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground/90">
+          {lang === "ar" ? ep.blurbAr : ep.blurbEn}
+        </p>
+        <a
+          href={`https://www.youtube.com/watch?v=${ep.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2.5 inline-flex items-center gap-1 text-[11.5px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ExternalLink className="h-3 w-3" /> {tt("podcast.youtubeOpen", lang)}
+        </a>
       </div>
     </div>
   )

@@ -1,18 +1,29 @@
 /** AI engine registry — the models that power the app's AI features.
  *
- *  Two engines can serve a request:
- *  1. The user's own Z.ai Open Platform key (ZAI_OPEN_API_KEY in .env.local)
- *     called directly at the OpenAI-compatible endpoint — this is the
- *     production engine, with model selection.
- *  2. The workspace built-in SDK — the zero-config fallback that keeps every
- *     feature working when no key is configured or the key engine fails
- *     (rate limits, exhausted balance, network).
+ *  v22 engine tiers:
+ *  1. KEYLESS (no setup, no key) — the default tier. "GLM-5.3 Flash" is the
+ *     keyless flagship: it prefers the real GLM workspace engine and fails
+ *     over to the freellmpool community routes (Kilo Gateway, LLM7,
+ *     Pollinations, OVHcloud) so the tutor works on any deployment,
+ *     including Vercel with zero environment variables.
+ *  2. The user's own Z.ai Open Platform key (ZAI_OPEN_API_KEY in .env)
+ *     called directly at the OpenAI-compatible endpoint — the production
+ *     engine with model selection, when a key is configured.
  *
- *  GLM-4.7-Flash: free, reasoning-capable — the default.
- *  GLM-4.6V-Flash: free, vision — auto-selected whenever an image is attached.
- *  GLM-4-Plus: premium tier — selectable; needs account balance. */
+ *  Keyless community routes are curated from the freellmpool catalog
+ *  (github.com/0xzr/freellmpool): keyless OpenAI-compatible providers
+ *  that need no signup. */
 
-export type AiModelId = "glm-4.7-flash" | "glm-4.6v-flash" | "glm-4-plus"
+export type AiModelId =
+  // keyless community tier (freellmpool routes — no key, no setup)
+  | "glm-5.3-flash" // keyless GLM flagship: workspace GLM → community pool failover
+  | "pool-kilo-auto" // Kilo Gateway auto-route (streams reasoning)
+  | "pool-llm7-fast" // LLM7 fast selector
+  | "pool-qwen3.5-397b" // OVHcloud Qwen3.5-397B-A17B (largest free open model)
+  // Z.ai key tier
+  | "glm-4.7-flash"
+  | "glm-4.6v-flash"
+  | "glm-4-plus"
 
 export type AiModelInfo = {
   id: AiModelId
@@ -20,25 +31,80 @@ export type AiModelInfo = {
   name: string
   /** Display name (Arabic) */
   nameAr: string
-  tier: "free" | "plus"
+  tier: "keyless" | "free" | "plus"
+  /** Registry group: keyless community routes vs the user's Z.ai key */
+  group: "keyless" | "zai"
   /** Accepts image input */
   vision: boolean
-  /** Supports the `thinking` parameter (reasoning models) */
+  /** Supports reasoning / a visible thinking process */
   reasoning: boolean
   note: { en: string; ar: string }
 }
 
 export const AI_MODELS: AiModelInfo[] = [
   {
+    id: "glm-5.3-flash",
+    name: "GLM-5.3 Flash",
+    nameAr: "GLM-5.3 Flash",
+    tier: "keyless",
+    group: "keyless",
+    vision: false,
+    reasoning: true,
+    note: {
+      en: "Keyless · thinking process · zero setup — GLM whenever available, community pool as backup",
+      ar: "بدون مفتاح · يعرض عملية التفكير · بدون إعداد — محرك GLM عند توفره ومجموعة مجتمعية كاحتياط",
+    },
+  },
+  {
+    id: "pool-kilo-auto",
+    name: "Kilo Auto",
+    nameAr: "Kilo Auto",
+    tier: "keyless",
+    group: "keyless",
+    vision: false,
+    reasoning: true,
+    note: {
+      en: "Keyless community pool (Kilo Gateway) — auto-routes the best free model, shows thinking",
+      ar: "مجموعة مجتمعية بدون مفتاح (بوابة Kilo) — تختار أفضل نموذج مجاني وتعرض التفكير",
+    },
+  },
+  {
+    id: "pool-qwen3.5-397b",
+    name: "Qwen3.5 397B",
+    nameAr: "Qwen3.5 397B",
+    tier: "keyless",
+    group: "keyless",
+    vision: false,
+    reasoning: false,
+    note: {
+      en: "Keyless community pool (OVHcloud) — the largest free open-weight model",
+      ar: "مجموعة مجتمعية بدون مفتاح (OVHcloud) — أكبر نموذج مفتوح مجاني",
+    },
+  },
+  {
+    id: "pool-llm7-fast",
+    name: "LLM7 Fast",
+    nameAr: "LLM7 Fast",
+    tier: "keyless",
+    group: "keyless",
+    vision: false,
+    reasoning: false,
+    note: {
+      en: "Keyless community pool (LLM7) — quick, lightweight answers",
+      ar: "مجموعة مجتمعية بدون مفتاح (LLM7) — إجابات سريعة وخفيفة",
+    },
+  },
+  {
     id: "glm-4.7-flash",
     name: "GLM-4.7 Flash",
     nameAr: "GLM-4.7 Flash",
     tier: "free",
+    group: "zai",
     vision: false,
     reasoning: true,
     note: {
-      en: "Free · fast · reasoning-capable — the default engine",
-      ar: "مجاني · سريع · يدعم الاستدلال — المحرك الافتراضي",
+      en: "Free on your Z.ai key · fast · reasoning-capable",
+      ar: "مجاني على مفتاح Z.ai · سريع · يدعم الاستدلال",
     },
   },
   {
@@ -46,11 +112,12 @@ export const AI_MODELS: AiModelInfo[] = [
     name: "GLM-4 Plus",
     nameAr: "GLM-4 Plus",
     tier: "plus",
+    group: "zai",
     vision: false,
     reasoning: false,
     note: {
-      en: "Premium tier — deepest answers, needs account balance",
-      ar: "الفئة المدفوعة — أعمق الإجابات، يتطلب رصيدًا في الحساب",
+      en: "Premium tier on your Z.ai key — deepest answers, needs account balance",
+      ar: "الفئة المدفوعة على مفتاح Z.ai — أعمق الإجابات، يتطلب رصيدًا",
     },
   },
   {
@@ -58,16 +125,20 @@ export const AI_MODELS: AiModelInfo[] = [
     name: "GLM-4.6V Flash",
     nameAr: "GLM-4.6V Flash",
     tier: "free",
+    group: "zai",
     vision: true,
     reasoning: true,
     note: {
-      en: "Free · vision — reads images you attach",
-      ar: "مجاني · رؤية — يقرأ الصور التي ترفقها",
+      en: "Free on your Z.ai key · vision — reads images you attach",
+      ar: "مجاني على مفتاح Z.ai · رؤية — يقرأ الصور التي ترفقها",
     },
   },
 ]
 
-export const DEFAULT_MODEL: AiModelId = "glm-4.7-flash"
+/** v22 default: the keyless GLM flagship — works with zero configuration. */
+export const DEFAULT_MODEL: AiModelId = "glm-5.3-flash"
+/** Free keyed model used as the in-key fallback (e.g. Plus selected, no balance). */
+export const KEYED_FALLBACK_MODEL: AiModelId = "glm-4.7-flash"
 export const VISION_MODEL: AiModelId = "glm-4.6v-flash"
 
 /** Models offered in the switcher (the vision model is auto-selected when an
@@ -86,8 +157,54 @@ export function getAiModel(id: AiModelId): AiModelInfo {
 
 /** Resolve the effective model for a request: if an image is attached the
  *  model must be vision-capable, so non-vision selections are routed to the
- *  vision engine automatically. */
+ *  vision engine automatically. (When no key is configured, the engine chain
+ *  in lib/ai.ts degrades to a keyless vision route or flattens the image.) */
 export function resolveModel(selected: AiModelId, hasImage: boolean): AiModelId {
   if (hasImage && !getAiModel(selected).vision) return VISION_MODEL
   return selected
+}
+
+/* ---------------- engine reporting (UI badges) ---------------- */
+
+/** Actual engine ids that can serve a request, as reported in SSE meta events. */
+export type EngineId =
+  | AiModelId // served by the matching engine (key or pool route)
+  | "zai-key" // the user's Z.ai key engine
+  | "workspace" // the built-in workspace GLM engine (SDK, keyless in-workspace)
+  | "kilo" // Kilo Gateway community route
+  | "llm7" // LLM7 community route
+  | "pollinations" // Pollinations community route
+  | "ovh" // OVHcloud community route
+  | "ovh-vision" // OVHcloud keyless vision route (Qwen2.5-VL)
+  | "sdk" // legacy alias of "workspace" (pre-v22 events)
+
+/** Human label + tone for the engine badge shown under AI answers. */
+export function describeEngine(used: string | null | undefined): {
+  label: string
+  tone: "keyless" | "key" | "sdk"
+} {
+  switch (used) {
+    case "workspace":
+    case "sdk":
+      return { label: "Workspace GLM engine", tone: "sdk" }
+    case "kilo":
+      return { label: "Kilo Gateway · keyless pool", tone: "keyless" }
+    case "llm7":
+      return { label: "LLM7 · keyless pool", tone: "keyless" }
+    case "pollinations":
+      return { label: "Pollinations · keyless pool", tone: "keyless" }
+    case "ovh":
+      return { label: "OVHcloud · keyless pool", tone: "keyless" }
+    case "ovh-vision":
+      return { label: "OVHcloud vision · keyless", tone: "keyless" }
+    case "zai-key":
+      return { label: "Your Z.ai key", tone: "key" }
+    default: {
+      if (isAiModelId(used)) {
+        const m = getAiModel(used)
+        return { label: m.tier === "keyless" ? `${m.name} · keyless` : m.name, tone: m.tier === "keyless" ? "keyless" : "key" }
+      }
+      return { label: "AI engine", tone: "sdk" }
+    }
+  }
 }

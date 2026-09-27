@@ -22,7 +22,9 @@ import {
   ArrowUpRight,
   AudioLines,
   BookOpen,
+  Brain,
   Check,
+  ChevronDown,
   Copy,
   Download,
   FolderOpen,
@@ -52,6 +54,7 @@ import {
 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { tt } from "@/lib/i18n"
+import { describeEngine } from "@/lib/models"
 
 /** A single one-tap follow-up action under the latest tutor answer. */
 function FollowUpChip({
@@ -116,6 +119,8 @@ export function AiTutor() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const aiModel = useAppStore((s) => s.aiModel)
+  const aiThinking = useAppStore((s) => s.aiThinking)
+  const setAiThinking = useAppStore((s) => s.setAiThinking)
 
   // restore the conversation opened from the popup
   const popupConversationId = useAppStore((s) => s.aiConversationId)
@@ -224,6 +229,7 @@ export function AiTutor() {
         forceSearch,
         forceLibrary,
         model: aiModel,
+        thinking: aiThinking,
         image,
       }
     )
@@ -313,6 +319,7 @@ export function AiTutor() {
       forceSearch,
       forceLibrary,
       model: aiModel,
+      thinking: aiThinking,
     })
     if (res.ok && res.text?.trim() && (aiAutoSpeak || handsFree)) {
       setSpeakSignal({ nonce: Date.now(), text: res.text })
@@ -699,6 +706,23 @@ export function AiTutor() {
           >
             <AudioLines className={cn("h-4 w-4", handsFree && "animate-pulse")} />
           </button>
+          {/* v22: thinking-process toggle — reasoning engines stream their
+              thinking live; off keeps answers snappy */}
+          <button
+            type="button"
+            onClick={() => setAiThinking(!aiThinking)}
+            aria-pressed={aiThinking}
+            aria-label={aiThinking ? tt("ai.thinkingOn", lang) : tt("ai.thinkingOff", lang)}
+            title={aiThinking ? tt("ai.thinkingOn", lang) : tt("ai.thinkingOff", lang)}
+            className={cn(
+              "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors focus-ring",
+              aiThinking
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            )}
+          >
+            <Brain className="h-4 w-4" />
+          </button>
           <ModelPicker lang={lang} />
           <VoicePicker lang={lang} />
           <button
@@ -833,19 +857,33 @@ export function AiTutor() {
                         ))}
                       </div>
                     )}
+                    {m.reasoning?.trim() ? (
+                      <ThinkingPanel
+                        text={m.reasoning}
+                        live={chat.busy && m.id === chat.messages[chat.messages.length - 1]?.id}
+                        lang={lang}
+                      />
+                    ) : null}
                     {m.content ? (
                       <div className="relative">
-                        {m.modelUsed && (
-                          <span
-                            className={cn(
-                              "mb-1.5 inline-block rounded-md px-1.5 py-0.5 font-mono text-[9.5px] font-medium",
-                              m.modelUsed === "sdk" ? "bg-secondary text-muted-foreground" : "bg-primary/10 text-primary"
-                            )}
-                            dir="ltr"
-                          >
-                            {m.modelUsed === "sdk" ? tt("ai.workspaceEngine", lang) : m.modelUsed}
-                          </span>
-                        )}
+                        {(() => {
+                          const engine = describeEngine(m.engine ?? m.modelUsed)
+                          return (
+                            <span
+                              className={cn(
+                                "mb-1.5 inline-block rounded-md px-1.5 py-0.5 font-mono text-[9.5px] font-medium",
+                                engine.tone === "keyless"
+                                  ? "bg-olive/15 text-olive-deep"
+                                  : engine.tone === "key"
+                                    ? "bg-primary/10 text-primary"
+                                    : "bg-secondary text-muted-foreground"
+                              )}
+                              dir="ltr"
+                            >
+                              {engine.label}
+                            </span>
+                          )
+                        })()}
                         <Markdown content={m.content} />
                         {/* v21: toggleable EN↔AR translation of this answer */}
                         {translations[m.id] && (
@@ -1173,6 +1211,53 @@ export function AiTutor() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+/** v22: the model's thinking process, streamed live above the answer.
+ *  Auto-open while reasoning is still streaming, auto-collapse when the
+ *  answer takes over — the learner can always re-open it. */
+export function ThinkingPanel({
+  text,
+  live,
+  lang,
+}: {
+  text: string
+  live: boolean
+  lang: "en" | "ar"
+}) {
+  // default: open while streaming, folded once the answer takes over — the
+  // learner's click always wins afterwards (derived, no setState-in-effect)
+  const [touched, setTouched] = useState(false)
+  const [userOpen, setUserOpen] = useState(false)
+  const open = touched ? userOpen : live
+
+  return (
+    <div className="mb-2.5 overflow-hidden rounded-xl border border-dashed border-primary/25 bg-secondary/30">
+      <button
+        type="button"
+        onClick={() => {
+          setTouched(true)
+          setUserOpen(!open)
+        }}
+        aria-expanded={open}
+        className="flex w-full items-center gap-1.5 px-3 py-1.5 text-start text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground focus-ring"
+      >
+        <Brain className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+        <span>{tt("ai.thoughtProcess", lang)}</span>
+        {live && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />}
+        <ChevronDown className={cn("ms-auto h-3 w-3 shrink-0 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div
+          dir="auto"
+          className="max-h-44 overflow-y-auto border-t border-dashed border-primary/15 px-3.5 py-2 text-[12px] leading-relaxed text-muted-foreground/90"
+        >
+          {text}
+          {live && <span className="ms-0.5 inline-block h-3 w-[2px] animate-pulse rounded bg-primary align-middle" />}
+        </div>
+      )}
     </div>
   )
 }

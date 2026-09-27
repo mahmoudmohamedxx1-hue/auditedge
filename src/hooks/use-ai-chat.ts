@@ -46,6 +46,8 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
         forceSearch?: boolean
         forceLibrary?: boolean
         model?: AiModelId
+        /** v22: show the thinking process for reasoning engines */
+        thinking?: boolean
         image?: AiImageAttachment | null
       }
     ): Promise<{ ok: boolean; conversationId?: string; text?: string }> => {
@@ -83,6 +85,7 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
             forceSearch: options?.forceSearch,
             forceLibrary: options?.forceLibrary,
             model: options?.model,
+            thinking: options?.thinking,
             image: options?.image
               ? { dataUrl: options.image.dataUrl, thumb: options.image.thumb }
               : undefined,
@@ -130,15 +133,25 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
             } else if (evt.type === "meta") {
               // which engine served the answer (+ an informational notice)
               const modelUsed = (evt.model as string) ?? null
+              const engine = (evt.engine as string) ?? null
               const notice = (evt.notice as string) ?? null
               setMessages((prev) => {
                 const next = [...prev]
                 const last = next[next.length - 1]
                 if (last) {
-                  const updated: AiChatMessage = { ...last, modelUsed }
+                  const updated: AiChatMessage = { ...last, modelUsed, engine }
                   if (notice) updated.notice = notice
                   next[next.length - 1] = updated
                 }
+                return next
+              })
+            } else if (evt.type === "reasoning") {
+              // v22: the model's thinking process, streamed live
+              const chunk = evt.text as string
+              setMessages((prev) => {
+                const next = [...prev]
+                const last = next[next.length - 1]
+                if (last) next[next.length - 1] = { ...last, reasoning: (last.reasoning ?? "") + chunk }
                 return next
               })
             } else if (evt.type === "sources") {
@@ -187,7 +200,9 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
           setMessages((prev) => {
             const next = [...prev]
             const last = next[next.length - 1]
-            if (last && !last.content) next.pop()
+            // keep the thinking panel of a stopped answer too — it is part of
+            // what the learner read when they hit Stop
+            if (last && !last.content && !last.reasoning) next.pop()
             return next
           })
         } else if (aborted) {

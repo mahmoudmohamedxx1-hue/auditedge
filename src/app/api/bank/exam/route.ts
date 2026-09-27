@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/auth"
 import { questionForClient } from "@/lib/bank"
 import { sampleExam, EXAM_MODES, type ExamMode } from "@/lib/exam-blueprint"
+import { getPastPaper } from "@/lib/past-papers"
 
 /** GET /api/bank/exam — past sittings (most recent first). */
 export async function GET() {
@@ -26,20 +27,19 @@ export async function GET() {
   return NextResponse.json({ sessions })
 }
 
-/** POST /api/bank/exam — start a timed sitting: {mode: "exam60" | "exam90"}. */
+/** POST /api/bank/exam — start a timed sitting:
+ *  {mode: "exam60" | "exam90"} blueprint sitting, or
+ *  {paper: "acca-aa" | "acca-aaa" | "acca-fr" | "acca-sbr" | "soe-audit"}
+ *  for a previous-exam paper (fixed question set, source-selected). */
 export async function POST(req: Request) {
   const me = await getSessionUser()
   if (!me) return NextResponse.json({ error: "unauthenticated" }, { status: 401 })
 
-  let body: { mode?: unknown }
+  let body: { mode?: unknown; paper?: unknown }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 })
-  }
-  const mode = String(body?.mode) as ExamMode
-  if (!(mode in EXAM_MODES)) {
-    return NextResponse.json({ error: "mode must be exam60 or exam90" }, { status: 400 })
   }
 
   // only one active sitting at a time — a fresh start abandons the old one
@@ -47,6 +47,59 @@ export async function POST(req: Request) {
     where: { userId: me.id, completedAt: null },
     data: { completedAt: new Date() },
   })
+
+  /* ---- v22: previous-exam paper sitting ---- */
+  if (body.paper !== undefined) {
+    const paper = getPastPaper(String(body.paper))
+    if (!paper) {
+      return NextResponse.json({ error: "unknown paper" }, { status: 400 })
+    }
+    const pool = await db.bankQuestion.findMany({
+      where: { source: paper.source },
+      select: { id: true, difficulty: true },
+    })
+    if (pool.length < paper.count) {
+      return NextResponse.json({ error: "paper bank incomplete" }, { status: 503 })
+    }
+    // deterministic draw in code order (stable past-paper sitting)
+    const ordered = pool.sort((a, b) => a.id.localeCompare(b.id))
+    const questionIds = ordered.slice(0, paper.count).map((q) => q.id)
+    const session = await db.examSession.create({
+      data: {
+        userId: me.id,
+        mode: `paper:${paper.id}`,
+        blueprint: JSON.stringify([{ paper: paper.id, count: paper.count, picked: paper.count }]),
+        questionIds: JSON.stringify(questionIds),
+        durationMin: paper.durationMin,
+        total: questionIds.length,
+      },
+    })
+    const questions = await db.bankQuestion.findMany({ where: { id: { in: questionIds } } })
+    const order = new Map(questionIds.map((id, i) => [id, i]))
+    questions.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+    return NextResponse.json({
+      session: {
+        id: session.id,
+        mode: session.mode,
+        durationMin: session.durationMin,
+        total: session.total,
+        startedAt: session.startedAt.toISOString(),
+        completedAt: null,
+        score: null,
+        correct: null,
+        sectionScores: {},
+        questions: questions.map(questionForClient),
+        answered: {},
+        flagged: [],
+        blueprint: [{ paper: paper.id, count: paper.count, picked: paper.count }],
+      },
+    })
+  }
+
+  const mode = String(body?.mode) as ExamMode
+  if (!(mode in EXAM_MODES)) {
+    return NextResponse.json({ error: "mode must be exam60 or exam90" }, { status: 400 })
+  }
 
   const pool = await db.bankQuestion.findMany({
     select: { id: true, area: true, difficulty: true },

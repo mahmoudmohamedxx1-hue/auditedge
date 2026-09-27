@@ -22,8 +22,8 @@ export type IndustryAnalysis = {
   content: string
   sources: IndustrySource[]
   createdAt: number
-  /** null = server default engine; "sdk" = workspace fallback engine */
-  model: AiModelId | "sdk" | null
+  /** which engine served the analysis (model id or engine id; null = unknown) */
+  model: string | null
 }
 
 export type IndustryStatus = "idle" | "searching" | "search-failed" | "writing"
@@ -47,7 +47,7 @@ export function useIndustryAnalysis() {
   const [industry, setIndustry] = useState("")
   const [content, setContent] = useState("")
   const [sources, setSources] = useState<IndustrySource[]>([])
-  const [modelUsed, setModelUsed] = useState<AiModelId | "sdk" | null>(null)
+  const [modelUsed, setModelUsed] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [history, setHistory] = useState<IndustryAnalysis[]>([])
@@ -129,7 +129,7 @@ export function useIndustryAnalysis() {
         let buffer = ""
         let full = ""
         let gotSources: IndustrySource[] = []
-        let usedModel: AiModelId | "sdk" | null = null
+        let usedModel: string | null = null
 
         while (true) {
           const { done, value } = await reader.read()
@@ -155,7 +155,7 @@ export function useIndustryAnalysis() {
               gotSources = (evt.sources as IndustrySource[]) ?? []
               setSources(gotSources)
             } else if (evt.type === "meta") {
-              usedModel = (evt.model as AiModelId | "sdk") ?? null
+              usedModel = ((evt.engine as string) ?? (evt.model as string)) ?? null
               setModelUsed(usedModel)
               if (typeof evt.notice === "string") setNotice(evt.notice)
             } else if (evt.type === "delta") {

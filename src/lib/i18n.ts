@@ -170,6 +170,19 @@ export const T = {
     },
     noneInCategory: { en: "No courses in this category yet.", ar: "لا توجد دورات في هذا التصنيف بعد." },
     clearFilters: { en: "Clear filters", ar: "مسح الفلاتر" },
+    // v22 — pro free courses catalog
+    freeTitle: { en: "Pro free courses — open to everyone", ar: "دورات احترافية مجانية — متاحة للجميع" },
+    freeDesc: {
+      en: "Hand-verified free courses from ACCA, MIT, the Open University, IFRS Foundation, Edraak and more — no paywall for the learning.",
+      ar: "دورات مجانية موثّقة من ACCA وMIT والجامعة المفتوحة ومؤسسة المعايير وإدراك وغيرها — بلا أي دفع مقابل التعلم.",
+    },
+    freeCat_all: { en: "All", ar: "الكل" },
+    freeCat_accounting: { en: "Accounting", ar: "المحاسبة" },
+    freeCat_ifrs: { en: "IFRS", ar: "المعايير الدولية" },
+    freeCat_reference: { en: "Reference", ar: "مراجع" },
+    freeCat_arabic: { en: "بالعربية", ar: "بالعربية" },
+    freeCert: { en: "Free certificate", ar: "شهادة مجانية" },
+    freeOpen: { en: "Open course", ar: "افتح الدورة" },
   },
 
   /* ---------- course detail ---------- */
@@ -562,6 +575,15 @@ export const T = {
     searchingWeb: { en: "Searching the web", ar: "البحث في الويب" },
     searchingLib: { en: "Searching the office library", ar: "البحث في مكتبة المكتب" },
     thinking: { en: "Thinking…", ar: "يفكر…" },
+    thinkingOn: {
+      en: "Thinking process on — the tutor streams its reasoning",
+      ar: "عملية التفكير مفعّلة — يعرض المساعد منطقه أثناء الإجابة",
+    },
+    thinkingOff: {
+      en: "Thinking process off — snappier answers",
+      ar: "عملية التفكير متوقفة — إجابات أسرع",
+    },
+    thoughtProcess: { en: "Thought process", ar: "عملية التفكير" },
     openTutor: { en: "Open AI tutor", ar: "فتح المساعد الذكي" },
     openFull: { en: "Open full AI tutor", ar: "فتح المساعد كامل الصفحة" },
     openFullTitle: { en: "Open full chat", ar: "فتح المحادثة الكاملة" },
@@ -882,6 +904,35 @@ export const T = {
     practiceDesc: { en: "Instant feedback + explanations. Misses join your review queue.", ar: "تصحيح فوري مع توضيحات. الأسئلة المخطئة تنضم لقائمة مراجعتك." },
     examTitle: { en: "Mock exam", ar: "اختبار تجريبي" },
     examDesc: { en: "Timed, section-weighted, flag-and-review. Results feed the review queue.", ar: "محدد الوقت بتوزيع الأقسام مع تعليم للمراجعة. النتائج تغذي قائمة المراجعة." },
+    // v22 — previous-exam papers + AI custom exams
+    papersTitle: { en: "Previous exam papers", ar: "امتحانات سابقة" },
+    papersDesc: {
+      en: "Real past papers adapted for AuditEdge — IFRS and auditing, ACCA-style plus the Egyptian SOE paper. Timed, with the same results and mistakes machinery.",
+      ar: "امتحانات سابقة حقيقية مكيّفة لأوديت إيدج — IFRS والمراجعة بنمط ACCA إضافة إلى ورقة الشركات الحكومية المصرية. بمواعيد محددة وبنفس منظومة النتائج والأخطاء.",
+    },
+    paperSit: { en: "Sit paper", ar: "ادخل الامتحان" },
+    paperFailed: { en: "Could not open this paper — try again.", ar: "تعذر فتح هذا الامتحان — حاول مجددًا." },
+    minutesShort: { en: "min", ar: "دقيقة" },
+    aiCustomLabel: { en: "AI custom exam", ar: "اختبار مخصص بالذكاء" },
+    customTitle: { en: "Build a custom exam with AI", ar: "أنشئ اختبارًا مخصصًا بالذكاء الاصطناعي" },
+    customDesc: {
+      en: "Tell the AI what to examine you on — it writes exam-style MCQs with explanations, then you sit them under the clock.",
+      ar: "أخبر الذكاء الاصطناعي بما تريد أن يختبرك فيه — سيكتب أسئلة اختيار من متعدد بأسلوب الامتحانات مع التوضيحات، ثم تجيب عليها داخل وقت محدد.",
+    },
+    customOpen: { en: "Build exam", ar: "أنشئ الاختبار" },
+    customTopic: { en: "Exam topic", ar: "موضوع الاختبار" },
+    customTopicPh: {
+      en: "e.g. Audit risk model and ISA 315 responses",
+      ar: "مثال: نموذج مخاطر المراجعة واستجابات ISA 315",
+    },
+    customArea: { en: "Section", ar: "القسم" },
+    customDiff: { en: "Difficulty", ar: "الصعوبة" },
+    customCount: { en: "Questions", ar: "عدد الأسئلة" },
+    customLang: { en: "Language", ar: "اللغة" },
+    customLangBi: { en: "Bilingual (EN + AR)", ar: "ثنائي اللغة (إنجليزي + عربي)" },
+    customGenerate: { en: "Generate & start", ar: "توليد وبدء" },
+    customGenerating: { en: "Writing your exam…", ar: "يجري تأليف اختبارك…" },
+    customFailed: { en: "The AI could not build this exam — try again.", ar: "تعذر على الذكاء الاصطناعي بناء هذا الاختبار — حاول مجددًا." },
     area: { en: "Area", ar: "المجال" },
     standard: { en: "Standard", ar: "المعيار" },
     difficulty: { en: "Difficulty", ar: "الصعوبة" },
@@ -1023,6 +1074,14 @@ export const T = {
     enOnly: { en: "English only", ar: "بالإنجليزية فقط" },
     clear: { en: "Clear", ar: "تفريغ" },
     queueAll: { en: "Queue whole course", ar: "جهّز الدورة كاملة" },
+    // v22 — curated Arabic YouTube podcasts
+    youtubeTitle: { en: "From YouTube — بالعربي", ar: "من يوتيوب — بالعربي" },
+    youtubeDesc: {
+      en: "Hand-picked Arabic audit & accounting channels — CPA Talks, Mahmoud Hamouda, ESAA and more. Friendly, clear, easy to follow.",
+      ar: "قنوات عربية مختارة بعناية في المراجعة والمحاسبة — CPA Talks ومحمود حمودة وجمعية المحاسبين وغيرها. ودودة وواضحة وسهلة الفهم.",
+    },
+    youtubeOpen: { en: "Open on YouTube", ar: "افتح على يوتيوب" },
+    views: { en: "views", ar: "مشاهدة" },
   },
   notes: {
     title: { en: "Notes & Highlights", ar: "الملاحظات والتظليلات" },

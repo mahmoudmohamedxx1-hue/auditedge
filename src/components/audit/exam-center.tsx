@@ -3,8 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { tt, dateLocaleOf } from "@/lib/i18n"
+import { PAST_PAPERS, getPastPaper } from "@/lib/past-papers"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -13,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import type {
   BankQuestionClient,
   BankStats,
@@ -24,6 +36,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ClipboardCheck,
+  FileText,
   FileWarning,
   History,
   Flag,
@@ -31,10 +44,12 @@ import {
   ListChecks,
   Loader2,
   RotateCcw,
+  Sparkles,
   Target,
   Timer,
   TrendingUp,
   Trophy,
+  Wand2,
   XCircle,
 } from "lucide-react"
 
@@ -237,6 +252,108 @@ export function ExamCenter() {
     setELoading(null)
     if (!res.ok) return
     const { session } = (await res.json()) as { session: ExamSessionClient }
+    setExam(session)
+    setEIdx(0)
+    setEResult(null)
+    setSecondsLeft(session.durationMin * 60)
+    setPhase("sitting")
+  }
+
+  /* ---------- v22: previous-exam paper sitting ---------- */
+  const [paperLoading, setPaperLoading] = useState<string | null>(null)
+  const startPaper = async (paperId: string) => {
+    setPaperLoading(paperId)
+    const res = await fetch("/api/bank/exam", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paper: paperId }),
+    })
+    setPaperLoading(null)
+    if (!res.ok) {
+      toast.error(tt("exam.paperFailed", lang))
+      return
+    }
+    const { session } = (await res.json()) as { session: ExamSessionClient }
+    setExam(session)
+    setEIdx(0)
+    setEResult(null)
+    setSecondsLeft(session.durationMin * 60)
+    setPhase("sitting")
+  }
+
+  /* ---------- v22: AI custom-exam builder (client-driven chunks) ---------- */
+  const [customOpen, setCustomOpen] = useState(false)
+  const [cTopic, setCTopic] = useState("")
+  const [cArea, setCArea] = useState("auditing")
+  const [cDiff, setCDiff] = useState("2")
+  const [cCount, setCCount] = useState("10")
+  const [cLang, setCLang] = useState("bilingual")
+  const [cLoading, setCLoading] = useState(false)
+  const [cProgress, setCProgress] = useState(0)
+  const [cError, setCError] = useState<string | null>(null)
+
+  const startCustomExam = async () => {
+    if (!cTopic.trim() || cLoading) return
+    setCLoading(true)
+    setCError(null)
+    setCProgress(0)
+    const target = Number(cCount)
+    const collected: unknown[] = []
+    let failures = 0
+    // chunked generation — each request writes a small batch (serverless-safe)
+    while (collected.length < target && failures < 2) {
+      const res = await fetch("/api/ai/exam-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "chunk",
+          topic: cTopic.trim(),
+          area: cArea,
+          difficulty: Number(cDiff),
+          lang: cLang,
+          count: Math.min(3, target - collected.length),
+          avoid: (collected as { stem?: unknown }[]).map((q) => String(q?.stem ?? "")),
+        }),
+      }).catch(() => null)
+      if (!res || !res.ok) {
+        failures++
+        await new Promise((r) => setTimeout(r, 1500))
+        continue
+      }
+      const data = (await res.json()) as { questions?: unknown[] }
+      if (!data.questions?.length) {
+        failures++
+        continue
+      }
+      collected.push(...data.questions)
+      setCProgress(Math.min(collected.length, target))
+    }
+    if (collected.length < 3) {
+      setCLoading(false)
+      setCError(tt("exam.customFailed", lang))
+      return
+    }
+    // finalize — persist + open the sitting
+    const fin = await fetch("/api/ai/exam-generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "finalize",
+        topic: cTopic.trim(),
+        area: cArea,
+        difficulty: Number(cDiff),
+        timed: true,
+        questions: collected,
+      }),
+    }).catch(() => null)
+    setCLoading(false)
+    if (!fin || !fin.ok) {
+      const j = fin ? ((await fin.json().catch(() => ({}))) as { error?: string }) : {}
+      setCError(j.error ?? tt("exam.customFailed", lang))
+      return
+    }
+    const { session } = (await fin.json()) as { session: ExamSessionClient }
+    setCustomOpen(false)
     setExam(session)
     setEIdx(0)
     setEResult(null)
@@ -492,6 +609,63 @@ export function ExamCenter() {
           </section>
         </div>
 
+        {/* v22 — previous exam papers + AI custom exam builder */}
+        <section className="mt-6 rounded-2xl border bg-card p-6 shadow-soft" aria-label={tt("exam.papersTitle", lang)}>
+          <h2 className="flex items-center gap-2 font-serif text-[18px] font-semibold">
+            <FileText className="h-4 w-4 text-primary" /> {tt("exam.papersTitle", lang)}
+          </h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{tt("exam.papersDesc", lang)}</p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {PAST_PAPERS.map((p) => (
+              <div
+                key={p.id}
+                className="flex flex-col rounded-xl border bg-secondary/25 p-4 transition-colors hover:border-primary/30"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
+                    {lang === "ar" ? p.titleAr : p.titleEn}
+                  </h3>
+                  <span className="shrink-0 rounded-full border border-plum/30 bg-plum/10 px-2 py-0.5 text-[10px] font-semibold text-plum-deep">
+                    {p.body}
+                  </span>
+                </div>
+                <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
+                  {lang === "ar" ? p.blurbAr : p.blurbEn}
+                </p>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
+                    <Timer className="h-3 w-3" /> {p.count} Q · {p.durationMin} {tt("exam.minutesShort", lang)}
+                  </span>
+                  <Button size="sm" className="h-8" onClick={() => void startPaper(p.id)} disabled={paperLoading !== null || eLoading !== null}>
+                    {paperLoading === p.id ? <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" /> : <ClipboardCheck className="me-1 h-3.5 w-3.5" />}
+                    {tt("exam.paperSit", lang)}
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {/* AI custom exam builder card */}
+            <div className="flex flex-col rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] p-4">
+              <div className="flex items-start justify-between gap-2">
+                <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
+                  {tt("exam.customTitle", lang)}
+                </h3>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
+                  <Wand2 className="h-3 w-3" /> AI
+                </span>
+              </div>
+              <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
+                {tt("exam.customDesc", lang)}
+              </p>
+              <div className="mt-3 flex justify-end">
+                <Button size="sm" className="h-8" variant="secondary" onClick={() => setCustomOpen(true)}>
+                  <Sparkles className="me-1 h-3.5 w-3.5" /> {tt("exam.customOpen", lang)}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* past sittings (v20.1 — P0-1 completion) */}
         {history.length > 0 && (
           <section className="mt-6 rounded-2xl border bg-card p-6 shadow-soft" aria-label={tt("exam.examHistory", lang)}>
@@ -502,7 +676,16 @@ export function ExamCenter() {
               {history.slice(0, 8).map((h) => (
                 <div key={h.id} className="flex items-center justify-between gap-3 rounded-xl border bg-secondary/25 px-4 py-2.5 text-[13px]">
                   <span className="text-muted-foreground">
-                    {h.mode === "exam90" ? "90 min" : "60 min"} ·{" "}
+                    {h.mode === "ai-custom"
+                      ? tt("exam.aiCustomLabel", lang)
+                      : h.mode.startsWith("paper:")
+                        ? (() => {
+                            const p = getPastPaper(h.mode.slice(6))
+                            return p ? (lang === "ar" ? p.titleAr : p.titleEn) : h.mode
+                          })()
+                        : h.mode === "exam90"
+                          ? "90 min"
+                          : "60 min"} ·{" "}
                     {new Date(h.startedAt).toLocaleDateString(dateLocaleOf(lang))}
                   </span>
                   <span className="flex items-center gap-3">
@@ -528,6 +711,114 @@ export function ExamCenter() {
             </div>
           </section>
         )}
+
+        {/* v22: AI custom-exam builder dialog */}
+        <Dialog open={customOpen} onOpenChange={(v) => (v ? setCustomOpen(true) : (setCustomOpen(false), setCError(null)))}>
+          <DialogContent className="sm:max-w-[480px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 font-serif">
+                <Wand2 className="h-4 w-4 text-primary" /> {tt("exam.customTitle", lang)}
+              </DialogTitle>
+              <DialogDescription>{tt("exam.customDesc", lang)}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="cexam-topic">{tt("exam.customTopic", lang)}</Label>
+                <Input
+                  id="cexam-topic"
+                  dir="auto"
+                  value={cTopic}
+                  onChange={(e) => setCTopic(e.target.value)}
+                  placeholder={tt("exam.customTopicPh", lang)}
+                  maxLength={300}
+                />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {["ISA 315 risk assessment", "IFRS 16 leases", "Going concern — ISA 570", "IFRS 15 revenue", "Audit evidence — ISA 500"].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setCTopic(s)}
+                      className="rounded-full border bg-secondary/50 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>{tt("exam.customArea", lang)}</Label>
+                  <Select value={cArea} onValueChange={setCArea}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auditing">{tt("exam.areaAuditing", lang)}</SelectItem>
+                      <SelectItem value="accounting">{tt("exam.areaAccounting", lang)}</SelectItem>
+                      <SelectItem value="egypt">{tt("exam.areaEgypt", lang)}</SelectItem>
+                      <SelectItem value="ethics">{tt("exam.areaEthics", lang)}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{tt("exam.customDiff", lang)}</Label>
+                  <Select value={cDiff} onValueChange={setCDiff}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">{tt("exam.easy", lang)}</SelectItem>
+                      <SelectItem value="2">{tt("exam.medium", lang)}</SelectItem>
+                      <SelectItem value="3">{tt("exam.hard", lang)}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>{tt("exam.customCount", lang)}</Label>
+                  <Select value={cCount} onValueChange={setCCount}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="15">15</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{tt("exam.customLang", lang)}</Label>
+                  <Select value={cLang} onValueChange={setCLang}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bilingual">{tt("exam.customLangBi", lang)}</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="ar">العربية</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {cError && (
+                <p className="rounded-lg border border-gold/35 bg-gold/[0.08] px-3 py-2 text-[12.5px] text-gold-deep" dir="auto">
+                  {cError}
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => void startCustomExam()} disabled={!cTopic.trim() || cLoading} className="w-full sm:w-auto">
+                {cLoading ? <Loader2 className="me-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="me-1.5 h-4 w-4" />}
+                {cLoading
+                  ? `${tt("exam.customGenerating", lang)} ${cProgress}/${Number(cCount)}`
+                  : tt("exam.customGenerate", lang)}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     )
   }

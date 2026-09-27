@@ -34,6 +34,8 @@ export const AI_POLICIES = {
   tts: { key: "ai-tts", limit: 60, windowMs: 120_000 },
   asr: { key: "ai-asr", limit: 30, windowMs: 120_000 },
   draft: { key: "ai-draft", limit: 8, windowMs: 120_000 },
+  /** v22: AI custom-exam generation (chunked: ~2-7 calls per exam build) */
+  examGen: { key: "ai-examgen", limit: 8, windowMs: 120_000 },
 } as const satisfies Record<string, RateLimitPolicy>
 
 export function clientIpOf(req: Request): string {
