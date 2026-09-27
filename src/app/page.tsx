@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import { useAppStore } from "@/store/useAppStore"
 import { Sidebar, SidebarContent } from "@/components/audit/sidebar"
 import { Dashboard } from "@/components/audit/dashboard"
@@ -9,20 +10,10 @@ import { CourseDetail } from "@/components/audit/course-detail"
 import { LessonPlayer } from "@/components/audit/lesson-player"
 import { QuizPlayer } from "@/components/audit/quiz-player"
 import { Library } from "@/components/audit/library"
-import { AuditProgram } from "@/components/audit/program"
-import { SectorLibrary } from "@/components/audit/sectors"
 import { Achievements } from "@/components/audit/achievements"
 import { CertificateView } from "@/components/audit/certificate-view"
-import { Studio } from "@/components/audit/studio"
-import { CourseBuilder } from "@/components/audit/course-builder"
-import { Discover } from "@/components/audit/discover"
 import { AiTutor } from "@/components/audit/ai-tutor"
 import { AiAssistant } from "@/components/audit/ai-assistant"
-import { ExamCenter } from "@/components/audit/exam-center"
-import { ReviewSession } from "@/components/audit/review"
-import { Simulation } from "@/components/audit/simulation"
-import { Podcast } from "@/components/audit/podcast"
-import { Analytics } from "@/components/audit/analytics"
 import { CommandPalette } from "@/components/audit/command-palette"
 import { Wordmark } from "@/components/audit/shared"
 import { LangToggle } from "@/components/audit/lang-toggle"
@@ -31,9 +22,41 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Menu } from "lucide-react"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion, MotionConfig } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { tt } from "@/lib/i18n"
+
+/* v21 — code-split the heavy, rarely-first views (program ~1.4k lines,
+ * studio, exam, simulation, sectors, podcast, discover, analytics, review)
+ * so the first paint ships the shell + home + courses only. Each lazy view
+ * gets a content-shaped skeleton instead of a blank flash. */
+const ViewSkeleton = () => (
+  <div className="mx-auto max-w-5xl space-y-4 px-6 py-10">
+    <div className="flex items-center gap-3">
+      <Skeleton className="h-11 w-11 rounded-xl" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-5 w-52" />
+        <Skeleton className="h-3.5 w-72" />
+      </div>
+    </div>
+    <div className="grid gap-4 md:grid-cols-2">
+      <Skeleton className="h-36 rounded-2xl" />
+      <Skeleton className="h-36 rounded-2xl" />
+      <Skeleton className="h-36 rounded-2xl" />
+      <Skeleton className="h-36 rounded-2xl" />
+    </div>
+  </div>
+)
+const AuditProgram = dynamic(() => import("@/components/audit/program").then((m) => ({ default: m.AuditProgram })), { loading: ViewSkeleton })
+const SectorLibrary = dynamic(() => import("@/components/audit/sectors").then((m) => ({ default: m.SectorLibrary })), { loading: ViewSkeleton })
+const Studio = dynamic(() => import("@/components/audit/studio").then((m) => ({ default: m.Studio })), { loading: ViewSkeleton })
+const CourseBuilder = dynamic(() => import("@/components/audit/course-builder").then((m) => ({ default: m.CourseBuilder })), { loading: ViewSkeleton })
+const Discover = dynamic(() => import("@/components/audit/discover").then((m) => ({ default: m.Discover })), { loading: ViewSkeleton })
+const ExamCenter = dynamic(() => import("@/components/audit/exam-center").then((m) => ({ default: m.ExamCenter })), { loading: ViewSkeleton })
+const ReviewSession = dynamic(() => import("@/components/audit/review").then((m) => ({ default: m.ReviewSession })), { loading: ViewSkeleton })
+const Simulation = dynamic(() => import("@/components/audit/simulation").then((m) => ({ default: m.Simulation })), { loading: ViewSkeleton })
+const Podcast = dynamic(() => import("@/components/audit/podcast").then((m) => ({ default: m.Podcast })), { loading: ViewSkeleton })
+const Analytics = dynamic(() => import("@/components/audit/analytics").then((m) => ({ default: m.Analytics })), { loading: ViewSkeleton })
 
 /** Shown only if the workspace data could not be loaded (e.g. server down). */
 function RetryScreen() {
@@ -133,6 +156,7 @@ export default function Home() {
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
   const hydrateSidebar = useAppStore((s) => s.hydrateSidebar)
   const hydrateTutorRail = useAppStore((s) => s.hydrateTutorRail)
+  const hydrateBookmarks = useAppStore((s) => s.hydrateBookmarks)
   const navigate = useAppStore((s) => s.navigate)
   const [menuOpen, setMenuOpen] = useState(false)
   const rtl = lang === "ar"
@@ -144,7 +168,8 @@ export default function Home() {
     hydrateTtsPrefs()
     hydrateSidebar()
     hydrateTutorRail()
-  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateTtsPrefs, hydrateSidebar, hydrateTutorRail])
+    hydrateBookmarks()
+  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateTtsPrefs, hydrateSidebar, hydrateTutorRail, hydrateBookmarks])
 
   useEffect(() => {
     void checkAuth()
@@ -176,6 +201,8 @@ export default function Home() {
   const isAiView = view === "ai"
 
   return (
+    // v21: honor the OS "reduce motion" preference across every animation
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen bg-background">
       <Sidebar />
       <CommandPalette />
@@ -266,5 +293,6 @@ export default function Home() {
       {/* floating AI tutor popup (everywhere except the full AI tab) */}
       <AiAssistant />
     </div>
+    </MotionConfig>
   )
 }

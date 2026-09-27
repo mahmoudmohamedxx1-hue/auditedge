@@ -1,0 +1,14 @@
+tongtong  en  OK    0.0s  224KB
+tongtong  ar  OK    0.0s  136KB
+chuichui  en  OK    0.0s  190KB
+chuichui  ar  OK    0.0s  174KB
+xiaochen  en  OK    0.0s  241KB
+xiaochen  ar  OK    0.0s  268KB
+jam       en  FAIL      ?  0KB  ERR: API request failed with status 429: {"error":"Too many requests, please try again later"}
+jam       ar  FAIL      ?  0KB  ERR: API request failed with status 429: {"error":"Too many requests, please try again later"}
+kazi      en  FAIL      ?  0KB  ERR: API request failed with status 429: {"error":"Too many requests, please try again later"}
+kazi      ar  FAIL      ?  0KB  ERR: API request failed with status 429: {"error":"Too many requests, please try again later"}
+douji     en  FAIL      ?  0KB  ERR: API request failed with status 429: {"error":"Too many requests, please try again later"}
+douji     ar  FAIL      ?  0KB  ERR: API request failed with status 429: {"error":"Too many requests, please try again later"}
+luodo     en  FAIL      ?  0KB  ERR: API request failed with status 429: {"error":"Too many requests, please try again later"}
+luodo     ar  FAIL      ?  0KB  ERR: API request failed with status 429: {"error":"Too many requests, please try again later"}

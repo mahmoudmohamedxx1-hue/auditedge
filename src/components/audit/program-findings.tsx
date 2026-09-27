@@ -8,6 +8,7 @@
 import { useMemo, useState } from "react"
 import { PROGRAM_SECTIONS } from "@/lib/program"
 import {
+  exportFindingsCsv as exportFindingsCsvUtil,
   sadVerdict,
   uncorrectedTotal,
   type Engagement,
@@ -16,7 +17,7 @@ import {
 } from "@/lib/engagement"
 import { cn } from "@/lib/utils"
 import { fmtEgp, fmtNum, NumInput, SectionSelect, TextInput, type Lang } from "./program-shared"
-import { AlertTriangle, Calculator, CheckCircle2, ClipboardList, MinusCircle, Plus, Trash2 } from "lucide-react"
+import { AlertTriangle, Calculator, CheckCircle2, ClipboardList, Download, MinusCircle, Plus, Trash2 } from "lucide-react"
 
 const T = {
   title: { en: "Findings & Summary of Audit Differences", ar: "الملاحظات وملخص فروق المراجعة" },
@@ -60,6 +61,14 @@ const T = {
     en: "Even when trivial quantitatively, consider qualitative factors — fraud, covenants, key metrics, regulatory limits (ISA 450.12).",
     ar: "حتى لو كانت تافهة كمّيًا، راعِ الأسباب النوعية — الاحتيال والتعهدات والمؤشرات الرئيسية والحدود التنظيمية (ISA 450.12).",
   },
+  // v21: register upgrades
+  exportCsv: { en: "Export SAD (CSV)", ar: "تصدير الملخص (CSV)" },
+  wpRef: { en: "WP ref", ar: "مرجع الورقة" },
+  qualFlag: { en: "Qualitative", ar: "نوعية" },
+  adjDr: { en: "Adj — Dr account", ar: "تسوية — حساب مدين" },
+  adjCr: { en: "Adj — Cr account", ar: "تسوية — حساب دائن" },
+  qualChip: { en: "qualitative", ar: "نوعية" },
+  proposedAdj: { en: "proposed adj", ar: "تسوية مقترحة" },
 } as const
 
 const VERDICT_STYLE: Record<string, string> = {
@@ -89,8 +98,13 @@ export function FindingsSad({
 }: {
   lang: Lang
   eng: Engagement
-  onAdd: (sectionId: string, description: string, amount?: number) => void
-  onUpdate: (id: string, patch: Partial<{ status: FindingStatus }>) => void
+  onAdd: (
+    sectionId: string,
+    description: string,
+    amount?: number,
+    extras?: { wp?: string; qualitative?: boolean; adj?: { dr?: string; cr?: string; amount?: number } }
+  ) => void
+  onUpdate: (id: string, patch: Partial<Pick<Finding, "status" | "wp" | "qualitative" | "adj">>) => void
   onDelete: (id: string) => void
   onSetMateriality: (pm?: number, ctt?: number) => void
   onGoMateriality: () => void
@@ -102,6 +116,12 @@ export function FindingsSad({
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
   const [confirmDel, setConfirmDel] = useState<string | null>(null)
+  // v21: register upgrades — WP ref, qualitative flag, proposed adjustment
+  const [wp, setWp] = useState("")
+  const [qualitative, setQualitative] = useState(false)
+  const [adjDr, setAdjDr] = useState("")
+  const [adjCr, setAdjCr] = useState("")
+  const [adjAmount, setAdjAmount] = useState("")
 
   const verdict = useMemo(() => sadVerdict(eng), [eng])
   const totals = useMemo(() => uncorrectedTotal(eng), [eng])
@@ -117,9 +137,21 @@ export function FindingsSad({
   const add = () => {
     if (!description.trim()) return
     const n = parseFloat(amount)
-    onAdd(sectionId, description, isFinite(n) ? n : undefined)
+    const adjAmountN = parseFloat(adjAmount)
+    onAdd(sectionId, description, isFinite(n) ? n : undefined, {
+      ...(wp.trim() ? { wp: wp.trim() } : {}),
+      ...(qualitative ? { qualitative: true } : {}),
+      ...(adjDr.trim() || adjCr.trim() || isFinite(adjAmountN)
+        ? { adj: { dr: adjDr.trim() || undefined, cr: adjCr.trim() || undefined, amount: isFinite(adjAmountN) ? adjAmountN : undefined } }
+        : {}),
+    })
     setDescription("")
     setAmount("")
+    setWp("")
+    setQualitative(false)
+    setAdjDr("")
+    setAdjCr("")
+    setAdjAmount("")
   }
 
   const sectionCode = (id: string) => PROGRAM_SECTIONS.find((s) => s.id === id)?.code ?? "—"
@@ -139,6 +171,15 @@ export function FindingsSad({
         </div>
       </div>
       <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-muted-foreground">{t("intro")}</p>
+
+      {eng.findings.length > 0 && (
+        <button
+          onClick={() => exportFindingsCsvUtil(eng, lang)}
+          className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[12px] font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary focus-ring"
+        >
+          <Download className="h-3.5 w-3.5" /> {t("exportCsv")}
+        </button>
+      )}
 
       {/* materiality inputs + verdict */}
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -227,6 +268,22 @@ export function FindingsSad({
             <Plus className="h-3.5 w-3.5" /> {t("add")}
           </button>
         </div>
+        {/* v21: WP ref · qualitative flag · proposed adjustment entry */}
+        <div className="mt-2.5 grid gap-2.5 md:grid-cols-[130px_auto_minmax(0,1fr)_minmax(0,1fr)_120px]">
+          <TextInput value={wp} onChange={setWp} placeholder={t("wpRef")} ariaLabel={t("wpRef")} />
+          <label className="flex cursor-pointer items-center gap-1.5 px-1 text-[12px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={qualitative}
+              onChange={(e) => setQualitative(e.target.checked)}
+              className="h-3.5 w-3.5 accent-primary"
+            />
+            {t("qualFlag")}
+          </label>
+          <TextInput value={adjDr} onChange={setAdjDr} placeholder={t("adjDr")} ariaLabel={t("adjDr")} dirAuto />
+          <TextInput value={adjCr} onChange={setAdjCr} placeholder={t("adjCr")} ariaLabel={t("adjCr")} dirAuto />
+          <NumInput value={adjAmount} onChange={setAdjAmount} placeholder={t("amount")} ariaLabel={`${t("proposedAdj")} — ${t("amount")}`} />
+        </div>
       </div>
 
       {/* findings list */}
@@ -280,7 +337,7 @@ function FindingRow({
   confirmDel: boolean
   onAskConfirm: () => void
   onCancelConfirm: () => void
-  onUpdate: (id: string, patch: Partial<{ status: FindingStatus }>) => void
+  onUpdate: (id: string, patch: Partial<Pick<Finding, "status" | "wp" | "qualitative" | "adj">>) => void
   onDelete: () => void
 }) {
   const t = (k: keyof typeof T) => T[k][lang]
@@ -316,8 +373,20 @@ function FindingRow({
             <p dir="auto" className={cn("text-[13px] leading-relaxed", f.status === "corrected" && "text-muted-foreground line-through decoration-sage/50")}>
               {f.description}
             </p>
-            <p className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-muted-foreground">
+            <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
               {typeof f.amount === "number" && <span className="font-medium tabular-nums text-foreground/80">{fmtEgp(f.amount, lang)}</span>}
+              {f.wp && (
+                <span dir="ltr" className="rounded bg-secondary px-1.5 font-mono text-[10px]">{f.wp}</span>
+              )}
+              {f.qualitative && (
+                <span className="rounded bg-gold/15 px-1.5 text-[10px] font-medium text-gold-deep">{t("qualChip")}</span>
+              )}
+              {f.adj && (f.adj.dr || f.adj.cr || typeof f.adj.amount === "number") && (
+                <span dir="auto" className="text-foreground/70">
+                  {t("proposedAdj")}: {f.adj.dr || "—"} / {f.adj.cr || "—"}
+                  {typeof f.adj.amount === "number" ? ` · ${fmtEgp(f.adj.amount, lang)}` : ""}
+                </span>
+              )}
               <span suppressHydrationWarning>{new Date(f.createdAt).toLocaleDateString(lang === "ar" ? "ar-EG-u-nu-latn" : "en-GB", { day: "numeric", month: "short" })}</span>
             </p>
           </div>

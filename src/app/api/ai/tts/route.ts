@@ -1,3 +1,4 @@
+import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { NextRequest, NextResponse } from "next/server"
 import { getZai } from "@/lib/ai"
 import { getSessionUser } from "@/lib/auth"
@@ -26,14 +27,20 @@ export const runtime = "nodejs"
  *  Both engines are flaky under burst (transient 5xx / 429), so we retry
  *  with backoff before giving up. */
 export async function POST(req: NextRequest) {
+  // v21: per-IP sliding-window guard — protects the AI quota if the URL leaks
+  const limited = aiRateLimit(req, AI_POLICIES.tts)
+  if (limited) return limited
+
   try {
     const me = await getSessionUser()
     if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const { text, speed, voice } = (await req.json()) as {
+    const { text, speed, voice, voiceAr, voiceEn } = (await req.json()) as {
       text?: string
       speed?: number
       voice?: string
+      voiceAr?: string
+      voiceEn?: string
     }
     if (!text || !text.trim())
       return NextResponse.json({ error: "Text is required" }, { status: 400 })
@@ -46,7 +53,12 @@ export async function POST(req: NextRequest) {
     const spd = typeof speed === "number" && speed >= 0.5 && speed <= 2 ? speed : 1
     // unknown/absent voice falls back to "auto" (neural, language-matched)
     const voiceChoice: TtsVoiceId = isTtsVoiceId(voice) ? voice : "auto"
-    const resolved = resolveTtsVoice(voiceChoice, text)
+    // v21: per-language voice memory — under "auto", Arabic chunks use the
+    // learner's remembered Arabic voice and English chunks their English one
+    const resolved = resolveTtsVoice(voiceChoice, text, {
+      ar: isTtsVoiceId(voiceAr) ? voiceAr : null,
+      en: isTtsVoiceId(voiceEn) ? voiceEn : null,
+    })
 
     // ---- 1) Edge neural path (with silent Z.ai fallback) ----
     if (resolved.provider === "edge") {

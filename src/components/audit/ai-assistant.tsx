@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { ArrowUp, FolderOpen, Globe, ImagePlus, Maximize2, Sparkles, Square, X } from "lucide-react"
+import { ArrowUp, Check, Copy, FolderOpen, Globe, GraduationCap, ImagePlus, Languages, ListChecks, Loader2, Maximize2, RefreshCw, Shapes, Sparkles, Square, X } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { tt } from "@/lib/i18n"
 
@@ -40,8 +40,26 @@ export function AiAssistant() {
   // automatic read-aloud honors the same persisted pref as the full tutor
   const aiAutoSpeak = useAppStore((s) => s.aiAutoSpeak)
   const [speakSignal, setSpeakSignal] = useState<{ nonce: number; text: string } | null>(null)
+  // v21: popup parity with the full tutor — copy / translate / retry
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [translations, setTranslations] = useState<Record<string, string>>({})
+  const [translatingId, setTranslatingId] = useState<string | null>(null)
 
   const data = useAppStore((s) => s.data)
+
+  // v21: Alt+T opens/closes the tutor popup — the tooltip promised it since v11
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === "t" || e.key === "T") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault()
+        const s = useAppStore.getState()
+        if (s.aiPopupOpen) s.closeAiPopup()
+        else s.openAiPopup()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -113,6 +131,57 @@ export function AiAssistant() {
     if (chat.conversationId) setAiConversationId(chat.conversationId)
     closeAiPopup()
     navigate("ai")
+  }
+
+  const copyMessage = async (m: (typeof chat.messages)[number]) => {
+    try {
+      await navigator.clipboard.writeText(m.content)
+      setCopiedId(m.id)
+      setTimeout(() => setCopiedId(null), 1600)
+    } catch {
+      /* clipboard blocked — the full tutor shows the error toast */
+    }
+  }
+
+  /** v21: one-tap EN↔AR translation (same route as the full tutor). */
+  const translateMessage = async (m: (typeof chat.messages)[number]) => {
+    if (translatingId) return
+    if (translations[m.id]) {
+      setTranslations((prev) => {
+        const next = { ...prev }
+        delete next[m.id]
+        return next
+      })
+      return
+    }
+    setTranslatingId(m.id)
+    try {
+      const res = await fetch("/api/ai/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: m.content, target: lang === "ar" ? "en" : "ar" }),
+      })
+      const j = (await res.json().catch(() => ({}))) as { translation?: string }
+      if (j.translation) setTranslations((prev) => ({ ...prev, [m.id]: j.translation! }))
+    } catch {
+      /* silent — retry is one tap away */
+    } finally {
+      setTranslatingId(null)
+    }
+  }
+
+  /** v21: retry after an error — re-send the last user question. */
+  const retryLast = async () => {
+    const lastUser = [...chat.messages].reverse().find((m) => m.role === "user")
+    if (!lastUser || chat.busy) return
+    // drop the failed trailing exchange locally, then resend
+    chat.setMessages((prev) => {
+      let cut = prev.length
+      if (cut > 0 && prev[cut - 1].role === "assistant" && !prev[cut - 1].content) cut--
+      return prev.slice(0, cut)
+    })
+    const res = await chat.send(lastUser.content, aiContext, { model: aiModel, forceSearch })
+    if (res.ok && res.text?.trim() && aiAutoSpeak) setSpeakSignal({ nonce: Date.now(), text: res.text })
   }
 
   return (
@@ -250,8 +319,69 @@ export function AiAssistant() {
                         {m.content ? (
                           <div>
                             <Markdown content={m.content} className="text-[13px]" />
-                            <div className="mt-1">
-                              <SpeakButton text={m.content} className="p-0.5" />
+                            {/* v21: toggleable translation */}
+                            {translations[m.id] && (
+                              <div className="mt-2 rounded-lg border-s-2 border-gold/50 bg-gold/[0.05] ps-3">
+                                <div className="flex items-center gap-1 pt-1.5 text-[9.5px] font-semibold uppercase tracking-[0.1em] text-gold-deep">
+                                  <Languages className="h-2.5 w-2.5" /> {tt("ai.translate", lang)}
+                                </div>
+                                <div className="pb-1">
+                                  <Markdown content={translations[m.id]} className="text-[12.5px]" />
+                                </div>
+                              </div>
+                            )}
+                            {/* v21: parity with the full tutor — copy + translate + follow-ups */}
+                            <div className="mt-1 flex flex-wrap items-center gap-1">
+                              <button
+                                onClick={() => void copyMessage(m)}
+                                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground focus-ring"
+                              >
+                                {copiedId === m.id ? <Check className="h-3 w-3 text-sage" /> : <Copy className="h-3 w-3" />}
+                                {copiedId === m.id ? tt("ai.copied", lang) : tt("ai.copy", lang)}
+                              </button>
+                              <button
+                                onClick={() => void translateMessage(m)}
+                                disabled={translatingId !== null}
+                                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground focus-ring"
+                              >
+                                {translatingId === m.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Languages className="h-3 w-3" />
+                                )}
+                                {tt("ai.translate", lang)}
+                              </button>
+                              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] text-muted-foreground">
+                                <SpeakButton text={m.content} className="p-0.5" /> {tt("ai.listen", lang)}
+                              </span>
+                              {!chat.busy && i === chat.messages.length - 1 && i > 0 && (
+                                <>
+                                  <button
+                                    onClick={() => void submit(tt("ai.fuSimplerPrompt", lang))}
+                                    className="inline-flex items-center gap-1 rounded-full border bg-card/60 px-2 py-0.5 text-[10.5px] text-foreground/75 transition-colors hover:border-primary/35 hover:text-foreground focus-ring"
+                                  >
+                                    <Shapes className="h-2.5 w-2.5 text-primary/70" /> {tt("ai.fuSimpler", lang)}
+                                  </button>
+                                  <button
+                                    onClick={() => void submit(tt("ai.fuQuizPrompt", lang))}
+                                    className="inline-flex items-center gap-1 rounded-full border bg-card/60 px-2 py-0.5 text-[10.5px] text-foreground/75 transition-colors hover:border-primary/35 hover:text-foreground focus-ring"
+                                  >
+                                    <GraduationCap className="h-2.5 w-2.5 text-primary/70" /> {tt("ai.fuQuiz", lang)}
+                                  </button>
+                                  <button
+                                    onClick={() => void submit(tt("ai.fuPointsPrompt", lang))}
+                                    className="inline-flex items-center gap-1 rounded-full border bg-card/60 px-2 py-0.5 text-[10.5px] text-foreground/75 transition-colors hover:border-primary/35 hover:text-foreground focus-ring"
+                                  >
+                                    <ListChecks className="h-2.5 w-2.5 text-primary/70" /> {tt("ai.fuPoints", lang)}
+                                  </button>
+                                  <button
+                                    onClick={() => void retryLast()}
+                                    className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.05] px-2 py-0.5 text-[10.5px] text-primary transition-colors hover:border-primary/45 focus-ring"
+                                  >
+                                    <RefreshCw className="h-2.5 w-2.5" /> {tt("ai.regenerate", lang)}
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         ) : (
@@ -264,9 +394,15 @@ export function AiAssistant() {
                     )
                   )}
                   {chat.error && (
-                    <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-[12px] text-destructive">
+                    <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-[12px] text-destructive">
                       {chat.error}
-                    </p>
+                      <button
+                        onClick={() => void retryLast()}
+                        className="ms-2 inline-flex items-center gap-1 rounded-md border border-destructive/30 px-1.5 py-0.5 text-[10.5px] font-medium text-destructive transition-colors hover:bg-destructive/10 focus-ring"
+                      >
+                        <RefreshCw className="h-2.5 w-2.5" /> {tt("ai.retry", lang)}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}

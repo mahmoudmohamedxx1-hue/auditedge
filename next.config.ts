@@ -20,6 +20,18 @@ const nextConfig: NextConfig = {
           { key: "Service-Worker-Allowed", value: "/" },
         ],
       },
+      {
+        // v21: baseline hardening for the deployed, key-carrying app.
+        // frame-ancestors 'self' keeps the app embeddable in its own iframe
+        // tests without opening it to arbitrary clickjack hosts.
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Permissions-Policy", value: "camera=(), geolocation=()" },
+        ],
+      },
     ];
   },
 };

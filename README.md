@@ -14,7 +14,7 @@
 
 ## About
 
-AuditEdge Academy is a personal learning workspace built for a Senior Associate in external audit (Egypt) — designed to feel like a professional tool, not a course catalog. It carries **30 courses and 933 lessons** across the full ISA framework, IFRS core standards and the Egyptian regulatory environment (FRA decrees, Egyptian Standards on Auditing, Companies Law 159/1981), plus **146 library materials** including official standard texts.
+AuditEdge Academy is a personal learning workspace built for a Senior Associate in external audit (Egypt) — designed to feel like a professional tool, not a course catalog. It carries **41 courses and 995 lessons** across the full ISA framework, IFRS core standards and the Egyptian regulatory environment (FRA decrees, Egyptian Standards on Auditing, Companies Law 159/1981), plus **146 library materials** including official standard texts.
 
 Around the curriculum sits an AI suite: a tutor that grounds its answers in your own library (RAG with cited excerpts), an industry risk analyst that streams sector-specific risk profiles, a Key Audit Matters drafter, and a trial-balance / journal-entry analyzer. Read-aloud is powered by 23 voices across two engines — including Egyptian and Gulf Arabic neural voices — with an Auto mode that matches the language of whatever is being read.
 
@@ -35,7 +35,7 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 ## Features
 
 ### Curriculum and library
-- **30 courses / 933 lessons** — ISA 315, 330, 240, 570, EVD 500, IFRS core, the Egyptian FRA framework, audit analytics, plus curated Arabic IFRS & auditing playlists
+- **41 courses / 995 lessons + the IFRS 18 course** — ISA 315, 330, 240, 570, EVD 500, IFRS core, the Egyptian FRA framework, audit analytics, plus curated Arabic IFRS & auditing playlists
 - **146 library materials** with official standard texts — searchable, excerpt-served
 - **Discover & Import** — search Coursera, MIT OCW, edX, OpenStax and YouTube, import as courses
 - Quizzes with certificates, XP, streaks and achievements with live earn-progress

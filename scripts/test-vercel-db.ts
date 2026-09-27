@@ -38,8 +38,8 @@ const courses = await db.course.count()
 const lessons = await db.lesson.count()
 const materials = await db.material.count()
 const users = await db.user.count()
-check("courses served", courses === 40, `${courses} courses`)
-check("lessons served", lessons === 985, `${lessons} lessons`)
+check("courses served", courses === 41, `${courses} courses`) // v21: +IFRS 18
+check("lessons served", lessons === 990, `${lessons} lessons`) // v21: +5 IFRS 18
 check("materials served", materials === 146, `${materials} materials`)
 check("single workspace user", users === 1, `${users} user`)
 

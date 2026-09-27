@@ -31,7 +31,9 @@ import {
   ListChecks,
   Loader2,
   RotateCcw,
+  Target,
   Timer,
+  TrendingUp,
   Trophy,
   XCircle,
 } from "lucide-react"
@@ -102,6 +104,34 @@ export function ExamCenter() {
   const [fTag, setFTag] = useState("all")
   const [fDiff, setFDiff] = useState("all")
 
+  // v21: practice flavour — free practice vs. mistake-book drill
+  const [pMode, setPMode] = useState<"practice" | "misses">("practice")
+  const [missCount, setMissCount] = useState<number | null>(null)
+
+  // v21: one-shot weak-topic prefill from the analytics heatmap
+  const prefill = useAppStore((s) => s.examTagPrefill)
+  const clearPrefill = useAppStore((s) => s.clearExamTagPrefill)
+  useEffect(() => {
+    if (prefill) {
+      setFTag(prefill)
+      clearPrefill()
+    }
+  }, [prefill, clearPrefill])
+
+  // v21: outstanding misses count (for the hub card)
+  useEffect(() => {
+    let alive = true
+    void (async () => {
+      const res = await fetch("/api/bank/misses")
+      if (!res.ok || !alive) return
+      const data = (await res.json()) as { count: number }
+      if (alive) setMissCount(data.count)
+    })()
+    return () => {
+      alive = false
+    }
+  }, [phase])
+
   const startPractice = async () => {
     setPLoading(true)
     const res = await fetch("/api/bank", {
@@ -117,6 +147,26 @@ export function ExamCenter() {
     setPLoading(false)
     if (!res.ok) return
     const { questions } = (await res.json()) as { questions: BankQuestionClient[] }
+    setPMode("practice")
+    setPractice(questions)
+    setPIdx(0)
+    setPPicked(null)
+    setPVerdict(null)
+    setPScore({ correct: 0, total: 0 })
+    setPracticeDone(false)
+    setPhase("practice")
+  }
+
+  /** v21 mistake book: drill exactly the questions whose latest attempt was
+   *  wrong. A correct answer here redeems the question in the book. */
+  const startMisses = async () => {
+    setPLoading(true)
+    const res = await fetch("/api/bank/misses")
+    setPLoading(false)
+    if (!res.ok) return
+    const { questions } = (await res.json()) as { questions: BankQuestionClient[] }
+    if (!questions.length) return
+    setPMode("misses")
     setPractice(questions)
     setPIdx(0)
     setPPicked(null)
@@ -165,12 +215,17 @@ export function ExamCenter() {
     correct: number
     total: number
     xpEarned: number
+    timedOut: boolean
+    avgSecs: number | null
     key: Record<string, number>
     explanations: Record<string, string>
     explanationsAr: Record<string, string>
   } | null>(null)
   const submitLock = useRef(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // v21 pacing: seconds spent on each question (first answer only)
+  const timingsRef = useRef<Record<string, number>>({})
+  const [qShownAt, setQShownAt] = useState(0)
 
   const startExam = async (mode: "exam60" | "exam90") => {
     setELoading(mode)
@@ -216,6 +271,10 @@ export function ExamCenter() {
   const examAnswer = async (picked: number) => {
     if (!exam) return
     const q = exam.questions[eIdx]
+    // v21 pacing: record the first-answer dwell time for this question
+    if (!(q.id in exam.answered) && qShownAt) {
+      timingsRef.current[q.id] = Math.max(1, Math.round((Date.now() - qShownAt) / 1000))
+    }
     setExam({ ...exam, answered: { ...exam.answered, [q.id]: picked } })
     await fetch(`/api/bank/exam/${exam.id}`, {
       method: "PATCH",
@@ -238,6 +297,11 @@ export function ExamCenter() {
     })
   }
 
+  // v21: reset the per-question clock whenever the sitting question changes
+  useEffect(() => {
+    if (phase === "sitting") setQShownAt(Date.now())
+  }, [eIdx, phase])
+
   const submitExam = useCallback(
     async (auto = false) => {
       if (!exam || submitLock.current) return
@@ -250,7 +314,10 @@ export function ExamCenter() {
       })
       submitLock.current = false
       if (!res.ok) return
-      const result = (await res.json()) as { score: number; correct: number; total: number; xpEarned: number }
+      const result = (await res.json()) as { score: number; correct: number; total: number; xpEarned: number; timedOut: boolean }
+      // v21 pacing: average seconds per answered question
+      const timings = Object.values(timingsRef.current)
+      const avgSecs = timings.length ? Math.round(timings.reduce((a, b) => a + b, 0) / timings.length) : null
       // reload with the answer key for the results screen
       const full = await fetch(`/api/bank/exam/${exam.id}`)
       if (full.ok) {
@@ -267,6 +334,8 @@ export function ExamCenter() {
           correct: result.correct,
           total: result.total,
           xpEarned: result.xpEarned,
+          timedOut: result.timedOut ?? false,
+          avgSecs,
           key: data.session.key ?? {},
           explanations: data.session.explanations ?? {},
           explanationsAr: data.session.explanationsAr ?? {},
@@ -378,6 +447,17 @@ export function ExamCenter() {
                 {pLoading ? <Loader2 className="me-1.5 h-4 w-4 animate-spin" /> : <ListChecks className="me-1.5 h-4 w-4" />}
                 {tt("exam.startPractice", lang)}
               </Button>
+              {missCount !== null && missCount > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={() => void startMisses()}
+                  disabled={pLoading}
+                  className="h-10 w-full"
+                >
+                  <Target className="me-1.5 h-4 w-4" />
+                  {tt("exam.drillMisses", lang)} ({missCount})
+                </Button>
+              )}
             </div>
           </section>
 
@@ -426,6 +506,11 @@ export function ExamCenter() {
                     {new Date(h.startedAt).toLocaleDateString(dateLocaleOf(lang))}
                   </span>
                   <span className="flex items-center gap-3">
+                    {h.timedOut && (
+                      <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        {tt("exam.timedOutBadge", lang)}
+                      </span>
+                    )}
                     <span className="text-muted-foreground">
                       {h.correct ?? 0}/{h.total} {tt("exam.correctAns", lang)}
                     </span>
@@ -459,7 +544,9 @@ export function ExamCenter() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Trophy className="h-7 w-7" />
             </div>
-            <h1 className="mt-5 font-serif text-[24px] font-semibold">{tt("exam.practiceDone", lang)}</h1>
+            <h1 className="mt-5 font-serif text-[24px] font-semibold">
+            {pMode === "misses" ? tt("exam.missesDone", lang) : tt("exam.practiceDone", lang)}
+          </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {tt("exam.yourAccuracy", lang)}:{" "}
               <b className="text-foreground">
@@ -588,6 +675,9 @@ export function ExamCenter() {
     const picked = exam.answered[q.id]
     const isFlagged = exam.flagged.includes(q.id)
     const answeredCount = Object.keys(exam.answered).length
+    const showAr = lang === "ar" && q.stemAr && q.optionsAr
+    const stem = showAr ? q.stemAr! : q.stem
+    const options = showAr ? q.optionsAr! : q.options
     return (
       <div className="mx-auto max-w-3xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -644,10 +734,10 @@ export function ExamCenter() {
             </button>
           </div>
           <h1 dir="auto" className="mt-3 font-serif text-[19px] font-semibold leading-snug tracking-tight">
-            {q.stem}
+            {stem}
           </h1>
           <div className="mt-6 space-y-2.5">
-            {(q.options).map((opt, i) => {
+            {options.map((opt, i) => {
               const isPicked = picked === i
               return (
                 <button
@@ -729,7 +819,26 @@ export function ExamCenter() {
           <div className="mx-auto mt-5 max-w-xs">
             <Progress value={eResult.score} className="h-1.5" />
           </div>
-          <p className="mt-4 text-[12.5px] text-muted-foreground">{tt("exam.missedToReview", lang)}</p>
+          <p className="mt-4 text-[12.5px] text-muted-foreground">
+            {tt("exam.missedToReview", lang)}
+          </p>
+          {(eResult.timedOut || eResult.avgSecs !== null) && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[12.5px]">
+              {eResult.timedOut && (
+                <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-medium text-primary">
+                  <AlarmClock className="me-1 inline h-3.5 w-3.5" />
+                  {tt("exam.timedOutBadge", lang)}
+                </span>
+              )}
+              {eResult.avgSecs !== null && (
+                <span className="rounded-full border bg-secondary px-3 py-1 text-muted-foreground">
+                  <Timer className="me-1 inline h-3.5 w-3.5" />
+                  {tt("exam.avgPace", lang)}: <b className="text-foreground">{eResult.avgSecs}s</b>
+                  {tt("exam.pacePerQ", lang)}
+                </span>
+              )}
+            </div>
+          )}
           <Button onClick={backToHub} className="mt-6 h-10">
             {tt("exam.backToExam", lang)}
           </Button>
@@ -750,11 +859,49 @@ export function ExamCenter() {
           </div>
         </section>
 
+        {/* v21: score trend across past sittings */}
+        {history.length >= 2 && (
+          <section className="mt-6 rounded-2xl border bg-card p-6 shadow-soft">
+            <h2 className="flex items-center gap-2 font-serif text-[16px] font-semibold">
+              <TrendingUp className="h-4 w-4 text-primary" /> {tt("exam.scoreTrend", lang)}
+            </h2>
+            <div className="mt-4 flex items-end gap-2" dir="ltr">
+              {history
+                .slice()
+                .reverse()
+                .slice(-12)
+                .map((h) => (
+                  <div key={h.id} className="flex flex-1 flex-col items-center gap-1.5">
+                    <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">{h.score ?? 0}</span>
+                    <div
+                      className={cn(
+                        "w-full rounded-t-md",
+                        (h.score ?? 0) >= 70 ? "bg-sage/70" : "bg-primary/50"
+                      )}
+                      style={{ height: `${Math.max(6, Math.round(((h.score ?? 0) / 100) * 72))}px` }}
+                      title={`${h.mode === "exam90" ? "90" : "60"} min · ${h.score ?? 0}%`}
+                    />
+                    <span className="text-[10px] tabular-nums text-muted-foreground">
+                      {new Date(h.startedAt).toLocaleDateString(dateLocaleOf(lang), { day: "numeric", month: "short" })}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </section>
+        )}
+
         <section className="mt-6 space-y-3">
           {exam.questions.map((qq, i) => {
             const myPick = exam.answered[qq.id]
             const answer = eResult.key[qq.id]
             const gotIt = myPick === answer
+            const rShowAr = lang === "ar" && qq.stemAr && qq.optionsAr
+            const rStem = rShowAr ? qq.stemAr! : qq.stem
+            const rOptions = rShowAr ? qq.optionsAr! : qq.options
+            const rExpl =
+              lang === "ar" && eResult.explanationsAr[qq.id]
+                ? eResult.explanationsAr[qq.id]
+                : eResult.explanations[qq.id]
             return (
               <div key={qq.id} className={cn("rounded-2xl border bg-card p-5 shadow-soft", gotIt ? "border-sage/30" : "border-primary/30")}>
                 <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
@@ -767,14 +914,14 @@ export function ExamCenter() {
                     Q{i + 1} · {qq.standardTag}
                   </span>
                 </div>
-                <p dir="auto" className="mt-2 text-[14px] font-medium leading-relaxed">{qq.stem}</p>
+                <p dir="auto" className="mt-2 text-[14px] font-medium leading-relaxed">{rStem}</p>
                 {!gotIt && (
                   <p dir="auto" className="mt-2 text-[13px] text-primary">
-                    {tt("exam.notCorrect", lang)} {LETTERS[answer]} — {qq.options[answer]}
+                    {tt("exam.notCorrect", lang)} {LETTERS[answer]} — {rOptions[answer]}
                   </p>
                 )}
                 <p dir="auto" className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-                  {eResult.explanations[qq.id]}
+                  {rExpl}
                 </p>
               </div>
             )

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/auth"
 import { markLessonComplete, parseQuizQuestions } from "@/lib/audit-server"
+import { seedReviewFromQuizQuestion } from "@/lib/review"
 
 export async function POST(req: Request) {
   const me = await getSessionUser()
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
    * Legacy clients may still report `correct` (honor system). */
   let correct: number
   const picks = Array.isArray(body?.picks) ? body.picks : null
+  const wrongPicks: number[] = []
   if (picks) {
     if (picks.length !== total) {
       return NextResponse.json(
@@ -48,6 +50,7 @@ export async function POST(req: Request) {
       if (p === null || p === undefined) continue // unanswered
       if (typeof p === "number" && Number.isInteger(p) && p >= 0 && p < questions[i].options.length) {
         if (p === questions[i].correctIndex) correct++
+        else wrongPicks.push(i)
       }
     }
   } else {
@@ -67,6 +70,14 @@ export async function POST(req: Request) {
   await db.quizAttempt.create({
     data: { userId: me.id, quizId, score, correct, total, passed },
   })
+
+  // v21: every wrongly-answered course-quiz question joins the review queue —
+  // course misses used to vanish after the reveal (bank misses already fed SRS)
+  for (const i of wrongPicks) {
+    try {
+      await seedReviewFromQuizQuestion(me.id, quizId, quiz.title, i, questions[i])
+    } catch {}
+  }
 
   // passing completes the quiz lesson (XP + certificate check)
   let certificate: Awaited<ReturnType<typeof markLessonComplete>>["certificate"] = null

@@ -37,15 +37,21 @@ async function main() {
   const tags = await db.bankQuestion.groupBy({ by: ["standardTag"], _count: true })
   check("≥ 25 distinct standard tags", tags.length >= 25, `${tags.length} tags`)
   const broken = await db.bankQuestion.findMany()
-  const invalid = broken.filter(
-    (q) =>
-      (JSON.parse(q.options) as string[]).length !== 4 ||
+  const invalid = broken.filter((q) => {
+    const opts = JSON.parse(q.options) as string[]
+    // v21: true/false items (2 options) are now part of the bank — accept
+    // 2-6 options; the answer key must sit inside the actual option count
+    return (
+      opts.length < 2 ||
+      opts.length > 6 ||
+      opts.some((o: string) => typeof o !== "string" || !o.trim()) ||
       q.answerIndex < 0 ||
-      q.answerIndex > 3 ||
+      q.answerIndex > opts.length - 1 ||
       q.difficulty < 1 ||
       q.difficulty > 3
-  )
-  check("every question: 4 options, valid answer, difficulty 1-3", invalid.length === 0, invalid.length ? `${invalid.length} bad` : "clean")
+    )
+  })
+  check("every question: 2-6 options, valid answer, difficulty 1-3", invalid.length === 0, invalid.length ? `${invalid.length} bad` : "clean")
 
   console.log("── 2. Exam blueprint (P0-1) ───────────────────")
   const { allocateByBlueprint, sampleExam, EXAM_MODES, seededRandom } = await import("../src/lib/exam-blueprint")

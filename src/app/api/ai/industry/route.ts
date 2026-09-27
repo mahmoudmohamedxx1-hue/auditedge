@@ -1,3 +1,4 @@
+import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { NextRequest } from "next/server"
 import { getSessionUser } from "@/lib/auth"
 import {
@@ -84,6 +85,10 @@ ${sourcesBlock}`
 }
 
 export async function POST(req: NextRequest) {
+  // v21: per-IP sliding-window guard — protects the AI quota if the URL leaks
+  const limited = aiRateLimit(req, AI_POLICIES.draft)
+  if (limited) return limited
+
   const me = await getSessionUser()
   if (!me) return Response.json({ error: "unauthenticated" }, { status: 401 })
 

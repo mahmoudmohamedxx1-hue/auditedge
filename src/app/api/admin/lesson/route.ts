@@ -48,6 +48,9 @@ export async function POST(req: NextRequest) {
         durationMin: Math.max(1, Math.trunc(Number(body.durationMin) || 12)),
         xp: Math.max(0, Math.trunc(Number(body.xp) || 10)),
         content: JSON.stringify(body.content ?? {}),
+        // v21: the studio can author/preserve the Arabic lesson edition
+        // ("" means no Arabic edition — the column is not nullable)
+        contentAr: body.contentAr == null ? "" : JSON.stringify(body.contentAr),
         attachments: JSON.stringify(
           Array.isArray(body.attachments) ? body.attachments.filter((x: unknown) => typeof x === "string") : []
         ),

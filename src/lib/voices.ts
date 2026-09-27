@@ -314,13 +314,23 @@ export interface ResolvedTtsVoice {
 /** Resolve any selection to a concrete provider + voice for `text`.
  *  - "auto": Arabic → Salma (Egyptian neural), else → Jenny (US neural);
  *    both fall back to the Z.ai engine at the route level if the Edge
- *    service is unreachable.
+ *    service is unreachable. v21: per-language preferences (stored when
+ *    the learner picks e.g. Shakir for Arabic sessions) override the
+ *    Salma/Jenny defaults under "auto".
  *  - an edge:… id: that Edge voice, whatever the text.
  *  - a Z.ai id: that Z.ai voice, whatever the text. */
-export function resolveTtsVoice(voice: TtsVoiceId, text: string): ResolvedTtsVoice {
+export function resolveTtsVoice(
+  voice: TtsVoiceId,
+  text: string,
+  prefs?: { ar?: string | null; en?: string | null }
+): ResolvedTtsVoice {
   if (voice !== "auto") {
     if (voice.startsWith("edge:")) return { provider: "edge", voice: voice.slice(5) }
     return { provider: "zai", voice }
+  }
+  const pref = isArabicText(text) ? prefs?.ar : prefs?.en
+  if (pref && pref !== "auto" && isTtsVoiceId(pref)) {
+    return resolveTtsVoice(pref, text)
   }
   return isArabicText(text)
     ? { provider: "edge", voice: "ar-EG-SalmaNeural" }

@@ -28,6 +28,7 @@ import {
   PlayCircle,
   Users,
   Zap,
+  Bookmark,
 } from "lucide-react"
 
 function greeting(lang: "en" | "ar") {
@@ -38,6 +39,54 @@ function greeting(lang: "en" | "ar") {
 
 const levelName = (name: string, lang: "en" | "ar") =>
   lang === "ar" ? (XP_LEVEL_AR[name] ?? name) : name
+
+/** v21: saved lessons (bookmarks) — the learner's keepers, one tap away. */
+function SavedLessonsCard() {
+  const data = useAppStore((s) => s.data)
+  const navigate = useAppStore((s) => s.navigate)
+  const lang = useAppStore((s) => s.lang)
+  const bookmarks = useAppStore((s) => s.bookmarks)
+
+  const saved = (() => {
+    const out: { course: NonNullable<typeof data>["courses"][number]; lesson: { id: string; title: string; type: string; durationMin: number } }[] = []
+    if (!data) return out
+    for (const c of data.courses)
+      for (const m of c.modules)
+        for (const l of m.lessons)
+          if (bookmarks.includes(l.id)) out.push({ course: c, lesson: l })
+    return out
+  })()
+
+  if (saved.length === 0) return null
+
+  return (
+    <section className="rounded-xl border bg-card p-5 shadow-soft" aria-label={tt("lesson.savedLessons", lang)}>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 font-serif text-[16px] font-semibold tracking-tight">
+          <Bookmark className="h-4 w-4 text-gold-deep" /> {tt("lesson.savedLessons", lang)}
+        </h2>
+        <span className="text-[12px] text-muted-foreground">{saved.length}</span>
+      </div>
+      <div className="space-y-1.5">
+        {saved.slice(0, 5).map(({ course, lesson }) => (
+          <button
+            key={lesson.id}
+            onClick={() =>
+              navigate(lesson.type === "quiz" ? "quiz" : "lesson", { courseId: course.id, lessonId: lesson.id })
+            }
+            className="flex w-full items-center gap-3 rounded-lg border bg-secondary/25 px-3.5 py-2.5 text-start transition-colors hover:border-primary/30 hover:bg-secondary/50 focus-ring"
+          >
+            <Bookmark className="h-3.5 w-3.5 shrink-0 fill-current text-gold-deep" />
+            <span dir="auto" className="min-w-0 flex-1 truncate text-[13px] font-medium">{lesson.title}</span>
+            <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+              {course.code} · {lesson.durationMin} {tt("misc20.min", lang)}
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 /** Continue-where-you-left-off card (v20 quick win) — one tap back into the
  *  last lesson the learner opened, wherever it lives. */
@@ -269,6 +318,9 @@ export function Dashboard() {
         <ReviewHomeCard />
         <ResumeCard />
       </div>
+
+      {/* v21: saved lessons (bookmarks) — one tap back to the keepers */}
+      <SavedLessonsCard />
 
       {/* in progress list */}
       {inProgress.length > 0 && (

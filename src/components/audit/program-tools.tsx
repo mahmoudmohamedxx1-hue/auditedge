@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import { MATERIALITY_BENCHMARKS, RELIABILITY_FACTORS } from "@/lib/program"
-import { Calculator, Layers } from "lucide-react"
+import type { MaterialityMemo } from "@/lib/engagement"
+import { Calculator, Layers, Save } from "lucide-react"
 
 type Lang = "en" | "ar"
 
@@ -33,6 +34,20 @@ const T = {
   formula: { en: "Formula", ar: "المعادلة" },
   items: { en: "items", ar: "بندًا" },
   enterFigures: { en: "Enter your figures to compute.", ar: "أدخل الأرقام لحساب النتائج." },
+  rationale: { en: "Benchmark rationale (ISA 320.10 — why this benchmark?)", ar: "تعليل الأساس (ISA 320.10 — لماذا هذا الأساس؟)" },
+  saveMemo: { en: "Save to this engagement", ar: "احفظ في هذه المهمة" },
+  memoSaved: { en: "Materiality memo saved — the SAD now evaluates against it.", ar: "حُفظ مذكرة الأهمية — وسيقوّم ملخص الفروق بناءً عليها." },
+  selectTitle: { en: "Systematic selection", ar: "الاختيار المنهجي" },
+  popCount: { en: "Population count (items)", ar: "عدد بنود المجتمع" },
+  pick: { en: "Examine items", ar: "افحص البنود" },
+  seed: { en: "Seed", ar: "البذرة" },
+  reroll: { en: "Re-roll", ar: "بذرة جديدة" },
+  copyList: { en: "Copy list", ar: "انسخ القائمة" },
+  selectHint: {
+    en: "ISA 530 discipline: record method, size, seed and the selected items in the working paper.",
+    ar: "انتظام ISA 530: وثّق المنهج والحجم والبذرة والبنود المختارة في ورقة العمل.",
+  },
+  copied: { en: "List copied", ar: "نُسخت القائمة" },
 }
 
 function fmt(n: number | null): string {
@@ -76,13 +91,24 @@ function NumInput({
   )
 }
 
-export function MaterialityCalculator({ lang }: { lang: Lang }) {
+export function MaterialityCalculator({
+  lang,
+  memo,
+  onSave,
+}: {
+  lang: Lang
+  /** v21: the engagement's saved memo — prefills the calculator */
+  memo?: MaterialityMemo
+  /** v21: persist the ISA 320 memo to the engagement */
+  onSave?: (m: MaterialityMemo) => void
+}) {
   const t = (k: keyof typeof T) => T[k][lang]
   const [figs, setFigs] = useState({ pbt: "", revenue: "", assets: "", equity: "" })
   const [bench, setBench] = useState<(typeof MATERIALITY_BENCHMARKS)[number]["key"]>("pbt")
   const [pct, setPct] = useState("5")
   const [pmPct, setPmPct] = useState("65")
   const [cttPct, setCttPct] = useState("5")
+  const [rationale, setRationale] = useState(memo?.rationale ?? "")
 
   const values = useMemo(
     () => ({
@@ -217,6 +243,50 @@ export function MaterialityCalculator({ lang }: { lang: Lang }) {
         ))}
       </div>
       <p className="mt-2.5 text-[11.5px] leading-relaxed text-muted-foreground">💡 {t("hint")}</p>
+
+      {/* v21: persist the ISA 320 memo to the engagement — the SAD and the
+          close-out bundle evaluate against it */}
+      {onSave && (
+        <div className="mt-3 rounded-xl border border-primary/20 bg-primary/[0.04] p-3">
+          <label className="text-[11.5px] font-medium text-muted-foreground">{t("rationale")}</label>
+          <textarea
+            dir="auto"
+            value={rationale}
+            onChange={(e) => setRationale(e.target.value)}
+            rows={2}
+            className="mt-1.5 w-full resize-none rounded-lg border bg-background p-2 text-[12.5px] leading-relaxed focus:border-primary/40 focus:outline-none"
+            placeholder={lang === "ar" ? "لماذا هذا الأساس؟ (تركيز المستخدمين، استقرار الأساس، طبيعة المنشأة…)" : "Why this benchmark? (users' focus, stability of the benchmark, entity nature…)"}
+          />
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[11px] text-muted-foreground">
+              {memo
+                ? lang === "ar"
+                  ? `محفوظة: ${new Date(memo.savedAt).toLocaleDateString("ar-EG")}`
+                  : `Saved: ${new Date(memo.savedAt).toLocaleDateString("en-GB")}`
+                : ""}
+            </span>
+            <button
+              onClick={() => {
+                if (om === null || pm === null || ctt === null) return
+                onSave({
+                  om,
+                  benchmark: selected.label.en,
+                  pmPct: pmPctNum,
+                  pm,
+                  cttPct: cttPctNum,
+                  ctt,
+                  rationale: rationale.trim(),
+                  savedAt: Date.now(),
+                })
+              }}
+              disabled={om === null}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-[12.5px] font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-ring disabled:opacity-40"
+            >
+              <Save className="h-3.5 w-3.5" /> {t("saveMemo")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -228,6 +298,9 @@ export function SamplingCalculator({ lang }: { lang: Lang }) {
   const [tdr, setTdr] = useState("5")
   const [pop, setPop] = useState("")
   const [tm, setTm] = useState("")
+  // v21: systematic selection engine
+  const [popCount, setPopCount] = useState("")
+  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 99999))
 
   const tdrNum = parseFloat(tdr) || 0
   const attrN = tdrNum > 0 ? Math.ceil(RELIABILITY_FACTORS[risk][expected] / (tdrNum / 100)) : null
@@ -235,6 +308,12 @@ export function SamplingCalculator({ lang }: { lang: Lang }) {
   const tmNum = parseFloat(tm) || 0
   const musN = popNum > 0 && tmNum > 0 ? Math.ceil((RELIABILITY_FACTORS[risk][expected] * popNum) / tmNum) : null
   const interval = musN && musN > 0 ? popNum / musN : null
+  // v21: the selection uses whichever sample size is active (MUS if set,
+  // else attribute), against the entered population count
+  const activeSize = musN ?? attrN
+  const popCountNum = Math.floor(parseFloat(popCount) || 0)
+  const selection =
+    activeSize !== null && popCountNum > 0 ? systematicSelection(popCountNum, activeSize, seed) : null
 
   const RiskButtons = (
     <div className="flex gap-1.5">
@@ -353,7 +432,89 @@ export function SamplingCalculator({ lang }: { lang: Lang }) {
         <p className="mt-2 text-[11px] tabular-nums text-muted-foreground" dir="ltr">
           n = (RF × population) ÷ tolerable misstatement
         </p>
+
+        {/* v21: systematic selection engine — which item numbers to examine,
+            seeded and documented (method + seed + items = the ISA 530 WP) */}
+        <div className="mt-3 rounded-xl border bg-secondary/40 p-3.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            {t("selectTitle")} · ISA 530
+          </p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+            <div>
+              <label className="text-[11.5px] font-medium text-muted-foreground">{t("popCount")}</label>
+              <div className="mt-1">
+                <NumInput value={popCount} onChange={setPopCount} placeholder="0" />
+              </div>
+            </div>
+            <div className="self-end">
+              <label className="text-[11.5px] font-medium text-muted-foreground">{t("seed")}</label>
+              <p className="mt-2 h-9 px-2 font-mono text-[12.5px] tabular-nums leading-9 text-muted-foreground">
+                #{seed}
+              </p>
+            </div>
+            <button
+              onClick={() => setSeed(Math.floor(Math.random() * 99999))}
+              className="self-end rounded-lg border px-3 py-2 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground focus-ring"
+            >
+              {t("reroll")}
+            </button>
+          </div>
+          {selection !== null && (
+            <div className="mt-2.5">
+              <p className="text-[11.5px] font-medium text-muted-foreground">
+                {t("pick")} ({selection.length} {t("items")}):
+              </p>
+              <p className="mt-1 max-h-24 overflow-y-auto rounded-lg border bg-background p-2 font-mono text-[12px] leading-relaxed tabular-nums scroll-thin" dir="ltr">
+                {selection.join(", ")}
+              </p>
+              <div className="mt-1.5 flex items-center justify-between gap-2">
+                <p className="text-[10.5px] text-muted-foreground">{t("selectHint")}</p>
+                <button
+                  onClick={() => {
+                    void navigator.clipboard.writeText(selection.join(", ")).then(() => toastOk(t("copied")))
+                  }}
+                  className="shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground focus-ring"
+                >
+                  {t("copyList")}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
+}
+
+/** v21: seeded systematic selection — random start in [1, interval], then
+ *  every interval-th item. Same seed + inputs → same items (documentable). */
+function systematicSelection(n: number, size: number, seed: number): number[] | null {
+  if (!Number.isFinite(n) || !Number.isFinite(size) || n < 1 || size < 1 || size > n) return null
+  const rnd = mulberryLite(seed)
+  const interval = n / size
+  const start = Math.floor(rnd() * interval) + 1
+  const out: number[] = []
+  for (let i = 0; i < size; i++) {
+    const item = Math.round(start + i * interval)
+    if (item >= 1 && item <= n && !out.includes(item)) out.push(item)
+  }
+  return out.length ? out : null
+}
+
+function mulberryLite(seed: number) {
+  let a = seed >>> 0
+  return () => {
+    a |= 0
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function toastOk(msg: string) {
+  // sonner is loaded lazily here to keep this tool module dependency-light
+  if (typeof window !== "undefined") {
+    void import("sonner").then((m) => m.toast.success(msg))
+  }
 }

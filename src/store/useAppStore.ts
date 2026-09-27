@@ -36,6 +36,10 @@ const AI_MODEL_KEY = "auditedge-ai-model"
 /** localStorage keys for the TTS reading voice + speed (v17). */
 const TTS_VOICE_KEY = "auditedge-tts-voice"
 const TTS_SPEED_KEY = "auditedge-tts-speed"
+/** v21: per-language voice memory — under "auto", Arabic chunks use the
+ *  remembered Arabic voice and English chunks the English one. */
+const TTS_VOICE_AR_KEY = "auditedge-tts-voice-ar"
+const TTS_VOICE_EN_KEY = "auditedge-tts-voice-en"
 /** Whether the AI tutor reads answers aloud automatically (v19). */
 const AI_AUTO_SPEAK_KEY = "auditedge-ai-auto-speak"
 /** Whether the desktop sidebar is collapsed to an icon rail (v19.1).
@@ -73,6 +77,8 @@ export interface LessonInput {
   durationMin: number
   xp: number
   content: LessonContent
+  /** v21: Arabic lesson edition — parsed object or null (API stringifies it). */
+  contentAr?: unknown
   attachments: string[]
   videoUrl?: string
   externalUrl?: string
@@ -112,6 +118,10 @@ interface AppState {
    *  answer's language; any of the 7 catalog voices can be pinned. */
   ttsVoice: TtsVoiceId
   setTtsVoice: (v: TtsVoiceId) => void
+  /** v21: per-language remembered voices — used when ttsVoice === "auto"
+   *  so the learner can prefer e.g. Shakir (AR) + Ryan (EN) at once. */
+  ttsVoiceAr: TtsVoiceId | null
+  ttsVoiceEn: TtsVoiceId | null
   /** Read-aloud playback speed (one of TTS_SPEEDS). */
   ttsSpeed: number
   setTtsSpeed: (s: number) => void
@@ -160,6 +170,15 @@ interface AppState {
   setAiConversationId: (id: string | null) => void
   setAiPresetQuestion: (q: string | null) => void
   setLibraryPresetQuery: (q: string | null) => void
+  /** v21: lesson bookmarks (saved lessons), persisted in localStorage. */
+  bookmarks: string[]
+  toggleBookmark: (lessonId: string) => void
+  hydrateBookmarks: () => void
+  /** v21: one-shot weak-topic drill prefill — the analytics heatmap sets it,
+   *  the Exam Center consumes it and clears it. */
+  examTagPrefill: string | null
+  setExamTagPrefill: (tag: string | null) => void
+  clearExamTagPrefill: () => void
 
   enroll: (courseId: string) => Promise<void>
   completeLesson: (lessonId: string) => Promise<void>
@@ -209,6 +228,29 @@ export const useAppStore = create<AppState>((set, get) => ({
   aiConversationId: null,
   aiPresetQuestion: null,
   libraryPresetQuery: null,
+  examTagPrefill: null,
+  bookmarks: [],
+
+  toggleBookmark: (lessonId) => {
+    set((s) => ({
+      bookmarks: s.bookmarks.includes(lessonId)
+        ? s.bookmarks.filter((x) => x !== lessonId)
+        : [...s.bookmarks, lessonId],
+    }))
+    try {
+      localStorage.setItem(
+        "auditedge-bookmarks",
+        JSON.stringify(useAppStore.getState().bookmarks)
+      )
+    } catch {}
+  },
+
+  hydrateBookmarks: () => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("auditedge-bookmarks") ?? "[]")
+      if (Array.isArray(raw)) set({ bookmarks: raw.filter((x) => typeof x === "string") })
+    } catch {}
+  },
 
   navigate: (view, opts) => {
     set((s) => {
@@ -306,10 +348,24 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   ttsVoice: DEFAULT_TTS_VOICE,
   ttsSpeed: DEFAULT_TTS_SPEED,
+  /** v21: remembered per-language voices (used when ttsVoice === "auto"). */
+  ttsVoiceAr: null,
+  ttsVoiceEn: null,
   setTtsVoice: (v) => {
     set({ ttsVoice: v })
     try {
       localStorage.setItem(TTS_VOICE_KEY, v)
+      // picking a concrete Arabic/English voice also remembers it for that
+      // language, so "auto" stays personalized after switching back
+      if (v !== "auto") {
+        if (v.includes("ar-") || v === "tongtong" || v === "xiaochen") {
+          set({ ttsVoiceAr: v })
+          localStorage.setItem(TTS_VOICE_AR_KEY, v)
+        } else if (v.includes("en-") || v === "jam") {
+          set({ ttsVoiceEn: v })
+          localStorage.setItem(TTS_VOICE_EN_KEY, v)
+        }
+      }
     } catch {}
   },
   setTtsSpeed: (s) => {
@@ -333,6 +389,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       const s = Number(localStorage.getItem(TTS_SPEED_KEY))
       if ((TTS_SPEEDS as readonly number[]).includes(s)) set({ ttsSpeed: s })
       set({ aiAutoSpeak: localStorage.getItem(AI_AUTO_SPEAK_KEY) === "1" })
+      const va = localStorage.getItem(TTS_VOICE_AR_KEY)
+      if (isTtsVoiceId(va)) set({ ttsVoiceAr: va })
+      const ve = localStorage.getItem(TTS_VOICE_EN_KEY)
+      if (isTtsVoiceId(ve)) set({ ttsVoiceEn: ve })
     } catch {}
   },
 
@@ -391,6 +451,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   setAiConversationId: (id) => set({ aiConversationId: id }),
   setAiPresetQuestion: (q) => set({ aiPresetQuestion: q }),
   setLibraryPresetQuery: (q) => set({ libraryPresetQuery: q }),
+
+  setExamTagPrefill: (tag) => set({ examTagPrefill: tag }),
+  clearExamTagPrefill: () => set({ examTagPrefill: null }),
 
   enroll: async (courseId) => {
     const { data } = get()

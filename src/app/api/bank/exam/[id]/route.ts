@@ -45,6 +45,7 @@ export async function GET(_req: Request, { params }: Params) {
       completedAt: session.completedAt?.toISOString() ?? null,
       score: session.score,
       correct: session.correct,
+      timedOut: session.timedOut,
       sectionScores: JSON.parse(session.sectionScores) as Record<
         string,
         { correct: number; total: number }
@@ -161,6 +162,12 @@ export async function PATCH(req: Request, { params }: Params) {
     const score = Math.round((correct / Math.max(1, questionIds.length)) * 100)
     const xpEarned = correct * 3 // exam XP: 3 per correct answer
 
+    // v21: server-side clock — a submission that lands after the deadline
+    // (plus a 45 s network grace) is graded but flagged as timed out, so a
+    // crashed tab can never silently inflate a mock-exam score.
+    const deadline = session.startedAt.getTime() + session.durationMin * 60_000
+    const timedOut = session.durationMin > 0 && Date.now() > deadline + 45_000
+
     await db.$transaction([
       ...attemptRows.map((r) => db.bankAttempt.create({ data: r })),
       db.examSession.update({
@@ -169,8 +176,8 @@ export async function PATCH(req: Request, { params }: Params) {
           completedAt: new Date(),
           correct,
           score,
+          timedOut,
           sectionScores: JSON.stringify(sectionScores),
-          ...(answeredCount > 0 ? {} : {}),
         },
       }),
       ...(xpEarned > 0
@@ -185,7 +192,7 @@ export async function PATCH(req: Request, { params }: Params) {
       } catch {}
     }
 
-    return NextResponse.json({ ok: true, score, correct, total: questionIds.length, xpEarned })
+    return NextResponse.json({ ok: true, score, correct, total: questionIds.length, xpEarned, timedOut })
   }
 
   return NextResponse.json({ error: "unknown action" }, { status: 400 })

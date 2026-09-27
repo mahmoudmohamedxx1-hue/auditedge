@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { SpeakButton } from "./speak-button"
 import { VoicePicker } from "./voice-picker"
 import { Markdown } from "./markdown"
+import { useAppStore } from "@/store/useAppStore"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { Check, Copy, FileSignature, Loader2, Sparkles } from "lucide-react"
@@ -113,6 +114,9 @@ export function KamDrafter({ lang }: { lang: Lang }) {
           whySignificant: why,
           howAddressed: how,
           listed,
+          // v21: honor the persisted engine choice (the Industry Analyst
+          // already did — the KAM drafter was silently stuck on the default)
+          model: useAppStore.getState().aiModel,
         }),
       })
       const j = (await res.json().catch(() => ({}))) as { draft?: string; error?: string }

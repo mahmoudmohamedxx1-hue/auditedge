@@ -4,6 +4,53 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 21.0.0 — The deep-improvement release
+
+Born from a four-lens deep audit (tutor/voice UX, content & learning flow,
+engagement workspace, platform infrastructure). Every P0/P1/P2 finding
+implemented — **46+ improvements, 991+ automated checks green.**
+
+### P0 — correctness & trust
+- **Mock exams now speak Arabic**: sitting + results screens use `stemAr`/`optionsAr`/`explanationsAr` (practice already did; the timed paper didn't).
+- **Server-enforced exam clock**: late submissions are graded but flagged `timedOut` (badge in results + history) — a crashed tab can never inflate a mock score. Plus pace stats (avg s/question) and a score-trend chart.
+- **Studio can no longer destroy bilingual content**: `sanitizeQuiz` and the lesson PATCH/POST routes preserve `questionAr`/`optionsAr`/`explanationAr`/`contentAr`, and the lesson editor gained full Arabic authoring tabs (lesson AR edition + per-question AR panels).
+- **Stop means stop**: the tutor's Stop button now cancels the upstream stream (`req.signal` → reader cancel) and persists the visible partial with a bilingual `*(stopped · أُوقف)*` marker — reload shows exactly what you read.
+- **Engine honesty**: answers served by the built-in workspace engine (no Z.ai key) carry a visible notice + a "workspace engine" badge instead of pretending to be the selected GLM model.
+- **Regenerate guards image questions** (the attachment can't be re-sent — explained instead of silently downgraded).
+- **Error boundaries everywhere**: `error.tsx`, `global-error.tsx`, `not-found.tsx` — one bad payload can never white-screen the workspace.
+- **Rate limiting on every AI route** (per-IP sliding windows; chat 20/2min, TTS 60, ASR 30, drafting 8) — protects the AI quota if the deployed URL leaks.
+- **Security headers** (nosniff, referrer policy, SAMEORIGIN framing, permissions policy).
+- **Mic UX fully bilingual** + ASR language hint (`ar-EG`/`en` passed through, with a no-hint retry).
+- **Markdown RTL correctness**: logical (`border-s`/`ps-*`/`text-start`) utilities — Arabic answers render mirrored properly.
+- **Alt+T** now actually opens/closes the tutor popup (the tooltip promised it since v11).
+- **Unbiased Fisher–Yates** replaces the biased sort in the practice draw.
+- Repo hygiene: version 21.0.0, SW cache `auditedge-v21`, `tool-results/`+`download/` untracked & gitignored, `git gc` reclaimed ~216 MB, README counts refreshed (41 courses / 990 lessons), `bun run test` + `test:all` scripts, GitHub Actions CI installed (`.github/workflows/ci.yml`: lint → tsc → batteries → build).
+
+### P1 — the learning loop closes
+- **Mistake book**: "Drill my misses" — every question whose LATEST attempt was wrong (a later correct answer redeems it), drawn as a practice set from `/api/bank/misses`.
+- **Course-quiz misses now seed the SRS queue** (they used to vanish after the reveal).
+- **Weak-topic one-tap remediation**: analytics heatmap chips pre-filter the Exam Center drill; study-plan items deep-link to the exact course / drill / sim / review.
+- **Conversation management**: rename inline, pin to the top, full-text search across message content (`?q=` server-side) — not just titles.
+- **One-tap EN↔AR translation** of any tutor answer (tutor + popup, toggleable, markdown-preserving prompt, codes kept in Latin).
+- **Popup tutor parity**: copy, translate, follow-up chips, regenerate and error-retry now exist on the floating tutor too.
+- **TTS double-buffer prefetch** (no dead air between chunks) + **global pause/resume** on every speak control.
+- **Per-language voice memory**: pick Shakir for Arabic and Ryan for English once — "auto" remembers both.
+- **Engagement tools write back**: the materiality calculator saves its ISA 320 memo (rationale included — PM/CTT sync to the SAD), the JE analyzer saves its population/exceptions summary, findings gained WP refs, a qualitative flag and proposed Dr/Cr adjustments, PBC items show chaser aging.
+- **The Close-out tab** (new 5th tab of the Audit Program): close-out dashboard, **AI partner EQR review** of the whole file (file-breakers / judgment risks / good discipline / the one fix first), assertion coverage map, working-paper index (missing + duplicate ref detection), interactive ISA 570 going-concern checklist, IR×CR risk matrix with derived RMM, and a one-click Markdown close-out bundle.
+- **Workspace backup round-trip**: the engagement file, KAM drafts and industry histories (localStorage-only data the server export can't see) download as one JSON and re-import after a browser reset.
+- **Engagements link to industry sectors** (20 profiles) — carried into the close-out bundle.
+- **Seeded systematic selection** in the sampling calculator (documentable method + seed + item list, copyable).
+- **Command palette**: full-text lesson-BODY search (cached haystacks) + Tab now runs the highlighted entry.
+- **Lesson bookmarks** + a "Saved lessons" Home card.
+- **Revision Sheets** (Library): five printable bilingual exam-night one-pagers — materiality ladder, opinion decision tree, going-concern ladder, risk model, field ratios.
+- **Code-split heavy views** (program, studio, exam, simulation, sectors, podcast, discover, analytics, review) with content-shaped skeletons; `prefers-reduced-motion` honored via CSS + `MotionConfig`; print stylesheet for study artifacts.
+
+### P2 — depth
+- **Egyptian framework bank fully bilingual**: 44 new Arabic translations → egypt area 47/47 (it was 3/47 — the worst gap exactly where the blueprint weights 15%).
+- **IFRS 18 course** (4 bilingual lessons + 5-question quiz + 12 bank questions incl. true/false & scenario stems) — the 2027 presentation overhaul the platform taught nothing about.
+- **Tutor prompt deepened**: materiality mechanics (benchmark → % → PM/CTT), the opinion-modification ladder, going-concern triggers & ladder, the Egyptian tax layer (91/2005, VAT 67/2016, e-invoicing), SOE/public-sector context (CAO, Law 144/2019), exam-blueprint weighting (45/30/15/10), a 150–400-word answer budget, and a canonical Arabic glossary for terminological consistency.
+- **Rolling conversation memory**: messages beyond the 16-message window fold into a stored summary (every 8 messages) and return as system context — long tutoring arcs stop re-teaching themselves.
+
 ## 20.1.0 — Roadmap completion pass
 
 Closes every remaining acceptance criterion from the improvement roadmap that

@@ -36,6 +36,7 @@ import {
   Paperclip,
   PlayCircle,
   Sparkles,
+  Bookmark,
   StickyNote,
   Trash2,
   Zap,
@@ -88,6 +89,10 @@ export function LessonPlayer() {
   const setAiContext = useAppStore((s) => s.setAiContext)
   const setAiPresetQuestion = useAppStore((s) => s.setAiPresetQuestion)
   const lang = useAppStore((s) => s.lang)
+  // v21: lesson bookmark (saved lessons, Home card)
+  const bookmarks = useAppStore((s) => s.bookmarks)
+  const toggleBookmark = useAppStore((s) => s.toggleBookmark)
+  const bookmarked = bookmarks.includes(lessonId ?? "")
 
   /* ---------- v20: notes & highlights (P2-9) ---------- */
   const [notes, setNotes] = useState<LessonNoteClient[]>([])
@@ -307,6 +312,21 @@ export function LessonPlayer() {
               className="ms-auto inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.06] px-3 py-1.5 text-[12px] font-medium text-primary transition-all hover:-translate-y-px hover:border-primary/50 hover:bg-primary/[0.12] hover:shadow-soft focus-ring"
             >
               <Sparkles className="h-3.5 w-3.5" /> {tt("lesson.askAi", lang)}
+            </button>
+            {/* v21: bookmark this lesson — surfaces on the Home saved card */}
+            <button
+              onClick={() => toggleBookmark(lesson.id)}
+              aria-pressed={bookmarked}
+              title={bookmarked ? tt("lesson.unsave", lang) : tt("lesson.save", lang)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-ring",
+                bookmarked
+                  ? "border-gold/50 bg-gold/10 text-gold-deep"
+                  : "border-border bg-secondary/40 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Bookmark className={cn("h-3.5 w-3.5", bookmarked && "fill-current")} />
+              {bookmarked ? tt("lesson.saved", lang) : tt("lesson.save", lang)}
             </button>
             <button
               onClick={() => setNotesOpen(true)}

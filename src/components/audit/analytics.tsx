@@ -44,6 +44,37 @@ function masteryColor(m: number) {
   return "bg-sage/25 text-sage-deep"
 }
 
+/** v21: resolve a study-plan item into a one-tap deep link — matching a
+ *  measured standard tag (drill prefill), a course, or a workspace area. */
+type PlanAction =
+  | { view: "exam"; tag?: string }
+  | { view: "review" }
+  | { view: "simulation" }
+  | { view: "course"; courseId: string }
+
+function planAction(
+  label: string,
+  tags: string[],
+  courses: { id: string; title: string; code: string }[]
+): PlanAction | null {
+  const l = label.toLowerCase()
+  // 1. a measured standard tag inside the label → pre-filtered drill
+  const tag = tags.find((t) => t && l.includes(t.toLowerCase()))
+  if (tag) return { view: "exam", tag }
+  // 2. a course whose code/title clearly appears in the label
+  const course = courses.find(
+    (c) =>
+      (c.code && l.includes(c.code.toLowerCase())) ||
+      (c.title.length > 8 && l.includes(c.title.toLowerCase().split(":")[0].slice(0, 24)))
+  )
+  if (course) return { view: "course", courseId: course.id }
+  // 3. workspace-area keywords
+  if (/simulat|engagement run|nile textiles/.test(l)) return { view: "simulation" }
+  if (/review queue|spaced|flash ?cards|daily review/.test(l)) return { view: "review" }
+  if (/mock exam|practice|drill|exam center|questions/.test(l)) return { view: "exam" }
+  return null
+}
+
 export function Analytics() {
   const data = useAppStore((s) => s.data)
   const lang = useAppStore((s) => s.lang)
@@ -154,7 +185,11 @@ export function Analytics() {
               {payload.tags.map((t) => (
                 <button
                   key={t.tag}
-                  onClick={() => navigate("exam")}
+                  onClick={() => {
+                    // v21: jump straight into a pre-filtered drill on this weak topic
+                    useAppStore.getState().setExamTagPrefill(t.tag)
+                    navigate("exam")
+                  }}
                   title={`${t.mastery}% · ${t.attempts} attempts`}
                   className={cn(
                     "rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-transform hover:scale-105 focus-ring",
@@ -208,18 +243,40 @@ export function Analytics() {
                         {tt("analytics.week", lang)} {wi + 1} · {w.focus}
                       </p>
                       <div className="mt-2 space-y-1">
-                        {w.items.map((it, ii) => (
-                          <button
-                            key={ii}
-                            onClick={() => void toggleItem(wi, ii, it.done)}
-                            className="flex w-full items-start gap-2 rounded-lg px-1.5 py-1 text-start text-[12.5px] leading-relaxed transition-colors hover:bg-secondary/60 focus-ring"
-                          >
-                            <CheckCircle2
-                              className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", it.done ? "text-sage-deep" : "text-muted-foreground/50")}
-                            />
-                            <span dir="auto" className={cn(it.done && "text-muted-foreground line-through")}>{it.label}</span>
-                          </button>
-                        ))}
+                        {w.items.map((it, ii) => {
+                          const action = planAction(
+                            it.label,
+                            payload?.tags.map((t) => t.tag) ?? [],
+                            data?.courses.map((c) => ({ id: c.id, title: c.title, code: c.code })) ?? []
+                          )
+                          return (
+                            <div key={ii} className="group/item flex items-start gap-1">
+                              <button
+                                onClick={() => void toggleItem(wi, ii, it.done)}
+                                className="flex flex-1 items-start gap-2 rounded-lg px-1.5 py-1 text-start text-[12.5px] leading-relaxed transition-colors hover:bg-secondary/60 focus-ring"
+                              >
+                                <CheckCircle2
+                                  className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", it.done ? "text-sage-deep" : "text-muted-foreground/50")}
+                                />
+                                <span dir="auto" className={cn(it.done && "text-muted-foreground line-through")}>{it.label}</span>
+                              </button>
+                              {action && (
+                                <button
+                                  onClick={() => {
+                                    if (action.view === "exam" && action.tag) {
+                                      useAppStore.getState().setExamTagPrefill(action.tag)
+                                    }
+                                    navigate(action.view === "course" ? "course" : action.view, action.view === "course" ? { courseId: action.courseId } : undefined)
+                                  }}
+                                  title={tt("analytics.planGoTo", lang)}
+                                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 opacity-0 transition-opacity hover:bg-secondary hover:text-primary focus-ring group-hover/item:opacity-100"
+                                >
+                                  <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   ))}

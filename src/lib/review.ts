@@ -87,6 +87,46 @@ export async function seedReviewFromQuestion(userId: string, questionId: string)
   })
 }
 
+/** v21: Create a flashcard from a wrongly-answered course-quiz question.
+ *  Course quizzes previously vanished after the reveal — now every miss
+ *  joins the spaced-repetition queue exactly like bank misses. */
+export async function seedReviewFromQuizQuestion(
+  userId: string,
+  quizId: string,
+  quizTitle: string,
+  index: number,
+  q: { question: string; options: string[]; correctIndex: number; explanation?: string; questionAr?: string; optionsAr?: string[]; explanationAr?: string }
+) {
+  const letters = "ABCD"
+  const front = `${q.question}\n\n${q.options.map((o, i) => `${letters[i]}. ${o}`).join("\n")}`
+  const frontAr =
+    q.questionAr && q.optionsAr
+      ? `${q.questionAr}\n\n${q.optionsAr.map((o, i) => `${letters[i]}. ${o}`).join("\n")}`
+      : null
+  const back = `Correct answer: ${letters[q.correctIndex]}. ${q.options[q.correctIndex]}${q.explanation ? `\n\n${q.explanation}` : ""}`
+  const backAr =
+    q.optionsAr && q.explanationAr
+      ? `الإجابة الصحيحة: ${letters[q.correctIndex]}. ${q.optionsAr[q.correctIndex]}\n\n${q.explanationAr}`
+      : null
+
+  await db.reviewItem.upsert({
+    where: { userId_refKey: { userId, refKey: `quiz:${quizId}:${index}` } },
+    create: {
+      userId,
+      kind: "question",
+      refId: quizId,
+      refKey: `quiz:${quizId}:${index}`,
+      title: quizTitle,
+      front,
+      frontAr,
+      back,
+      backAr,
+      dueAt: nextReviewStart(),
+    },
+    update: {}, // a repeat miss keeps the existing schedule
+  })
+}
+
 /** Apply an SM-2-lite grade to one card. */
 export async function gradeReviewItem(userId: string, itemId: string, grade: ReviewGrade) {
   const item = await db.reviewItem.findFirst({ where: { id: itemId, userId } })

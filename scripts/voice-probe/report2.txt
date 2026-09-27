@@ -1,0 +1,14 @@
+saved  chuichui-ar.wav    3.0s  140KB
+saved  xiaochen-en.wav    5.1s  241KB
+saved  tongtong-en.wav    4.8s  224KB
+saved  tongtong-ar.wav    3.1s  146KB
+saved  xiaochen-ar.wav    2.2s  103KB
+saved  chuichui-en.wav    4.0s  190KB
+jam       en  FAIL      ?  0KB  ERR: API request failed with status 429: {"error":"Too many requests, please try again later"}
+jam       ar  OK   21.1s  991KB
+kazi      en  OK    8.4s  395KB
+kazi      ar  OK   18.3s  858KB
+douji     en  OK    8.5s  398KB
+douji     ar  OK   18.9s  885KB
+luodo     en  OK    9.0s  422KB
+luodo     ar  OK   16.8s  788KB

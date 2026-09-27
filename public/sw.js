@@ -10,7 +10,7 @@
  *    generative features are online-only, honestly so.
  */
 
-const VERSION = "auditedge-v18"
+const VERSION = "auditedge-v21"
 const SHELL_CACHE = `${VERSION}-shell`
 const DATA_CACHE = `${VERSION}-data`
 const ASSET_CACHE = `${VERSION}-assets`

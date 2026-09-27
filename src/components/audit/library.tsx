@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
+import { RevisionSheets } from "./revision-sheets"
 import { formatBytes, MATERIAL_CATEGORIES } from "@/lib/audit-types"
 import { tt, arOr, MATERIAL_CATEGORY_AR, dateLocaleOf } from "@/lib/i18n"
 import { PageHeader } from "./shared"
@@ -131,6 +132,9 @@ export function Library() {
           ) : undefined
         }
       />
+
+      {/* v21: printable bilingual revision sheets (exam-night one-pagers) */}
+      <RevisionSheets />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative max-w-sm flex-1">

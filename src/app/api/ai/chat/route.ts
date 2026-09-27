@@ -1,3 +1,4 @@
+import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/auth"
@@ -8,6 +9,7 @@ import {
   decideSearch,
   formatLibraryResults,
   formatSearchResults,
+  generateOnce,
   generateStream,
   type ContentPart,
   type EngineMessage,
@@ -29,6 +31,10 @@ const MAX_IMAGE_CHARS = 4_000_000
 const MAX_THUMB_CHARS = 200_000
 
 export async function POST(req: NextRequest) {
+  // v21: per-IP sliding-window guard — protects the AI quota if the URL leaks
+  const limited = aiRateLimit(req, AI_POLICIES.chat)
+  if (limited) return limited
+
   const me = await getSessionUser()
   if (!me) {
     return Response.json({ error: "unauthenticated" }, { status: 401 })
@@ -74,9 +80,11 @@ export async function POST(req: NextRequest) {
 
   // load or create conversation (must belong to the session user)
   let conversationId = typeof body.conversationId === "string" ? body.conversationId : null
+  let priorSummary = ""
   if (conversationId) {
     const convo = await db.aiConversation.findUnique({ where: { id: conversationId } })
     if (!convo || convo.userId !== me.id) conversationId = null
+    else priorSummary = convo.summary || ""
   }
   if (!conversationId) {
     const title = message.length > 48 ? `${message.slice(0, 48).trim()}…` : message
@@ -103,6 +111,40 @@ export async function POST(req: NextRequest) {
     orderBy: { createdAt: "asc" },
   })
   const recent = history.slice(-HISTORY_LIMIT)
+
+  /* v21 rolling summary: once messages fall out of the 16-message window,
+   * fold them into a stored summary every 8 messages so long tutoring arcs
+   * keep their earlier teaching (level, decisions, drilled topics) alive. */
+  const older = history.slice(0, -HISTORY_LIMIT)
+  let summary = priorSummary
+  if (older.length >= 8 && older.length % 8 === 0) {
+    try {
+      const text = older
+        .map((m) => `${m.role === "user" ? "Learner" : "Tutor"}: ${m.content.slice(0, 800)}`)
+        .join("\n")
+        .slice(-8000)
+      const res = await generateOnce({
+        messages: [
+          {
+            role: "user",
+            content: [
+              "Update the running memory of this tutoring conversation. Keep: the learner's stated level and goals, topics already taught and the tutor's key conclusions, agreed examples, and any open follow-ups. Be concise (max 220 words), plain prose, no headings.",
+              priorSummary ? `\nCurrent running memory:\n${priorSummary}` : "",
+              `\nConversation so far (older messages):\n${text}`,
+              "\nReply with the updated memory only.",
+            ].join("\n"),
+          },
+        ],
+      })
+      const next = res?.text?.trim()
+      if (next) {
+        summary = next.slice(0, 2500)
+        await db.aiConversation.update({ where: { id: convoId }, data: { summary } }).catch(() => {})
+      }
+    } catch {
+      // summarization is best-effort — never block the answer
+    }
+  }
 
   // tutor context (current lesson/course awareness)
   const contextBlock = await buildContextBlock(body.context)
@@ -199,6 +241,14 @@ export async function POST(req: NextRequest) {
             }),
           },
         ]
+        // v21: inject the rolling memory of messages beyond the window
+        if (summary.trim()) {
+          messages.push({
+            role: "system",
+            content: `Earlier in this conversation (running memory of the first ${older.length} messages — treat as established context, do not re-teach unless asked):
+${summary}`,
+          })
+        }
         for (const m of recent) {
           messages.push({ role: m.role === "user" ? "user" : "assistant", content: m.content })
         }
@@ -235,6 +285,7 @@ export async function POST(req: NextRequest) {
         let full = ""
         let savedMessageId: string | null = null
         let saved = false
+        let stopped = false
         const persistAssistant = async () => {
           if (saved || !full.trim()) return
           saved = true
@@ -243,7 +294,7 @@ export async function POST(req: NextRequest) {
               data: {
                 conversationId: convoId,
                 role: "assistant",
-                content: full,
+                content: stopped ? `${full}\n\n*(stopped · أُوقف)*` : full,
                 sources: JSON.stringify(allSources),
               },
             })
@@ -260,11 +311,29 @@ export async function POST(req: NextRequest) {
             messages,
             thinking: false, // snappy conversational answers; deep reasoning lives in the Industry Analyst
           })
-          send({ type: "meta", model: modelUsed, notice })
+          send({
+            type: "meta",
+            model: modelUsed,
+            notice:
+              notice ??
+              // v21: be honest when the built-in SDK engine served the answer
+              (modelUsed === "sdk"
+                ? "Answered by the built-in workspace engine — add a Z.ai API key (ZAI_OPEN_API_KEY) to use the selected GLM models."
+                : undefined),
+          })
 
           if (upstream) {
             full = await consumeSSEStream(upstream, (text) => {
               send({ type: "delta", text })
+            }, () => {
+              // v21 stop-honesty: when the learner hits Stop, the client abort
+              // propagates through req.signal — stop consuming, persist the
+              // partial answer, and stop burning upstream tokens.
+              if (req.signal.aborted) {
+                stopped = true
+                return true
+              }
+              return false
             })
           }
         } catch (streamErr) {

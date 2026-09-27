@@ -68,8 +68,25 @@ export function sanitizeQuiz(
     const correctIndex =
       Number.isInteger(correctRaw) && correctRaw >= 0 && correctRaw < options.length ? correctRaw : 0
     const explanation = typeof item?.explanation === "string" ? item.explanation : ""
+    // v21: preserve the Arabic edition — a studio re-save used to strip these
+    // fields and silently destroy bilingual quizzes (P0 data-loss fix)
+    const questionAr = typeof item?.questionAr === "string" && item.questionAr.trim() ? item.questionAr.trim() : undefined
+    const optionsAr =
+      Array.isArray(item?.optionsAr) && (item.optionsAr as unknown[]).every((o) => typeof o === "string")
+        ? (item.optionsAr as string[])
+        : undefined
+    const explanationAr =
+      typeof item?.explanationAr === "string" && item.explanationAr.trim() ? item.explanationAr.trim() : undefined
     if (question && options.length >= 2) {
-      questions.push({ question, options, correctIndex, explanation })
+      questions.push({
+        question,
+        options,
+        correctIndex,
+        explanation,
+        ...(questionAr ? { questionAr } : {}),
+        ...(optionsAr && optionsAr.length === options.length ? { optionsAr } : {}),
+        ...(explanationAr ? { explanationAr } : {}),
+      })
     }
   }
   if (!questions.length) return null

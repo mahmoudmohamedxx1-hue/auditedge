@@ -51,12 +51,13 @@ export async function DELETE(
   return NextResponse.json({ ok: true })
 }
 
-/** PATCH → trim the trailing exchange so the client can regenerate a fresh
- *  answer for the same question without leaving duplicates in the history.
- *  Body: { action: "trimLastExchange" } — removes the last assistant message
- *  plus the last user message before it (if present). */
+/** PATCH → conversation maintenance (owner only).
+ *  v21 actions:
+ *   - { action: "trimLastExchange" } — regenerate support (unchanged)
+ *   - { action: "rename", title }    — rename the conversation
+ *   - { action: "pin", pinned }      — pin/unpin to the top of the rail */
 export async function PATCH(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const me = await getSessionUser()
@@ -66,6 +67,32 @@ export async function PATCH(
   const convo = await db.aiConversation.findUnique({ where: { id } })
   if (!convo || convo.userId !== me.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
+
+  let body: { action?: unknown; title?: unknown; pinned?: unknown }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+  }
+
+  /* v21: rename — clamp to 90 chars, never empty */
+  if (body?.action === "rename") {
+    const title = typeof body.title === "string" ? body.title.trim().slice(0, 90) : ""
+    if (!title) return NextResponse.json({ error: "title required" }, { status: 400 })
+    await db.aiConversation.update({ where: { id }, data: { title } })
+    return NextResponse.json({ ok: true, title })
+  }
+
+  /* v21: pin / unpin */
+  if (body?.action === "pin") {
+    const pinned = body.pinned !== false
+    await db.aiConversation.update({ where: { id }, data: { pinned } })
+    return NextResponse.json({ ok: true, pinned })
+  }
+
+  if (body?.action !== "trimLastExchange") {
+    return NextResponse.json({ error: "unknown action" }, { status: 400 })
   }
 
   const tail = await db.aiMessage.findMany({

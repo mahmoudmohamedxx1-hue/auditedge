@@ -32,3 +32,10 @@ worklog.md
 .restore/
 skills/
 research/
+
+# v21: agent verification artifacts — regenerated per session, never ship
+tool-results/
+download/
+dev.log
+.zscripts/
+Caddyfile

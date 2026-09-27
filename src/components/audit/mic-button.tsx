@@ -5,6 +5,8 @@ import { audioBlobToWavBase64 } from "@/lib/audio"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { AudioLines, Mic, Square } from "lucide-react"
+import { useAppStore } from "@/store/useAppStore"
+import { tt } from "@/lib/i18n"
 
 const MAX_MS = 60_000 // hard cap: one minute per recording
 
@@ -12,7 +14,9 @@ const MAX_MS = 60_000 // hard cap: one minute per recording
  *  stop — the clip is converted to WAV and transcribed into the composer.
  *  `autoStartSignal` lets a parent start recording programmatically (hands-
  *  free voice mode bumps a counter after the spoken answer finishes); it is
- *  ignored while recording/transcribing so it can never interrupt itself. */
+ *  ignored while recording/transcribing so it can never interrupt itself.
+ *  v21: fully bilingual toasts/aria labels + the UI language is passed to
+ *  the ASR route as a hint (ar → Egyptian-Arabic-friendly transcription). */
 export function MicButton({
   onTranscript,
   disabled,
@@ -24,6 +28,7 @@ export function MicButton({
   compact?: boolean
   autoStartSignal?: number
 }) {
+  const lang = useAppStore((s) => s.lang)
   const [state, setState] = useState<"idle" | "recording" | "transcribing">("idle")
   const [seconds, setSeconds] = useState(0)
   const recorderRef = useRef<MediaRecorder | null>(null)
@@ -66,13 +71,13 @@ export function MicButton({
       const res = await fetch("/api/ai/asr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ audio: base64 }),
+        body: JSON.stringify({ audio: base64, lang }),
       })
       const j = (await res.json().catch(() => ({}))) as { text?: string; error?: string }
-      if (!res.ok || !j.text) throw new Error(j.error || "Transcription failed")
+      if (!res.ok || !j.text) throw new Error(j.error || tt("ai.asrFailed", lang))
       onTranscript(j.text)
     } catch (e) {
-      toast.error(e instanceof Error && e.message ? e.message : "Could not transcribe your speech")
+      toast.error(e instanceof Error && e.message ? e.message : tt("ai.asrFailed", lang))
     } finally {
       setState("idle")
       setSeconds(0)
@@ -90,7 +95,7 @@ export function MicButton({
       return
     }
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      toast.error("Your browser does not support microphone recording")
+      toast.error(tt("ai.micUnsupported", lang))
       return
     }
     try {
@@ -107,7 +112,7 @@ export function MicButton({
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" })
         cleanup()
         if (blob.size < 1000) {
-          toast.error("Recording was too short — tap the mic, then speak for a few seconds")
+          toast.error(tt("ai.micTooShort", lang))
           setState("idle")
           setSeconds(0)
           return
@@ -123,13 +128,13 @@ export function MicButton({
         const s = Math.floor((Date.now() - startedAt) / 1000)
         setSeconds(s)
         if (Date.now() - startedAt >= MAX_MS) {
-          toast.info("Recording stopped at one minute")
+          toast.info(tt("ai.micCapped", lang))
           stopRecording()
         }
       }, 500)
     } catch {
       cleanup()
-      toast.error("Microphone access was denied — allow it in your browser permissions")
+      toast.error(tt("ai.micDenied", lang))
       setState("idle")
     }
   }
@@ -142,8 +147,14 @@ export function MicButton({
       type="button"
       onClick={() => void start()}
       disabled={disabled || state === "transcribing"}
-      aria-label={state === "recording" ? "Stop recording and transcribe" : "Speak your question"}
-      title={state === "recording" ? "Stop and transcribe" : state === "transcribing" ? "Transcribing…" : "Speak your question"}
+      aria-label={state === "recording" ? tt("ai.micStop", lang) : tt("ai.micSpeak", lang)}
+      title={
+        state === "recording"
+          ? tt("ai.micStop", lang)
+          : state === "transcribing"
+            ? tt("ai.micTranscribing", lang)
+            : tt("ai.micSpeak", lang)
+      }
       className={cn(
         "relative inline-flex shrink-0 items-center justify-center rounded-full transition-colors focus-ring",
         size,

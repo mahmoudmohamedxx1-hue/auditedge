@@ -285,3 +285,36 @@ html.dark .focus-ring:focus-visible {
     inset: 0;
   }
 }
+
+/* v21 — vestibular safety: users who ask the OS for reduced motion get
+   instant state changes instead of slides, springs and pulsing dots */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* v21 — print styles for study artifacts: lessons, exam results, review
+   cards, analytics and the close-out views print clean (chrome hidden) */
+@media print {
+  .print\:hidden,
+  aside,
+  nav,
+  button {
+    visibility: hidden;
+  }
+  main,
+  article,
+  section,
+  .print-cert {
+    visibility: visible;
+  }
+  body {
+    background: #fff !important;
+  }
+}

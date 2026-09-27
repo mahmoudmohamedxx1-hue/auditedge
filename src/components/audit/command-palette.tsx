@@ -33,6 +33,49 @@ type Entry = {
   action: () => void
 }
 
+/** v21: lesson-BODY search haystacks, cached per bootstrap payload —
+ *  "where was that going-concern trigger table?" now answers from the
+ *  palette instead of only the AI tutor. */
+type Haystacks = Map<string, string>
+const haystackCache = new WeakMap<object, Haystacks>()
+
+function lessonHaystacks(data: {
+  courses: {
+    modules: {
+      lessons: {
+        id: string
+        title: string
+        type: string
+        content: {
+          intro?: string
+          sections?: { heading: string; body: string; bullets?: string[] }[]
+          keyPoints?: string[]
+          takeaway?: string
+        }
+      }[]
+    }[]
+  }[]
+}): Haystacks {
+  const cached = haystackCache.get(data)
+  if (cached) return cached
+  const map: Haystacks = new Map()
+  for (const c of data.courses)
+    for (const m of c.modules)
+      for (const l of m.lessons) {
+        if (l.type === "quiz" || !l.content) continue
+        const parts: string[] = [l.title]
+        if (l.content.intro) parts.push(l.content.intro)
+        for (const s of l.content.sections ?? []) {
+          parts.push(s.heading, s.body, ...(s.bullets ?? []))
+        }
+        parts.push(...(l.content.keyPoints ?? []))
+        if (l.content.takeaway) parts.push(l.content.takeaway)
+        map.set(l.id, parts.join("\n").toLowerCase())
+      }
+  haystackCache.set(data, map)
+  return map
+}
+
 /** Global command palette (P2-12) — Ctrl/Cmd+K from anywhere. */
 export function CommandPalette() {
   const open = useAppStore((s) => s.paletteOpen)
@@ -168,9 +211,19 @@ export function CommandPalette() {
   const filtered: Entry[] = (() => {
     const q = query.trim().toLowerCase()
     if (!q) return entries.filter((e) => e.group === "views")
-    return entries
-      .filter((e) => e.label.toLowerCase().includes(q) || e.hint?.toLowerCase().includes(q))
-      .slice(0, 30)
+    // v21: title/hint matches first, then lesson-BODY matches (ranked below
+    // so exact titles win, but content hits still surface)
+    const direct = entries.filter((e) => e.label.toLowerCase().includes(q) || e.hint?.toLowerCase().includes(q))
+    const extra: Entry[] = []
+    if (q.length >= 3 && data) {
+      const hay = lessonHaystacks(data as never)
+      for (const e of entries) {
+        if (extra.length >= 12) break
+        if (e.group !== "lessons" || direct.includes(e)) continue
+        if (hay.get(e.id.slice(7))?.includes(q)) extra.push(e)
+      }
+    }
+    return [...direct, ...extra].slice(0, 30)
   })()
 
   const grouped: [string, Entry[]][] = (() => {
@@ -218,6 +271,10 @@ export function CommandPalette() {
                 e.preventDefault()
                 setCursor((c) => Math.max(c - 1, 0))
               } else if (e.key === "Enter") {
+                e.preventDefault()
+                runAt(cursor)
+              } else if (e.key === "Tab") {
+                // v21: the footer promised it — Tab runs the highlighted entry
                 e.preventDefault()
                 runAt(cursor)
               }

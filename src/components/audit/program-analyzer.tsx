@@ -22,6 +22,7 @@ import {
   FileSpreadsheet,
   Info,
   Loader2,
+  Save,
   SearchCheck,
   Sparkles,
   Upload,
@@ -89,7 +90,14 @@ function download(name: string, content: string, type = "text/csv;charset=utf-8"
 
 /** Journal-entry / trial-balance analyzer (improvement #7): real client-side
  *  ISA 240 data analytics on the auditor's own CSV exports. */
-export function JournalEntryAnalyzer({ lang }: { lang: Lang }) {
+export function JournalEntryAnalyzer({
+  lang,
+  onSave,
+}: {
+  lang: Lang
+  /** v21: persist the JE-testing summary into the engagement (AP-01) */
+  onSave?: (s: { population: number; exceptions: number; note: string }) => void
+}) {
   const rtl = lang === "ar"
   const setAiPresetQuestion = useAppStore((s) => s.setAiPresetQuestion)
   const navigate = useAppStore((s) => s.navigate)
@@ -507,6 +515,26 @@ export function JournalEntryAnalyzer({ lang }: { lang: Lang }) {
                 >
                   <Sparkles className="h-3.5 w-3.5" /> {t("askAi", lang)}
                 </button>
+                {/* v21: write the JE-testing summary back into the engagement
+                    file — population, exceptions, date — for the close-out bundle */}
+                {onSave && (
+                  <button
+                    onClick={() =>
+                      onSave({
+                        population: result.summary.rows,
+                        exceptions: result.findings.reduce((a, f) => a + f.count, 0),
+                        note: result.findings
+                          .slice(0, 6)
+                          .map((f) => (lang === "ar" ? f.titleAr : f.titleEn))
+                          .join(" · "),
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 text-[12px] font-medium transition-colors hover:border-primary/30 hover:text-primary focus-ring"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    {lang === "ar" ? "احفظ في المهمة" : "Save to engagement"}
+                  </button>
+                )}
               </div>
             </div>
           )}

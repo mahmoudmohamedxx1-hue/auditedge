@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { LessonInput } from "@/store/useAppStore"
-import { Lesson, formatBytes } from "@/lib/audit-types"
+import { Lesson, QuizQuestion, formatBytes } from "@/lib/audit-types"
 import { useAppStore } from "@/store/useAppStore"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,6 +24,11 @@ import { Link2, Loader2, Paperclip, Plus, Save, Search, Trash2, X } from "lucide
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"]
 
+/** v21: empty Arabic-edition skeleton for the editor. */
+function blankAr() {
+  return { intro: "", sections: [], keyPoints: [], takeaway: "" }
+}
+
 export function LessonEditor({
   lesson,
   onSave,
@@ -36,7 +41,9 @@ export function LessonEditor({
 }) {
   const data = useAppStore((s) => s.data)
   const lang = useAppStore((s) => s.lang)
-  const [tab, setTab] = useState<"content" | "quiz" | "files">(lesson.type === "quiz" ? "quiz" : "content")
+  const [tab, setTab] = useState<"content" | "quiz" | "arabic" | "files">(
+    lesson.type === "quiz" ? "quiz" : "content"
+  )
   const [busy, setBusy] = useState(false)
 
   const [title, setTitle] = useState(lesson.title)
@@ -58,11 +65,27 @@ export function LessonEditor({
   const [materialQuery, setMaterialQuery] = useState("")
   const [quizTitle, setQuizTitle] = useState(lesson.quiz?.title ?? lesson.title)
   const [passScore, setPassScore] = useState(lesson.quiz?.passScore ?? 70)
-  const [questions, setQuestions] = useState(
+  const [questions, setQuestions] = useState<QuizQuestion[]>(
     lesson.quiz?.questions?.length
-      ? lesson.quiz.questions.map((q) => ({ ...q, options: [...q.options] }))
+      ? lesson.quiz.questions.map((q) => ({
+          ...q,
+          options: [...q.options],
+          optionsAr: q.optionsAr ? [...q.optionsAr] : undefined,
+        }))
       : [{ question: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" }]
   )
+
+  // v21: Arabic edition state — parsed once from the stored JSON so an
+  // untouched tab round-trips byte-for-byte (never destroys existing AR)
+  const [ar, setAr] = useState<import("@/lib/audit-types").LessonContent | null>(() => {
+    try {
+      return lesson.contentAr ? (JSON.parse(lesson.contentAr) as import("@/lib/audit-types").LessonContent) : null
+    } catch {
+      return null
+    }
+  })
+  // which questions have their AR panel open
+  const [arOpenQ, setArOpenQ] = useState<Set<number>>(new Set())
 
   const isQuiz = lesson.type === "quiz"
 
@@ -142,6 +165,7 @@ export function LessonEditor({
       attachments,
       videoUrl: videoUrl.trim(),
       externalUrl: externalUrl.trim(),
+      contentAr: ar, // object | null — the API stores JSON.stringify(ar)
       quiz: isQuiz
         ? {
             title: quizTitle.trim() || title.trim(),
@@ -154,11 +178,22 @@ export function LessonEditor({
                   .map((o, i) => ({ o: o.trim(), i }))
                   .filter((x) => x.o)
                 const keptCorrect = kept.findIndex((x) => x.i === q.correctIndex)
+                // v21: carry the Arabic edition through the same remap so a
+                // studio re-save never strips bilingual content again
+                const keptAr = q.optionsAr
+                  ? kept.map((x) => (q.optionsAr ?? [])[x.i]?.trim() ?? "")
+                  : undefined
+                const arFields = {
+                  ...(q.questionAr ? { questionAr: q.questionAr } : {}),
+                  ...(keptAr && keptAr.some((o) => o) ? { optionsAr: keptAr } : {}),
+                  ...(q.explanationAr ? { explanationAr: q.explanationAr } : {}),
+                }
                 return {
                   question: q.question.trim(),
                   options: kept.map((x) => x.o),
                   correctIndex: keptCorrect >= 0 ? keptCorrect : 0,
                   explanation: q.explanation,
+                  ...(Object.keys(arFields).length ? arFields : {}),
                 }
               }),
           }
@@ -202,6 +237,7 @@ export function LessonEditor({
               ]
             : [
                 { id: "content" as const, label: tt("builder.content", lang) },
+                { id: "arabic" as const, label: "AR · العربية" },
                 { id: "files" as const, label: tt("builder.materials", lang) },
               ]
           ).map((t) => (
@@ -437,6 +473,126 @@ export function LessonEditor({
           </div>
         )}
 
+        {tab === "arabic" && (
+          <div className="space-y-5">
+            <p className="rounded-xl border border-gold/30 bg-gold/[0.07] p-3 text-[12.5px] leading-relaxed text-foreground/80">
+              {lang === "ar"
+                ? "النسخة العربية تظهر زر «نسخة عربية» في مشغّل الدرس. اتركها فارغة لإخفاء الزر — الحفظ لا يمسّ النسخة الإنجليزية."
+                : "The Arabic edition powers the “Arabic edition” toggle in the lesson player. Leave it empty to hide the toggle — saving never touches the English edition."}
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-[13px]">{lang === "ar" ? "التمهيد (عربي)" : "Intro (Arabic)"}</Label>
+              <Textarea
+                dir="rtl"
+                value={ar?.intro ?? ""}
+                onChange={(e) => setAr((x) => ({ ...(x ?? blankAr()), intro: e.target.value }))}
+                className="min-h-[64px]"
+              />
+            </div>
+            <div className="space-y-3">
+              <Label className="text-[13px]">{lang === "ar" ? "الأقسام (عربي)" : "Sections (Arabic)"}</Label>
+              {(ar?.sections ?? []).map((s, i) => (
+                <div key={i} className="rounded-xl border bg-secondary/25 p-3.5">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      dir="rtl"
+                      value={s.heading}
+                      onChange={(e) =>
+                        setAr((x) => ({
+                          ...(x ?? blankAr()),
+                          sections: (x?.sections ?? []).map((y, yi) =>
+                            yi === i ? { ...y, heading: e.target.value } : y
+                          ),
+                        }))
+                      }
+                      className="h-8"
+                    />
+                    <button
+                      onClick={() =>
+                        setAr((x) => ({
+                          ...(x ?? blankAr()),
+                          sections: (x?.sections ?? []).filter((_, yi) => yi !== i),
+                        }))
+                      }
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-ring"
+                      aria-label={lang === "ar" ? "إزالة القسم" : "Remove section"}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <Textarea
+                    dir="rtl"
+                    value={s.body}
+                    onChange={(e) =>
+                      setAr((x) => ({
+                        ...(x ?? blankAr()),
+                        sections: (x?.sections ?? []).map((y, yi) =>
+                          yi === i ? { ...y, body: e.target.value } : y
+                        ),
+                      }))
+                    }
+                    className="mt-2 min-h-[64px]"
+                  />
+                  <Textarea
+                    dir="rtl"
+                    value={(s.bullets ?? []).join("\n")}
+                    onChange={(e) =>
+                      setAr((x) => ({
+                        ...(x ?? blankAr()),
+                        sections: (x?.sections ?? []).map((y, yi) =>
+                          yi === i ? { ...y, bullets: e.target.value.split("\n") } : y
+                        ),
+                      }))
+                    }
+                    placeholder={lang === "ar" ? "نقطة في كل سطر" : "One bullet per line"}
+                    className="mt-2 min-h-[56px] text-[13px]"
+                  />
+                </div>
+              ))}
+              <button
+                onClick={() =>
+                  setAr((x) => ({
+                    ...(x ?? blankAr()),
+                    sections: [...(x?.sections ?? []), { heading: "", body: "", bullets: [] }],
+                  }))
+                }
+                className="text-[12px] font-medium text-primary hover:underline focus-ring"
+              >
+                + {lang === "ar" ? "قسم" : "section"}
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[13px]">{lang === "ar" ? "النقاط الأساسية (عربي)" : "Key points (Arabic)"}</Label>
+              <Textarea
+                dir="rtl"
+                value={(ar?.keyPoints ?? []).join("\n")}
+                onChange={(e) =>
+                  setAr((x) => ({ ...(x ?? blankAr()), keyPoints: e.target.value.split("\n") }))
+                }
+                placeholder={lang === "ar" ? "نقطة في كل سطر" : "One key point per line"}
+                className="min-h-[72px] text-[13px]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[13px]">{lang === "ar" ? "الخلاصة (عربي)" : "Takeaway (Arabic)"}</Label>
+              <Textarea
+                dir="rtl"
+                value={ar?.takeaway ?? ""}
+                onChange={(e) => setAr((x) => ({ ...(x ?? blankAr()), takeaway: e.target.value }))}
+                className="min-h-[56px]"
+              />
+            </div>
+            {ar && (ar.intro || (ar.sections ?? []).length || (ar.keyPoints ?? []).length || ar.takeaway) && (
+              <button
+                onClick={() => setAr(null)}
+                className="text-[12px] font-medium text-destructive hover:underline focus-ring"
+              >
+                {lang === "ar" ? "حذف النسخة العربية" : "Remove the Arabic edition"}
+              </button>
+            )}
+          </div>
+        )}
+
         {tab === "quiz" && (
           <div className="space-y-5">
             <div className="grid grid-cols-[1fr_120px] gap-3">
@@ -560,6 +716,70 @@ export function LessonEditor({
                   }
                   className="mt-2.5 min-h-[56px]"
                 />
+                {/* v21: per-question Arabic edition (optional) */}
+                <button
+                  onClick={() =>
+                    setArOpenQ((s) => {
+                      const next = new Set(s)
+                      if (next.has(qi)) next.delete(qi)
+                      else next.add(qi)
+                      return next
+                    })
+                  }
+                  className={cn(
+                    "mt-2 rounded-full border px-2.5 py-1 text-[11.5px] font-semibold transition-colors focus-ring",
+                    arOpenQ.has(qi) || q.questionAr || q.optionsAr || q.explanationAr
+                      ? "border-gold/60 bg-gold/10 text-gold-deep"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  AR · العربية {q.questionAr || q.optionsAr || q.explanationAr ? "✓" : ""}
+                </button>
+                {arOpenQ.has(qi) && (
+                  <div className="mt-2 space-y-2 rounded-lg border border-gold/25 bg-gold/[0.05] p-3">
+                    <Input
+                      dir="rtl"
+                      value={q.questionAr ?? ""}
+                      onChange={(e) =>
+                        setQuestions((arr) => arr.map((x, xi) => (xi === qi ? { ...x, questionAr: e.target.value } : x)))
+                      }
+                      placeholder="السؤال بالعربية"
+                      className="h-8"
+                    />
+                    {(q.optionsAr ?? q.options.map(() => "")).map((opt, oi) => (
+                      <Input
+                        key={oi}
+                        dir="rtl"
+                        value={opt}
+                        onChange={(e) =>
+                          setQuestions((arr) =>
+                            arr.map((x, xi) =>
+                              xi === qi
+                                ? {
+                                    ...x,
+                                    optionsAr: (x.optionsAr ?? x.options.map(() => "")).map((y, yi) =>
+                                      yi === oi ? e.target.value : y
+                                    ),
+                                  }
+                                : x
+                            )
+                          )
+                        }
+                        placeholder={`الخيار ${LETTERS[oi]}`}
+                        className="h-8"
+                      />
+                    ))}
+                    <Textarea
+                      dir="rtl"
+                      value={q.explanationAr ?? ""}
+                      onChange={(e) =>
+                        setQuestions((arr) => arr.map((x, xi) => (xi === qi ? { ...x, explanationAr: e.target.value } : x)))
+                      }
+                      placeholder="التوضيح بالعربية"
+                      className="min-h-[48px]"
+                    />
+                  </div>
+                )}
               </div>
             ))}
             <button

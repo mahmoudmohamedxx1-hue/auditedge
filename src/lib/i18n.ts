@@ -208,6 +208,11 @@ export const T = {
     min: { en: "min", ar: "دقيقة" },
     completed: { en: "Completed", ar: "مكتمل" },
     askAi: { en: "Ask AI about this lesson", ar: "اسأل الذكاء الاصطناعي عن هذا الدرس" },
+    save: { en: "Save", ar: "حفظ" },
+    saved: { en: "Saved", ar: "محفوظ" },
+    unsave: { en: "Remove from saved", ar: "إزالة من المحفوظات" },
+    savedLessons: { en: "Saved lessons", ar: "الدروس المحفوظة" },
+    savedEmpty: { en: "Bookmark lessons worth revisiting — they collect here.", ar: "احفظ الدروس التي تستحق المراجعة — تتجمع هنا." },
     continueOn: { en: "Continue this course on", ar: "أكمل هذه الدورة على" },
     thePlatform: { en: "the platform", ar: "المنصة" },
     videoCaption: {
@@ -445,6 +450,14 @@ export const T = {
     trainingProgram: { en: "Office Training Program", ar: "برنامج تدريب المكتب" },
   },
 
+  /* ---------- TTS controls (v21) ---------- */
+  tts: {
+    speak: { en: "Read aloud", ar: "قراءة صوتية" },
+    pause: { en: "Pause reading", ar: "إيقاف مؤقت" },
+    resume: { en: "Resume reading", ar: "متابعة القراءة" },
+    stop: { en: "Stop reading", ar: "إيقاف القراءة" },
+  },
+
   /* ---------- AI tutor chrome ---------- */
   ai: {
     newConversation: { en: "New conversation", ar: "محادثة جديدة" },
@@ -516,6 +529,35 @@ export const T = {
       en: "The tutor auto-searches the web for current topics. Verify critical guidance against the standards themselves.",
       ar: "يبحث المساعد تلقائيًا في الويب للموضوعات الحديثة. تحقق من الإرشادات الحرجة من نصوص المعايير نفسها.",
     },
+    /* v21 — voice + conversation management */
+    micUnsupported: { en: "Your browser does not support microphone recording", ar: "متصفحك لا يدعم التسجيل الصوتي" },
+    micTooShort: { en: "Recording was too short — tap the mic, then speak for a few seconds", ar: "التسجيل قصير جدًا — اضغط الميكروفون ثم تحدث بضع ثوانٍ" },
+    micCapped: { en: "Recording stopped at one minute", ar: "توقف التسجيل عند دقيقة واحدة" },
+    micDenied: { en: "Microphone access was denied — allow it in your browser permissions", ar: "تم رفض الوصول للميكروفون — اسمح به من إعدادات المتصفح" },
+    micStop: { en: "Stop recording and transcribe", ar: "إيقاف التسجيل والتحويل لنص" },
+    micSpeak: { en: "Speak your question", ar: "انطق سؤالك" },
+    micTranscribing: { en: "Transcribing…", ar: "يحوّل الصوت لنص…" },
+    asrFailed: { en: "Could not transcribe your speech", ar: "تعذر تحويل كلامك إلى نص" },
+    stoppedMarker: { en: "stopped", ar: "أُوقف" },
+    workspaceEngine: { en: "workspace engine", ar: "محرك مساحة العمل" },
+    sdkNotice: {
+      en: "Answered by the built-in workspace engine — add a Z.ai API key to use GLM-4.7 Flash / GLM-4 Plus.",
+      ar: "أجاب محرك مساحة العمل المدمج — أضف مفتح Z.ai لاستخدام GLM-4.7 Flash / GLM-4 Plus.",
+    },
+    translate: { en: "Translate", ar: "ترجم" },
+    translating: { en: "Translating…", ar: "يترجم…" },
+    translateFailed: { en: "Translation failed — try again", ar: "فشلت الترجمة — حاول مجددًا" },
+    rename: { en: "Rename", ar: "إعادة تسمية" },
+    renameTitle: { en: "Rename conversation", ar: "إعادة تسمية المحادثة" },
+    pin: { en: "Pin", ar: "تثبيت" },
+    unpin: { en: "Unpin", ar: "إلغاء التثبيت" },
+    pinned: { en: "Pinned", ar: "مثبتة" },
+    renamed: { en: "Conversation renamed", ar: "أُعيدت تسمية المحادثة" },
+    regenNoImage: {
+      en: "Regenerate isn't available for image questions — the attachment can't be re-sent. Ask again with the image re-attached.",
+      ar: "إعادة التوليد غير متاحة لأسئلة الصور — لا يمكن إعادة إرسال المرفق. أعد السؤال مع إرفاق الصورة مرة أخرى.",
+    },
+    retry: { en: "Retry", ar: "أعد المحاولة" },
     scrollLatest: { en: "Scroll to latest message", ar: "الانتقال لآخر رسالة" },
     searchingWeb: { en: "Searching the web", ar: "البحث في الويب" },
     searchingLib: { en: "Searching the office library", ar: "البحث في مكتبة المكتب" },
@@ -881,6 +923,12 @@ export const T = {
     practiceDone: { en: "Practice set complete", ar: "انتهى التدريب" },
     retryPractice: { en: "New practice set", ar: "مجموعة تدريب جديدة" },
     yourAccuracy: { en: "Your accuracy this set", ar: "دقتك في هذه المجموعة" },
+    drillMisses: { en: "Drill my misses", ar: "تدرّب على أخطائي" },
+    missesDone: { en: "Misses drill complete", ar: "انتهى تصحيح الأخطاء" },
+    timedOutBadge: { en: "Time expired", ar: "انتهى الوقت" },
+    avgPace: { en: "Pace", ar: "الإيقاع" },
+    pacePerQ: { en: "s / question", ar: "ث/سؤال" },
+    scoreTrend: { en: "Score trend — past sittings", ar: "تطور النتائج — الاختبارات السابقة" },
   },
   review: {
     title: { en: "Daily Review", ar: "المراجعة اليومية" },
@@ -938,6 +986,7 @@ export const T = {
     coverage: { en: "coverage", ar: "التغطية" },
     accuracy: { en: "accuracy", ar: "الدقة" },
     studyPlan: { en: "Study plan", ar: "خطة الدراسة" },
+    planGoTo: { en: "Go to this task", ar: "انتقل إلى المهمة" },
     generatePlan: { en: "Generate AI study plan", ar: "أنشئ خطة دراسة ذكية" },
     goal: { en: "Your goal", ar: "هدفك" },
     goalPh: { en: "e.g. Pass the SOXE audit paper in December", ar: "مثال: اجتاز ورقة المراجعة في ديسمبر" },

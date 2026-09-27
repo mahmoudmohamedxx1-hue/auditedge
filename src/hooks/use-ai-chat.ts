@@ -190,6 +190,19 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
             if (last && !last.content) next.pop()
             return next
           })
+        } else if (aborted) {
+          // v21 stop-honesty: keep the partial answer and mark it — the server
+          // persists exactly the same partial text with the same marker, so
+          // reloading the conversation matches what the learner read
+          setMessages((prev) => {
+            const next = [...prev]
+            const last = next[next.length - 1]
+            if (last && last.role === "assistant" && last.content.trim() && !last.content.includes("*(stopped")) {
+              next[next.length - 1] = { ...last, content: `${last.content}\n\n*(stopped · أُوقف)*` }
+            }
+            return next
+          })
+          opts?.conversationsRefresh?.()
         }
         return { ok: false }
       } finally {
@@ -269,8 +282,9 @@ export function useAiChat(opts?: { conversationsRefresh?: () => void }) {
 export function useAiConversations() {
   const [conversations, setConversations] = useState<AiConversationSummary[] | null>(null)
 
-  const refresh = useCallback(() => {
-    return fetch("/api/ai/conversations")
+  const refresh = useCallback((q?: string) => {
+    const url = q && q.trim() ? `/api/ai/conversations?q=${encodeURIComponent(q.trim())}` : "/api/ai/conversations"
+    return fetch(url)
       .then((r) => (r.ok ? r.json() : null))
       .then((list) => {
         if (Array.isArray(list)) setConversations(list)
@@ -291,5 +305,32 @@ export function useAiConversations() {
     []
   )
 
-  return { conversations, refresh, remove }
+  /** v21: rename a conversation (optimistic, server-clamped title). */
+  const rename = useCallback(async (id: string, title: string) => {
+    const clean = title.trim().slice(0, 90)
+    if (!clean) return
+    setConversations((prev) => prev?.map((c) => (c.id === id ? { ...c, title: clean } : c)) ?? null)
+    await fetch(`/api/ai/conversations/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "rename", title: clean }),
+    }).catch(() => {})
+  }, [])
+
+  /** v21: pin/unpin a conversation to the top of the rail. */
+  const setPinned = useCallback(async (id: string, pinned: boolean) => {
+    setConversations(
+      (prev) =>
+        prev
+          ?.map((c) => (c.id === id ? { ...c, pinned } : c))
+          .sort((a, b) => Number(b.pinned ?? false) - Number(a.pinned ?? false)) ?? null
+    )
+    await fetch(`/api/ai/conversations/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "pin", pinned }),
+    }).catch(() => {})
+  }, [])
+
+  return { conversations, refresh, remove, rename, setPinned }
 }

@@ -75,8 +75,36 @@ export async function drawPractice(opts: {
   if (fresh.length >= opts.count) pool = fresh
 
   const rand = mulberry32(opts.seed ?? Math.floor(Math.random() * 1e9))
-  const shuffled = [...pool].sort(() => rand() - 0.5)
+  // v21: unbiased Fisher–Yates (the old sort(() => rand() - 0.5) is biased)
+  const shuffled = [...pool]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
   return shuffled.slice(0, opts.count).map(questionForClient)
+}
+
+/** v21 mistake book: questions whose LATEST attempt was wrong (a later
+ *  correct answer redeems the question). Returns them shuffled, capped. */
+export async function missedQuestions(userId: string, cap = 30, seed?: number): Promise<ClientQ[]> {
+  const attempts = await db.bankAttempt.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+    select: { questionId: true, correct: true },
+  })
+  const latest = new Map<string, boolean>()
+  for (const a of attempts) latest.set(a.questionId, a.correct)
+  const missedIds = [...latest.entries()].filter(([, ok]) => !ok).map(([id]) => id)
+  if (!missedIds.length) return []
+
+  const rows = await db.bankQuestion.findMany({ where: { id: { in: missedIds } } })
+  const rand = mulberry32(seed ?? Math.floor(Math.random() * 1e9))
+  const shuffled = [...rows]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled.slice(0, cap).map(questionForClient)
 }
 
 export function mulberry32(seed: number) {

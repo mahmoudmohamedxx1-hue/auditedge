@@ -41,6 +41,12 @@ export type Finding = {
   amount?: number
   status: FindingStatus
   createdAt: number
+  /** v21: working-paper reference for the misstatement schedule */
+  wp?: string
+  /** v21: qualitative flag — matters regardless of size (ISA 450.11) */
+  qualitative?: boolean
+  /** v21: the proposed adjustment entry management could post */
+  adj?: { dr?: string; cr?: string; amount?: number }
 }
 
 export type Signoff = {
@@ -48,6 +54,53 @@ export type Signoff = {
   preparedAt?: number
   reviewedBy?: string
   reviewedAt?: number
+}
+
+/** v21: the ISA 320 materiality memo saved from the AP-02 calculator. */
+export type MaterialityMemo = {
+  om: number
+  benchmark: string
+  pmPct: number
+  pm: number
+  cttPct: number
+  ctt: number
+  rationale: string
+  savedAt: number
+}
+
+/** v21: ISA 570 going-concern checklist state. */
+export type GcChecklist = {
+  /** indicator id → observed by the team */
+  indicators: Record<string, boolean>
+  /** evidence obtained / WFGI notes */
+  notes: string
+  /** adequate-disclosure → MURGC paragraph; inadequate → modification ladder */
+  conclusion: "pending" | "adequate" | "inadequate-disclosed" | "inadequate-undisclosed"
+  savedAt: number
+}
+
+/** v21: one row of the interactive risk-assessment matrix (ISA 315/330). */
+export type RiskRating = "low" | "med" | "high"
+
+export type RiskRow = {
+  id: string
+  account: string
+  /** assertion code (EX/C/A/VA/RO/CO/CL/PR) or free text */
+  assertion: string
+  ir: RiskRating
+  cr: RiskRating
+  /** significant risk → stands-alone response (ISA 240/315) */
+  significant: boolean
+  response: string
+  savedAt: number
+}
+
+/** v21: JE/TB analyzer summary persisted into the engagement (AP-01). */
+export type JeSummary = {
+  savedAt: number
+  population: number
+  exceptions: number
+  note: string
 }
 
 export type Engagement = {
@@ -68,6 +121,16 @@ export type Engagement = {
   pm?: number
   /** clearly-trivial threshold (EGP) */
   ctt?: number
+  /** v21: linked industry sector — tailors the risk view + KAM seeds */
+  sectorId?: string
+  /** v21: the saved ISA 320 materiality memo (AP-02) */
+  materiality?: MaterialityMemo
+  /** v21: ISA 570 going-concern checklist (AP-04) */
+  gc?: GcChecklist
+  /** v21: risk-assessment matrix rows (AP-01) */
+  riskMatrix?: RiskRow[]
+  /** v21: JE-testing summary written back from the analyzer (AP-01) */
+  jeSummary?: JeSummary
 }
 
 export type EngagementStore = {
@@ -361,4 +424,323 @@ export function exportPbcCsv(eng: Engagement) {
     })
   const slug = eng.client.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").toLowerCase() || "engagement"
   downloadCsv(`pbc-list-${slug}.csv`, rows)
+}
+
+/* ------------------------------------------------------------------ */
+/* v21 — findings register export (SAD with proposed adjustments)      */
+/* ------------------------------------------------------------------ */
+
+/** The summary of adjusted differences as management can post it. */
+export function exportFindingsCsv(eng: Engagement, lang: "en" | "ar") {
+  const rows: string[][] = [
+    lang === "ar"
+      ? ["القسم", "الوصف", "المبلغ (ج.م)", "الحالة", "نوعية؟", "مرجع ورقة العمل", "تسوية مقترحة — مدين", "تسوية مقترحة — دائن", "المبلغ المقترح"]
+      : ["Section", "Description", "Amount (EGP)", "Status", "Qualitative?", "WP ref", "Proposed adj — Dr", "Proposed adj — Cr", "Proposed amount"],
+  ]
+  const statusAr: Record<FindingStatus, string> = { open: "قائمة", passed: "مُجازة", corrected: "مصححة" }
+  for (const f of eng.findings) {
+    rows.push([
+      f.sectionId,
+      f.description,
+      typeof f.amount === "number" ? String(f.amount) : "",
+      lang === "ar" ? statusAr[f.status] : f.status,
+      f.qualitative ? (lang === "ar" ? "نعم" : "Yes") : "",
+      f.wp ?? "",
+      f.adj?.dr ?? "",
+      f.adj?.cr ?? "",
+      typeof f.adj?.amount === "number" ? String(f.adj.amount) : "",
+    ])
+  }
+  const slug = eng.client.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").toLowerCase() || "engagement"
+  downloadCsv(`sad-${slug}-${eng.period.replace(/\s+/g, "")}.csv`, rows)
+}
+
+/* ------------------------------------------------------------------ */
+/* v21 — working-paper index (ISA 230 cross-reference discipline)      */
+/* ------------------------------------------------------------------ */
+
+export type WpIndexEntry = {
+  ref: string
+  procIds: string[]
+  sections: string[]
+}
+
+export type WpIndexReport = {
+  entries: WpIndexEntry[]
+  /** done procedures with no WP ref at all */
+  missing: { procId: string; sectionCode: string; text: string }[]
+  /** the same WP ref used by procedures in different sections */
+  duplicates: WpIndexEntry[]
+}
+
+export function wpIndex(eng: Engagement, sections = PROGRAM_SECTIONS): WpIndexReport {
+  const byRef = new Map<string, WpIndexEntry>()
+  const missing: WpIndexReport["missing"] = []
+  for (const s of sections)
+    s.procedures.forEach((p) => {
+      const st = eng.procedures[p.id]
+      if (st?.status !== "done") return
+      const ref = st.wp?.trim()
+      if (!ref) {
+        missing.push({ procId: p.id, sectionCode: s.code, text: p.text.en })
+        return
+      }
+      const norm = ref.toUpperCase().replace(/\s+/g, "")
+      const e = byRef.get(norm) ?? { ref, procIds: [], sections: [] }
+      e.procIds.push(p.id)
+      if (!e.sections.includes(s.code)) e.sections.push(s.code)
+      byRef.set(norm, e)
+    })
+  const entries = [...byRef.values()].sort((a, b) => a.ref.localeCompare(b.ref))
+  const duplicates = entries.filter((e) => e.procIds.length > 1)
+  return { entries, missing, duplicates }
+}
+
+/* ------------------------------------------------------------------ */
+/* v21 — assertion coverage map (ISA 315/330 linkage)                   */
+/* ------------------------------------------------------------------ */
+
+export type AssertionCoverage = {
+  /** assertion code → covered / total across ticked procedures */
+  rows: { code: string; done: number; na: number; total: number }[]
+  /** sections carrying this assertion vocabulary */
+  totalSections: number
+}
+
+export function assertionCoverage(eng: Engagement, assertions: { code: string }[], sections = PROGRAM_SECTIONS): AssertionCoverage {
+  const rows = assertions.map((a) => ({ code: a.code, done: 0, na: 0, total: 0 }))
+  const byCode = new Map(rows.map((r) => [r.code, r]))
+  for (const s of sections)
+    for (const code of s.assertions ?? []) {
+      const r = byCode.get(code)
+      if (!r) continue
+      for (const p of s.procedures) {
+        const st = eng.procedures[p.id]
+        r.total++
+        if (st?.status === "done") r.done++
+        else if (st?.status === "na") r.na++
+      }
+    }
+  return { rows, totalSections: sections.filter((s) => (s.assertions ?? []).length > 0).length }
+}
+
+/* ------------------------------------------------------------------ */
+/* v21 — PBC aging (chaser discipline)                                  */
+/* ------------------------------------------------------------------ */
+
+export type AgedPbc = PbcItem & { daysOutstanding: number }
+
+/** Requested-but-not-received items, oldest chaser first. */
+export function pbcAging(eng: Engagement): AgedPbc[] {
+  const now = Date.now()
+  return pbcItems(eng)
+    .filter((it) => it.state?.status === "requested")
+    .map((it) => ({
+      ...it,
+      daysOutstanding: it.state?.requestedAt ? Math.floor((now - it.state.requestedAt) / 86_400_000) : 0,
+    }))
+    .sort((a, b) => b.daysOutstanding - a.daysOutstanding)
+}
+
+/* ------------------------------------------------------------------ */
+/* v21 — engagement close-out bundle (Markdown, ISA 230.14 assembly)   */
+/* ------------------------------------------------------------------ */
+
+function mdEscape(s: string): string {
+  return s.replace(/\|/g, "\\|")
+}
+
+/** The one-document engagement summary: progress, PBC, SAD vs PM,
+ *  unsigned sections, GC conclusion — printable, archivable. */
+export function engagementBundleMd(eng: Engagement, sections = PROGRAM_SECTIONS): string {
+  const prog = overallProgress(eng)
+  const ps = pbcStats(eng)
+  const unc = uncorrectedTotal(eng)
+  const verdict = sadVerdict(eng)
+  const wp = wpIndex(eng, sections)
+  const aged = pbcAging(eng)
+  const unsigned = sections.filter((s) => {
+    const so = eng.signoffs[s.id]
+    return sectionProgress(eng, s.id).pct > 0 && !(so?.preparedBy && so?.reviewedBy)
+  })
+
+  const lines: string[] = [
+    `# Audit file close-out — ${eng.client} (${eng.period})`,
+    "",
+    `Generated ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} · AuditEdge Academy`,
+    "",
+    "## 1. Fieldwork progress",
+    `- Procedures performed: **${prog.done}** done + ${prog.na} N/A of ${prog.total} (**${prog.pct}%**)`,
+    ...(eng.sectorId ? [`- Industry sector: ${eng.sectorId}`] : []),
+    "",
+    "## 2. Materiality (ISA 320)",
+    ...(eng.materiality
+      ? [
+          `- Overall materiality: EGP ${eng.materiality.om.toLocaleString()} (${eng.materiality.benchmark})`,
+          `- Performance materiality: EGP ${eng.materiality.pm.toLocaleString()} (${eng.materiality.pmPct}% of OM)`,
+          `- Clearly-trivial threshold: EGP ${eng.materiality.ctt.toLocaleString()}`,
+          `- Rationale: ${eng.materiality.rationale || "—"}`,
+        ]
+      : ["- Not yet saved from the AP-02 calculator."]),
+    "",
+    "## 3. Summary of adjusted differences (ISA 450)",
+    `- Open: EGP ${unc.open.toLocaleString()} · waived: EGP ${unc.passed.toLocaleString()} · **aggregate uncorrected: EGP ${unc.total.toLocaleString()}**`,
+    `- Verdict: ${verdict.en}`,
+    `- Qualitative findings: ${eng.findings.filter((f) => f.qualitative).length}`,
+    "",
+    "## 4. PBC status",
+    `- Received ${ps.received}/${ps.total} · requested ${ps.requested} · pending ${ps.pending}`,
+    ...(aged.length
+      ? [
+          `- Outstanding requests (oldest first): ${aged
+            .slice(0, 5)
+            .map((a) => `${a.code} (${a.daysOutstanding}d)`)
+            .join(", ")}${aged.length > 5 ? " …" : ""}`,
+        ]
+      : ["- No outstanding requests."]),
+    "",
+    "## 5. Working-paper index (ISA 230)",
+    ...(wp.entries.length
+      ? [
+          "| WP ref | Sections | Procedures |",
+          "| --- | --- | --- |",
+          ...wp.entries.map((e) => `| ${mdEscape(e.ref)} | ${e.sections.join(", ")} | ${e.procIds.length} |`),
+        ]
+      : ["- No WP references recorded yet."]),
+    ...(wp.missing.length ? [`- Done procedures with no WP ref: ${wp.missing.length}`] : []),
+    ...(wp.duplicates.length ? [`- Reused WP refs (check): ${wp.duplicates.map((d) => d.ref).join(", ")}`] : []),
+    "",
+    "## 6. Going concern (ISA 570)",
+    ...(eng.gc
+      ? [
+          `- Indicators observed: ${Object.values(eng.gc.indicators).filter(Boolean).length}`,
+          `- Conclusion: ${eng.gc.conclusion}`,
+          ...(eng.gc.notes ? [`- Notes: ${eng.gc.notes}`] : []),
+        ]
+      : ["- Checklist not yet completed."]),
+    "",
+    "## 7. Sections awaiting sign-off",
+    ...(unsigned.length
+      ? unsigned.map((s) => `- ${s.code} — ${s.title.en} (${sectionProgress(eng, s.id).pct}% performed)`)
+      : ["- All active sections prepared and reviewed."]),
+    "",
+    "## 8. Risk matrix (ISA 315/330)",
+    ...(eng.riskMatrix?.length
+      ? [
+          "| Account | Assertion | IR | CR | Significant | Response |",
+          "| --- | --- | --- | --- | --- | --- |",
+          ...eng.riskMatrix.map(
+            (r) => `| ${mdEscape(r.account)} | ${r.assertion} | ${r.ir} | ${r.cr} | ${r.significant ? "yes" : ""} | ${mdEscape(r.response)} |`
+          ),
+        ]
+      : ["- Risk matrix not yet built."]),
+    "",
+    "## 9. JE / TB analytics (ISA 240)",
+    eng.jeSummary
+      ? `- Population ${eng.jeSummary.population.toLocaleString()} entries · ${eng.jeSummary.exceptions} exceptions flagged · saved ${csvDate(eng.jeSummary.savedAt)}`
+      : "- Analyzer results not yet saved to this engagement.",
+    "",
+    "## 10. Open findings register",
+    ...(eng.findings.length
+      ? [
+          "| Section | Description | EGP | Status |",
+          "| --- | --- | --- | --- |",
+          ...eng.findings.map(
+            (f) => `| ${f.sectionId} | ${mdEscape(f.description)} | ${typeof f.amount === "number" ? f.amount.toLocaleString() : "—"} | ${f.status} |`
+          ),
+        ]
+      : ["- No findings recorded."]),
+    "",
+  ]
+  return lines.join("\n")
+}
+
+export function downloadEngagementBundle(eng: Engagement) {
+  const md = engagementBundleMd(eng)
+  const slug = eng.client.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").toLowerCase() || "engagement"
+  const blob = new Blob([`\uFEFF${md}`], { type: "text/markdown;charset=utf-8" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = `closeout-${slug}-${eng.period.replace(/\s+/g, "")}.md`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+/* ------------------------------------------------------------------ */
+/* v21 — localStorage workspaces in the backup round-trip              */
+/* ------------------------------------------------------------------ */
+
+/** Everything the server-side /api/user-data export CANNOT see: the
+ *  engagement store (tick-offs, findings, sign-offs, PBC), KAM drafts and
+ *  industry-analysis history. One JSON file the learner can re-import. */
+export function exportWorkspaceLocalJson(): string {
+  const ls = typeof localStorage === "undefined" ? null : localStorage
+  const payload: Record<string, unknown> = {
+    version: 21,
+    exportedAt: new Date().toISOString(),
+    engagements: JSON.parse(ls?.getItem("auditedge-engagements-v1") ?? '{"engagements":[],"activeId":null}'),
+  }
+  for (const key of ["auditedge-kam-draft", "auditedge-industry-analyses-v1", "auditedge-bookmarks"]) {
+    const raw = ls?.getItem(key)
+    if (raw) {
+      try {
+        payload[key] = JSON.parse(raw)
+      } catch {
+        payload[key] = raw
+      }
+    }
+  }
+  return JSON.stringify(payload, null, 2)
+}
+
+export function downloadWorkspaceLocalBackup() {
+  const slug = new Date().toISOString().slice(0, 10)
+  const blob = new Blob([exportWorkspaceLocalJson()], { type: "application/json" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = `auditedge-workspace-backup-${slug}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+/** Import a workspace backup — merges engagements by id (never deletes
+ *  current work) and restores KAM/industry history only when absent. */
+export async function importWorkspaceLocalJson(file: File): Promise<{ engagements: number; restored: string[] }> {
+  const text = await file.text()
+  const data = JSON.parse(text) as Record<string, unknown>
+  const restored: string[] = []
+  let count = 0
+
+  const store = loadEngagements()
+  const incoming = (data.engagements as EngagementStore | undefined)?.engagements
+  if (Array.isArray(incoming) && incoming.length) {
+    const byId = new Map(store.engagements.map((e) => [e.id, e]))
+    for (const e of incoming) {
+      if (!e || typeof e.id !== "string") continue
+      if (!byId.has(e.id)) {
+        // defensive normalisation — same shape as loadEngagements
+        byId.set(e.id, {
+          ...e,
+          procedures: e.procedures ?? {},
+          pbc: e.pbc ?? {},
+          findings: Array.isArray(e.findings) ? e.findings : [],
+          signoffs: e.signoffs ?? {},
+        })
+        count++
+      }
+    }
+    store.engagements = [...byId.values()]
+    saveEngagements(store)
+    restored.push("engagements")
+  }
+
+  for (const key of ["auditedge-kam-draft", "auditedge-industry-analyses-v1", "auditedge-bookmarks"]) {
+    if (data[key] !== undefined && !localStorage.getItem(key)) {
+      localStorage.setItem(key, typeof data[key] === "string" ? data[key] : JSON.stringify(data[key]))
+      restored.push(key)
+    }
+  }
+  return { engagements: count, restored }
 }

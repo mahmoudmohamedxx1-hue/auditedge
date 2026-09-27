@@ -175,6 +175,11 @@ export function PbcTracker({
                             {st.requestedAt && (
                               <>
                                 {t("requestedOn")} {fmtDate(st.requestedAt, lang)}
+                                {isRequested && (
+                                  <span className="ms-1.5 rounded px-1 py-px font-semibold text-gold-deep bg-gold/15" title={lang === "ar" ? "عمرك الانتظار" : "chaser age"}>
+                                    +{Math.max(0, Math.floor((Date.now() - st.requestedAt) / 86_400_000))}d
+                                  </span>
+                                )}
                               </>
                             )}
                             {st.requestedAt && st.receivedAt && " · "}

@@ -20,6 +20,7 @@ export async function GET() {
       score: true,
       startedAt: true,
       completedAt: true,
+      timedOut: true,
     },
   })
   return NextResponse.json({ sessions })

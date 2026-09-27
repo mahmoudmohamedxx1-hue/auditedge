@@ -42,6 +42,8 @@ export type AiChatMessage = {
 export type AiConversationSummary = {
   id: string
   title: string
+  /** v21: pinned conversations float to the top of the tutor rail. */
+  pinned?: boolean
   updatedAt: string
   messageCount: number
 }
@@ -280,6 +282,8 @@ export type ExamSessionClient = {
   score: number | null
   correct: number | null
   sectionScores: Record<string, { correct: number; total: number }>
+  /** v21: submitted after the server-side deadline */
+  timedOut?: boolean
   questions: BankQuestionClient[]
   /** answered picks so far: {questionId: picked} */
   answered: Record<string, number>
@@ -295,6 +299,7 @@ export type ExamSummaryRow = {
   score: number | null
   startedAt: string
   completedAt: string | null
+  timedOut?: boolean
 }
 
 export type ReviewCardClient = {

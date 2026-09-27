@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { ASSERTIONS, PROGRAM_SECTIONS, PROGRAM_TOTAL_PROCEDURES, type ProgramSection } from "@/lib/program"
+import { SECTOR_PROFILES } from "@/lib/program/sectors"
 import {
   loadEngagements,
   saveEngagements,
@@ -24,7 +25,9 @@ import { SignoffEditor, fmtDate, type Lang } from "./program-shared"
 import { PbcTracker } from "./program-pbc"
 import { FindingsSad } from "./program-findings"
 import { SignoffSummary } from "./program-signoffs"
+import { CloseOutPanel } from "./program-closeout"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -136,6 +139,7 @@ const UI = {
   tabPbc: { en: "PBC Tracker", ar: "مستندات العميل" },
   tabFindings: { en: "Findings & SAD", ar: "الملاحظات والفروقات" },
   tabSignoffs: { en: "Sign-offs", ar: "الاعتمادات" },
+  tabCloseout: { en: "Close-out", ar: "الإقفال" },
   procs: { en: "procedures", ar: "إجراء" },
   pbcShort: { en: "PBC", ar: "مستندات" },
   findingsShort: { en: "findings", ar: "ملاحظة" },
@@ -174,12 +178,13 @@ export function libraryQueryFor(standard: string): string | null {
   return null // EAS, Labor Law — no text in the library yet
 }
 
-type Tab = "program" | "pbc" | "findings" | "signoffs"
+type Tab = "program" | "pbc" | "findings" | "signoffs" | "closeout"
 const TABS: { id: Tab; key: keyof typeof UI }[] = [
   { id: "program", key: "tabProgram" },
   { id: "pbc", key: "tabPbc" },
   { id: "findings", key: "tabFindings" },
   { id: "signoffs", key: "tabSignoffs" },
+  { id: "closeout", key: "tabCloseout" },
 ]
 
 export function AuditProgram() {
@@ -234,16 +239,18 @@ export function AuditProgram() {
 
   /* ---------------- engagement CRUD ---------------- */
 
-  const createEngagement = (client: string, period: string) => {
-    const e = newEngagement(client, period)
+  const createEngagement = (client: string, period: string, sectorId?: string) => {
+    const e = { ...newEngagement(client, period), ...(sectorId ? { sectorId } : {}) }
     persist({ engagements: [...store.engagements, e], activeId: e.id })
   }
 
-  const updateEngagementMeta = (id: string, client: string, period: string) =>
+  const updateEngagementMeta = (id: string, client: string, period: string, sectorId?: string) =>
     persist({
       ...store,
       engagements: store.engagements.map((e) =>
-        e.id === id ? { ...e, client: client.trim() || e.client, period: period.trim() || e.period } : e
+        e.id === id
+          ? { ...e, client: client.trim() || e.client, period: period.trim() || e.period, ...(sectorId !== undefined ? { sectorId } : {}) }
+          : e
       ),
     })
 
@@ -285,10 +292,21 @@ export function AuditProgram() {
       return { ...e, signoffs }
     })
 
-  const addFinding = (sectionId: string, description: string, amount?: number) =>
-    updateEng((e) => ({ ...e, findings: [...e.findings, newFinding(sectionId, description, amount)] }))
+  const addFinding = (
+    sectionId: string,
+    description: string,
+    amount?: number,
+    extras?: { wp?: string; qualitative?: boolean; adj?: { dr?: string; cr?: string; amount?: number } }
+  ) =>
+    updateEng((e) => ({
+      ...e,
+      findings: [...e.findings, { ...newFinding(sectionId, description, amount), ...extras }],
+    }))
 
-  const updateFinding = (id: string, patch: Partial<{ status: "open" | "passed" | "corrected" }>) =>
+  const updateFinding = (
+    id: string,
+    patch: Partial<{ status: "open" | "passed" | "corrected"; wp?: string; qualitative?: boolean; adj?: { dr?: string; cr?: string; amount?: number } }>
+  ) =>
     updateEng((e) => ({
       ...e,
       findings: e.findings.map((f) => (f.id === id ? { ...f, ...patch } : f)),
@@ -516,6 +534,8 @@ export function AuditProgram() {
         />
       ) : tab === "signoffs" ? (
         <SignoffSummary lang={lang} eng={eng} onSetSignoff={setSignoff} />
+      ) : tab === "closeout" ? (
+        <CloseOutPanel lang={lang} eng={eng} onPatchEng={(patch) => updateEng((e) => ({ ...e, ...patch }))} />
       ) : searchResults ? (
         /* search results mode */
         <div className="mt-5 space-y-2 print:hidden">
@@ -637,6 +657,7 @@ export function AuditProgram() {
             onSignoff={(patch) => setSignoff(active.id, patch)}
             onOpenStandard={openStandard}
             onGoPbc={() => goTab("pbc")}
+            onPatchEng={(patch) => updateEng((e) => ({ ...e, ...patch }))}
           />
         </div>
       )}
@@ -660,9 +681,9 @@ function EngagementBar({
   store: EngagementStore
   eng: Engagement
   lang: Lang
-  onCreate: (client: string, period: string) => void
+  onCreate: (client: string, period: string, sectorId?: string) => void
   onSwitch: (id: string) => void
-  onEditMeta: (id: string, client: string, period: string) => void
+  onEditMeta: (id: string, client: string, period: string, sectorId?: string) => void
   onDelete: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -671,6 +692,7 @@ function EngagementBar({
     target?: Engagement
     client: string
     period: string
+    sectorId: string
   } | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
 
@@ -763,7 +785,7 @@ function EngagementBar({
                     </span>
                   </button>
                   <button
-                    onClick={() => setDialog({ mode: "edit", target: e, client: e.client, period: e.period })}
+                    onClick={() => setDialog({ mode: "edit", target: e, client: e.client, period: e.period, sectorId: e.sectorId ?? "" })}
                     aria-label={t("editEngagement", lang)}
                     className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity hover:text-primary focus-ring"
                   >
@@ -784,7 +806,7 @@ function EngagementBar({
           </div>
           <button
             onClick={() => {
-              setDialog({ mode: "create", client: "", period: "FY 2026" })
+              setDialog({ mode: "create", client: "", period: "FY 2026", sectorId: "" })
               setOpen(false)
             }}
             className="mt-1.5 flex w-full items-center gap-2 rounded-xl border border-dashed px-2.5 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary focus-ring"
@@ -800,13 +822,15 @@ function EngagementBar({
         lang={lang}
         client={dialog?.client ?? ""}
         period={dialog?.period ?? ""}
+        sectorId={dialog?.sectorId ?? ""}
         onClientChange={(v) => setDialog((d) => (d ? { ...d, client: v } : d))}
         onPeriodChange={(v) => setDialog((d) => (d ? { ...d, period: v } : d))}
+        onSectorChange={(v) => setDialog((d) => (d ? { ...d, sectorId: v } : d))}
         onClose={() => setDialog(null)}
         onSave={() => {
           if (!dialog || !dialog.client.trim()) return
-          if (dialog.mode === "create") onCreate(dialog.client, dialog.period)
-          else if (dialog.target) onEditMeta(dialog.target.id, dialog.client, dialog.period)
+          if (dialog.mode === "create") onCreate(dialog.client, dialog.period, dialog.sectorId || undefined)
+          else if (dialog.target) onEditMeta(dialog.target.id, dialog.client, dialog.period, dialog.sectorId || undefined)
           setDialog(null)
         }}
       />
@@ -820,8 +844,10 @@ function EngagementDialog({
   lang,
   client,
   period,
+  sectorId,
   onClientChange,
   onPeriodChange,
+  onSectorChange,
   onClose,
   onSave,
 }: {
@@ -830,8 +856,10 @@ function EngagementDialog({
   lang: Lang
   client: string
   period: string
+  sectorId: string
   onClientChange: (v: string) => void
   onPeriodChange: (v: string) => void
+  onSectorChange: (v: string) => void
   onClose: () => void
   onSave: () => void
 }) {
@@ -871,6 +899,26 @@ function EngagementDialog({
               className="mt-1 h-10 w-full rounded-xl border bg-background px-3 text-[13.5px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary/40"
             />
           </div>
+          {/* v21: link the engagement to an industry sector — the risk library
+              and the close-out bundle pick it up */}
+          <div>
+            <label className="text-[12px] font-medium text-muted-foreground">
+              {lang === "ar" ? "القطاع (اختياري)" : "Industry sector (optional)"}
+            </label>
+            <select
+              value={sectorId}
+              onChange={(e) => onSectorChange(e.target.value)}
+              className="mt-1 h-10 w-full rounded-xl border bg-background px-3 text-[13.5px] outline-none transition-colors focus:border-primary/40"
+              aria-label={lang === "ar" ? "القطاع" : "Industry sector"}
+            >
+              <option value="">{lang === "ar" ? "— بلا قطاع —" : "— no sector —"}</option>
+              {SECTOR_PROFILES.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {lang === "ar" ? s.name.ar : s.name.en}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <DialogFooter>
           <button
@@ -906,6 +954,7 @@ function SectionView({
   onSignoff,
   onOpenStandard,
   onGoPbc,
+  onPatchEng,
 }: {
   section: ProgramSection
   lang: Lang
@@ -916,6 +965,8 @@ function SectionView({
   onSignoff: (patch: Partial<Signoff>) => void
   onOpenStandard: (standard: string) => void
   onGoPbc: () => void
+  /** v21: patch the whole engagement (materiality memo, JE summary) */
+  onPatchEng: (patch: Partial<Engagement>) => void
 }) {
   const [confirmReset, setConfirmReset] = useState(false)
   const rtl = lang === "ar"
@@ -1116,7 +1167,20 @@ function SectionView({
       )}
       {section.id === "materiality" && (
         <div className="mt-3">
-          <MaterialityCalculator lang={lang} />
+          {/* v21: the calculator persists its ISA 320 memo to the engagement
+              (and syncs PM/CTT so the SAD evaluates against it) */}
+          <MaterialityCalculator
+            lang={lang}
+            memo={eng.materiality}
+            onSave={(m) => {
+              onPatchEng({ materiality: m, pm: m.pm, ctt: m.ctt })
+              toast.success(
+                lang === "ar"
+                  ? "حُفظت مذكرة الأهمية — وسيقوّم ملخص الفروق بناءً عليها."
+                  : "Materiality memo saved — the SAD now evaluates against it."
+              )
+            }}
+          />
         </div>
       )}
       {section.id === "sampling" && (
@@ -1126,7 +1190,18 @@ function SectionView({
       )}
       {section.id === "risk-assessment" && (
         <div className="mt-3">
-          <JournalEntryAnalyzer lang={lang} />
+          {/* v21: the JE-testing summary persists into the engagement file */}
+          <JournalEntryAnalyzer
+            lang={lang}
+            onSave={(s) => {
+              onPatchEng({ jeSummary: { ...s, savedAt: Date.now() } })
+              toast.success(
+                lang === "ar"
+                  ? "حُفظ ملخص اختبار القيود في ملف المهمة."
+                  : "JE-testing summary saved to the engagement file."
+              )
+            }}
+          />
         </div>
       )}
       {section.id === "completion" && (

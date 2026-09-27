@@ -1,3 +1,4 @@
+import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { NextRequest, NextResponse } from "next/server"
 import { generateOnce } from "@/lib/ai"
 import { DEFAULT_MODEL, isAiModelId } from "@/lib/models"
@@ -11,6 +12,10 @@ export const maxDuration = 120
  *  audit, and returns a bilingual (EN + AR) draft KAM built on the standard's
  *  structure. Non-streaming: a single structured memo. */
 export async function POST(req: NextRequest) {
+  // v21: per-IP sliding-window guard — protects the AI quota if the URL leaks
+  const limited = aiRateLimit(req, AI_POLICIES.draft)
+  if (limited) return limited
+
   try {
     const me = await getSessionUser()
     if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

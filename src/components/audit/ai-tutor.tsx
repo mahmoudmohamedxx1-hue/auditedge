@@ -30,12 +30,16 @@ import {
   GraduationCap,
   History,
   ImagePlus,
+  Languages,
   Lightbulb,
   ListChecks,
   Loader2,
   MessageSquarePlus,
   PanelLeftClose,
   PanelLeftOpen,
+  Pencil,
+  Pin,
+  PinOff,
   RefreshCw,
   Search,
   Shapes,
@@ -83,7 +87,7 @@ export function AiTutor() {
   const tutorRailOpen = useAppStore((s) => s.tutorRailOpen)
   const setTutorRailOpen = useAppStore((s) => s.setTutorRailOpen)
 
-  const { conversations, refresh, remove } = useAiConversations()
+  const { conversations, refresh, remove, rename, setPinned } = useAiConversations()
   const chat = useAiChat({ conversationsRefresh: refresh })
   const [input, setInput] = useState("")
   const [forceSearch, setForceSearch] = useState(false)
@@ -93,6 +97,11 @@ export function AiTutor() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [attachment, setAttachment] = useState<AiImageAttachment | null>(null)
   const [convoQuery, setConvoQuery] = useState("")
+  // v21: rail management (rename inline, pin) + full-text search + translate
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState("")
+  const [translations, setTranslations] = useState<Record<string, string>>({})
+  const [translatingId, setTranslatingId] = useState<string | null>(null)
   // voice: automatic answer reading (persisted pref) + hands-free conversation
   // mode (session-only — the mic must never surprise-open after a reload)
   const aiAutoSpeak = useAppStore((s) => s.aiAutoSpeak)
@@ -269,11 +278,17 @@ export function AiTutor() {
 
   /** Re-ask the same question for a fresh answer. The old exchange is
    *  trimmed server-side first (PATCH trimLastExchange) so reloading the
-   *  conversation never shows stale duplicates. */
+   *  conversation never shows stale duplicates. v21: image questions can't
+   *  be regenerated (the attachment is not re-sent) — explain instead of
+   *  silently downgrading to a text-only answer. */
   const regenerate = async () => {
     if (chat.busy) return
     const lastUser = [...chat.messages].reverse().find((m) => m.role === "user")
     if (!lastUser) return
+    if (lastUser.imageUrl) {
+      toast.error(tt("ai.regenNoImage", lang))
+      return
+    }
     stopAllTts()
     if (chat.conversationId) {
       const trimmed = await fetch(`/api/ai/conversations/${chat.conversationId}`, {
@@ -353,6 +368,158 @@ export function AiTutor() {
     return conversations.filter((c) => c.title.toLowerCase().includes(q))
   }, [conversations, convoQuery])
 
+  // v21: full-text conversation search — once the query is 2+ chars, ask the
+  // server to search MESSAGE CONTENT (title matching alone can't answer
+  // "where did the tutor explain ECL staging?")
+  useEffect(() => {
+    const q = convoQuery.trim()
+    if (conversations === null) return
+    const t = setTimeout(() => {
+      if (q.length >= 2 || q.length === 0) void refresh(q)
+    }, 350)
+    return () => clearTimeout(t)
+  }, [convoQuery])
+
+  /** v21: one-tap EN↔AR translation of any tutor answer (toggleable). */
+  const translateMessage = async (m: AiChatMessage) => {
+    if (translatingId) return
+    if (translations[m.id]) {
+      setTranslations((prev) => {
+        const next = { ...prev }
+        delete next[m.id]
+        return next
+      })
+      return
+    }
+    setTranslatingId(m.id)
+    try {
+      const res = await fetch("/api/ai/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: m.content, target: lang === "ar" ? "en" : "ar" }),
+      })
+      const j = (await res.json().catch(() => ({}))) as { translation?: string; error?: string }
+      if (!res.ok || !j.translation) throw new Error(j.error || "failed")
+      setTranslations((prev) => ({ ...prev, [m.id]: j.translation! }))
+    } catch {
+      toast.error(tt("ai.translateFailed", lang))
+    } finally {
+      setTranslatingId(null)
+    }
+  }
+
+  /** v21: one rail row — open / rename inline / pin / delete. Shared by the
+   *  pinned group and every recency bucket (desktop rail + mobile sheet). */
+  const convoRow = (c: { id: string; title: string; pinned?: boolean; messageCount: number }) => (
+    <div key={c.id} className="group relative">
+      {editingId === c.id ? (
+        <div className="flex items-center gap-1 px-2 py-1.5">
+          <input
+            autoFocus
+            dir="auto"
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                void rename(c.id, editTitle)
+                setEditingId(null)
+              } else if (e.key === "Escape") {
+                setEditingId(null)
+              }
+            }}
+            aria-label={tt("ai.renameTitle", lang)}
+            className="h-8 min-w-0 flex-1 rounded-lg border border-primary/40 bg-background px-2 text-[12.5px] text-foreground focus:outline-none"
+          />
+          <button
+            onClick={() => {
+              void rename(c.id, editTitle)
+              setEditingId(null)
+            }}
+            aria-label={tt("ai.rename", lang)}
+            className="rounded-md p-1.5 text-sage-deep transition-colors hover:bg-sage/10 focus-ring"
+          >
+            <Check className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setEditingId(null)}
+            aria-label={tt("ai.close", lang)}
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary focus-ring"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <>
+          <button
+            onClick={() => {
+              stopAllTts()
+              void chat.load(c.id)
+              setHistoryOpen(false)
+              setAtBottom(true)
+            }}
+            title={`${c.title} — ${c.messageCount} ${tt("ai.msgCount", lang)}`}
+            className={cn(
+              "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 pe-[4.25rem] text-start transition-colors focus-ring",
+              chat.conversationId === c.id
+                ? "bg-card font-medium text-foreground shadow-soft ring-1 ring-border"
+                : "text-foreground/70 hover:bg-secondary/70"
+            )}
+          >
+            {c.pinned ? (
+              <Pin className="h-3 w-3 shrink-0 text-gold-deep" />
+            ) : (
+              <MessageSquarePlus className="h-3.5 w-3.5 shrink-0 rotate-45 text-muted-foreground" />
+            )}
+            <span dir="auto" className="min-w-0 truncate text-[12.5px]">
+              {c.title}
+            </span>
+            <span className="ms-auto me-1 shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+              {c.messageCount}
+            </span>
+          </button>
+          {/* row actions: rename · pin · delete */}
+          <div className="absolute end-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">
+            <button
+              aria-label={`${tt("ai.rename", lang)}: ${c.title}`}
+              title={tt("ai.rename", lang)}
+              onClick={() => {
+                setEditingId(c.id)
+                setEditTitle(c.title)
+              }}
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-ring"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button
+              aria-label={(c.pinned ? tt("ai.unpin", lang) : tt("ai.pin", lang)) + `: ${c.title}`}
+              title={c.pinned ? tt("ai.unpin", lang) : tt("ai.pin", lang)}
+              onClick={() => void setPinned(c.id, !c.pinned)}
+              className={cn(
+                "rounded-md p-1 transition-colors focus-ring",
+                c.pinned
+                  ? "text-gold-deep hover:bg-gold/10"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              )}
+            >
+              {c.pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+            </button>
+            <button
+              aria-label={`Delete ${c.title}`}
+              onClick={async () => {
+                await remove(c.id)
+                if (chat.conversationId === c.id) void chat.load(null)
+                toast.success(tt("ai.deleted", lang))
+              }}
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-ring"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+
   const ConversationList = (
     <div>
       {/* search box — desktop rail + mobile sheet share it */}
@@ -388,8 +555,22 @@ export function AiTutor() {
           {convoQuery.trim() ? tt("ai.noConvoMatches", lang) : tt("ai.noConversations", lang)}
         </p>
       ) : (
-        ([0, 1, 2, 3] as const).map((bucket) => {
-          const group = (filteredConversations ?? []).filter((c) => convoBucket(c.updatedAt) === bucket)
+        <div>
+          {/* v21: pinned conversations float above the recency buckets */}
+          {(() => {
+            const pinned = (filteredConversations ?? []).filter((c) => c.pinned)
+            if (!pinned.length) return null
+            return (
+              <div className="mb-1">
+                <div className="flex items-center gap-1.5 px-4 pb-1 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-gold-deep">
+                  <Pin className="h-3 w-3" /> {tt("ai.pinned", lang)}
+                </div>
+                {pinned.map((c) => convoRow(c))}
+              </div>
+            )
+          })()}
+          {([0, 1, 2, 3] as const).map((bucket) => {
+          const group = (filteredConversations ?? []).filter((c) => !c.pinned && convoBucket(c.updatedAt) === bucket)
           if (group.length === 0) return null
           return (
             <div key={bucket} className="mb-1">
@@ -402,47 +583,11 @@ export function AiTutor() {
                       ? tt("ai.gLast7", lang)
                       : tt("ai.gOlder", lang)}
               </div>
-              {group.map((c) => (
-                <div key={c.id} className="group relative">
-                  <button
-                    onClick={() => {
-                      stopAllTts()
-                      void chat.load(c.id)
-                      setHistoryOpen(false)
-                      setAtBottom(true)
-                    }}
-                    title={`${c.title} — ${c.messageCount} ${tt("ai.msgCount", lang)}`}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 pe-8 text-start transition-colors focus-ring",
-                      chat.conversationId === c.id
-                        ? "bg-card font-medium text-foreground shadow-soft ring-1 ring-border"
-                        : "text-foreground/70 hover:bg-secondary/70"
-                    )}
-                  >
-                    <MessageSquarePlus className="h-3.5 w-3.5 shrink-0 rotate-45 text-muted-foreground" />
-                    <span dir="auto" className="min-w-0 truncate text-[12.5px]">
-                      {c.title}
-                    </span>
-                    <span className="ms-auto me-1 shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
-                      {c.messageCount}
-                    </span>
-                  </button>
-                  <button
-                    aria-label={`Delete ${c.title}`}
-                    onClick={async () => {
-                      await remove(c.id)
-                      if (chat.conversationId === c.id) void chat.load(null)
-                      toast.success(tt("ai.deleted", lang))
-                    }}
-                    className="absolute end-1.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive focus-ring lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
+              {group.map((c) => convoRow(c))}
             </div>
           )
-        })
+          })}
+        </div>
       )}
     </div>
   )
@@ -690,12 +835,29 @@ export function AiTutor() {
                     )}
                     {m.content ? (
                       <div className="relative">
-                        {m.modelUsed && m.modelUsed !== "sdk" && (
-                          <span className="mb-1.5 inline-block rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[9.5px] font-medium text-primary">
-                            {m.modelUsed}
+                        {m.modelUsed && (
+                          <span
+                            className={cn(
+                              "mb-1.5 inline-block rounded-md px-1.5 py-0.5 font-mono text-[9.5px] font-medium",
+                              m.modelUsed === "sdk" ? "bg-secondary text-muted-foreground" : "bg-primary/10 text-primary"
+                            )}
+                            dir="ltr"
+                          >
+                            {m.modelUsed === "sdk" ? tt("ai.workspaceEngine", lang) : m.modelUsed}
                           </span>
                         )}
                         <Markdown content={m.content} />
+                        {/* v21: toggleable EN↔AR translation of this answer */}
+                        {translations[m.id] && (
+                          <div className="mt-3 rounded-xl border-s-2 border-gold/50 bg-gold/[0.05] ps-3.5">
+                            <div className="flex items-center gap-1.5 pt-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-gold-deep">
+                              <Languages className="h-3 w-3" /> {tt("ai.translate", lang)}
+                            </div>
+                            <div className="pb-1">
+                              <Markdown content={translations[m.id]} />
+                            </div>
+                          </div>
+                        )}
                         <div className="absolute -right-9 top-0 hidden flex-col gap-1 opacity-0 transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100 lg:flex rtl:-right-auto rtl:-left-9">
                           <button
                             onClick={() => void copyMessage(m)}
@@ -709,16 +871,46 @@ export function AiTutor() {
                               <Copy className="h-3.5 w-3.5" />
                             )}
                           </button>
+                          <button
+                            onClick={() => void translateMessage(m)}
+                            disabled={translatingId !== null}
+                            aria-label={tt("ai.translate", lang)}
+                            title={tt("ai.translate", lang)}
+                            className={cn(
+                              "rounded-lg p-1.5 transition-colors focus-ring focus:opacity-100",
+                              translations[m.id]
+                                ? "text-gold-deep"
+                                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            )}
+                          >
+                            {translatingId === m.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Languages className="h-3.5 w-3.5" />
+                            )}
+                          </button>
                           <SpeakButton text={m.content} />
                         </div>
                         {/* touch/mobile: inline actions */}
-                        <div className="mt-1.5 flex gap-1 lg:hidden">
+                        <div className="mt-1.5 flex flex-wrap gap-1 lg:hidden">
                           <button
                             onClick={() => void copyMessage(m)}
                             className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground focus-ring"
                           >
                             {copiedId === m.id ? <Check className="h-3 w-3 text-sage" /> : <Copy className="h-3 w-3" />}
                             {copiedId === m.id ? tt("ai.copied", lang) : tt("ai.copy", lang)}
+                          </button>
+                          <button
+                            onClick={() => void translateMessage(m)}
+                            disabled={translatingId !== null}
+                            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground focus-ring"
+                          >
+                            {translatingId === m.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Languages className="h-3 w-3" />
+                            )}
+                            {tt("ai.translate", lang)}
                           </button>
                           <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] text-muted-foreground">
                             <SpeakButton text={m.content} className="p-0" /> {tt("ai.listen", lang)}

@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    name: Lint, typecheck, content tests & build
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:./ci.sqlite
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: bunx prisma generate
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Type check
+        run: bunx tsc --noEmit
+
+      # v21: the content/integration batteries (bank, blueprint, SRS,
+      # analytics, sectors, engagement, analyzer, model routing) — DB-backed,
+      # so push a scratch schema first
+      - name: Content & integration batteries
+        run: |
+          bunx prisma db push --accept-data-loss
+          bun run test
+
+      - name: Production build
+        run: bun run build

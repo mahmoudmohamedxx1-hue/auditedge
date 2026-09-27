@@ -28,6 +28,11 @@ export async function PATCH(
     if (body.order !== undefined && Number.isFinite(Number(body.order)))
       data.order = Math.trunc(Number(body.order))
     if (body.content !== undefined) data.content = JSON.stringify(body.content)
+    // v21: preserve/author the Arabic edition — previously a PATCH dropped it
+    // ("" = no Arabic edition; the column is not nullable)
+    if (body.contentAr !== undefined) {
+      data.contentAr = body.contentAr == null ? "" : JSON.stringify(body.contentAr)
+    }
     if (Array.isArray(body.attachments)) {
       data.attachments = JSON.stringify(body.attachments.filter((x: unknown) => typeof x === "string"))
     }
