@@ -299,6 +299,21 @@ html.dark .focus-ring:focus-visible {
   }
 }
 
+/* v24 — the podcast player's equalizer bars (now-playing mark) */
+@keyframes eq {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.animate-eq {
+  transform-origin: bottom;
+  animation: eq 0.9s ease-in-out infinite;
+}
+
 /* v21 — print styles for study artifacts: lessons, exam results, review
    cards, analytics and the close-out views print clean (chrome hidden) */
 @media print {

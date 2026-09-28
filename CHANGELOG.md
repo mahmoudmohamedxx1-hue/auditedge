@@ -4,6 +4,49 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 24.0.0 — The listen-in-app + whole-ACCA-syllabus release
+
+Podcasts now **play inside the website**: a sticky, global player bar streams
+every lesson episode while you keep browsing — the audio never cuts when you
+navigate. And the Exam Center now covers the **entire ACCA syllabus**: every
+Applied Knowledge, Applied Skills and Strategic Professional paper as a full
+timed past paper.
+
+- **The in-website podcast player** — a global audio player mounted at the
+  app shell (survives every view change) streaming the lesson MP3s from the
+  podcast endpoint: play/pause, ±10s skip, seek rail, playback speed
+  (0.75×–2×, persisted), volume/mute, queue position, download and close.
+  Media Session API wired for lock-screen / media-key control; an in-memory
+  objectURL cache makes replays instant without re-synthesis; the Podcasts
+  section gained Play-course / play-from-here / per-lesson play buttons with
+  a live now-playing equalizer, EN and AR renditions.
+- **The whole ACCA syllabus as past papers** — NINE new full bilingual
+  papers: **BT** (18 Q), **MA** (18), **LW** (24), **PM** (24), **TX** (24),
+  **SBL** (24), **AFM** (18), **APM** (18), **ATX** (18). 186 new exam-style
+  questions (bank: 687 → **873**), grouped in the Exam Center by syllabus
+  level (Applied Knowledge / Applied Skills / Strategic Professional /
+  Egyptian practice) with level headers and paper counts. Deterministic
+  answer-position rotation keeps the key honest (A/B/C/D spread).
+- **Pro thumbnails on EVERY course** — the in-house course cards and course
+  heroes now carry designed covers: subject-tinted gradients, a
+  deterministic ledger/hatch/dot pattern per course, watermark of the
+  subject mark, code + level chips and a lesson count rail. The free-course
+  catalog covers were upgraded to the same designed system (monogram,
+  level, language chips).
+- **Auditing + IFRS + CFA courses (zero new accounting)** — 9 new full video
+  courses with real YouTube thumbnails: FinanceSkul's complete ACCA F8/AA
+  course, Ruchi Goyal's 10-hour AA marathon, the Bisk 9-hour CPA AUD
+  review; Accounting BotCast's 10-hour All-in-One IFRS, Silvia of CPDbox's
+  complete consolidation lecture, Tashwita Gupta's all-standards tour; and
+  the **complete FinTree CFA Level I crash course** (8 sessions, ~65h) plus
+  QuintEdge's 7-hour CFA Ethics lecture and edZeb's Quant + Ethics revision
+  marathons — with a new CFA category chip.
+- **Free catalog: the professional tilt** — AnalystPrep's free CFA Level I
+  materials, the CFA Institute Research Foundation's free publications, and
+  ACCA's official exam-support hub (free specimen exams for every paper) —
+  the perfect companion to AuditEdge's adapted papers.
+- SW cache `auditedge-v24`.
+
 ## 23.0.0 — The sessions-that-remember release
 
 Tutor conversations now **survive sessions**: every chat is mirrored into the

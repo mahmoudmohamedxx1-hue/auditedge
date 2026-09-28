@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { tt, dateLocaleOf } from "@/lib/i18n"
-import { PAST_PAPERS, getPastPaper } from "@/lib/past-papers"
+import { PAST_PAPERS, PAPER_GROUPS, getPastPaper } from "@/lib/past-papers"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
@@ -619,69 +619,99 @@ export function ExamCenter() {
           </section>
         </div>
 
-        {/* v22 — previous exam papers + AI custom exam builder */}
+        {/* v22–v24 — previous exam papers (grouped by syllabus level) + AI custom exam builder */}
         <section className="mt-6 rounded-2xl border bg-card p-6 shadow-soft" aria-label={tt("exam.papersTitle", lang)}>
           <h2 className="flex items-center gap-2 font-serif text-[18px] font-semibold">
             <FileText className="h-4 w-4 text-primary" /> {tt("exam.papersTitle", lang)}
           </h2>
           <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{tt("exam.papersDesc", lang)}</p>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {PAST_PAPERS.map((p) => (
-              <div
-                key={p.id}
-                className="flex flex-col rounded-xl border bg-secondary/25 p-4 transition-colors hover:border-primary/30"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
-                    {lang === "ar" ? p.titleAr : p.titleEn}
-                  </h3>
-                  <span className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="rounded-full border border-plum/30 bg-plum/10 px-2 py-0.5 text-[10px] font-semibold text-plum-deep">
-                      {p.body}
-                    </span>
-                    {/* v23 — full-length paper badge */}
-                    {p.count >= 24 && (
-                      <span className="rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
-                        {tt("exam.paperFull", lang)}
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
-                  {lang === "ar" ? p.blurbAr : p.blurbEn}
-                </p>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
-                    <Timer className="h-3 w-3" /> {p.count} Q · {p.durationMin} {tt("exam.minutesShort", lang)}
-                  </span>
-                  <Button size="sm" className="h-8" onClick={() => void startPaper(p.id)} disabled={paperLoading !== null || eLoading !== null}>
-                    {paperLoading === p.id ? <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" /> : <ClipboardCheck className="me-1 h-3.5 w-3.5" />}
-                    {tt("exam.paperSit", lang)}
-                  </Button>
-                </div>
-              </div>
-            ))}
 
-            {/* AI custom exam builder card */}
-            <div className="flex flex-col rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] p-4">
-              <div className="flex items-start justify-between gap-2">
-                <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
-                  {tt("exam.customTitle", lang)}
-                </h3>
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
-                  <Wand2 className="h-3 w-3" /> AI
-                </span>
+          {PAPER_GROUPS.map((g) => {
+            const papers = PAST_PAPERS.filter((p) => p.group === g.id)
+            if (!papers.length) return null
+            return (
+              <div key={g.id} className="mt-5">
+                {/* syllabus-level header */}
+                <div className="mb-3 flex items-center gap-2.5">
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full",
+                      g.id === "knowledge" && "bg-olive",
+                      g.id === "skills" && "bg-primary",
+                      g.id === "strategic" && "bg-plum",
+                      g.id === "egypt" && "bg-gold"
+                    )}
+                  />
+                  <h3 className="text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                    {lang === "ar" ? g.labelAr : g.labelEn}
+                  </h3>
+                  <span className="rounded-full bg-secondary px-1.5 py-px text-[10px] tabular-nums text-muted-foreground">
+                    {papers.length}
+                  </span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {papers.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex flex-col rounded-xl border bg-secondary/25 p-4 transition-colors hover:border-primary/30"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
+                          {lang === "ar" ? p.titleAr : p.titleEn}
+                        </h3>
+                        <span className="flex shrink-0 flex-col items-end gap-1">
+                          <span className="rounded-full border border-plum/30 bg-plum/10 px-2 py-0.5 text-[10px] font-semibold text-plum-deep">
+                            {p.body}
+                          </span>
+                          {/* v23 — full-length paper badge */}
+                          {p.count >= 24 && (
+                            <span className="rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
+                              {tt("exam.paperFull", lang)}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
+                        {lang === "ar" ? p.blurbAr : p.blurbEn}
+                      </p>
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
+                          <Timer className="h-3 w-3" /> {p.count} Q · {p.durationMin} {tt("exam.minutesShort", lang)}
+                        </span>
+                        <Button size="sm" className="h-8" onClick={() => void startPaper(p.id)} disabled={paperLoading !== null || eLoading !== null}>
+                          {paperLoading === p.id ? <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" /> : <ClipboardCheck className="me-1 h-3.5 w-3.5" />}
+                          {tt("exam.paperSit", lang)}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* AI custom exam builder card rides along the last group */}
+                  {g.id === "egypt" && (
+                    <div className="flex flex-col rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
+                          {tt("exam.customTitle", lang)}
+                        </h3>
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
+                          <Wand2 className="h-3 w-3" /> AI
+                        </span>
+                      </div>
+                      <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
+                        {tt("exam.customDesc", lang)}
+                      </p>
+                      <div className="mt-3 flex justify-end">
+                        <Button size="sm" className="h-8" variant="secondary" onClick={() => setCustomOpen(true)}>
+                          <Sparkles className="me-1 h-3.5 w-3.5" /> {tt("exam.customOpen", lang)}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
-                {tt("exam.customDesc", lang)}
-              </p>
-              <div className="mt-3 flex justify-end">
-                <Button size="sm" className="h-8" variant="secondary" onClick={() => setCustomOpen(true)}>
-                  <Sparkles className="me-1 h-3.5 w-3.5" /> {tt("exam.customOpen", lang)}
-                </Button>
-              </div>
-            </div>
-          </div>
+            )
+          })}
         </section>
 
         {/* past sittings (v20.1 — P0-1 completion) */}

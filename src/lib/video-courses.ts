@@ -6,8 +6,14 @@
  *  Learn Skills Daily full Illustrator courses) and CPA Talks' complete
  *  14-episode Audit 101 series.
  *
- *  Video ids, lengths and view counts captured from live YouTube search on
- *  2026-09-28; thumbnails load from i.ytimg.com. */
+ *  v24 — the catalog tilts professional: 9 new full AUDIT / IFRS / CFA
+ *  courses (zero accounting additions) — three complete English audit
+ *  courses, three English IFRS deep-dives, and the entire FinTree CFA
+ *  Level I crash course (8 sessions, ~65 hours) plus two CFA revision
+ *  marathons.
+ *
+ *  Video ids, lengths and view counts captured from live YouTube search
+ *  on 2026-09-28; thumbnails load from i.ytimg.com. */
 
 export type VideoLesson = {
   /** YouTube video id */
@@ -22,7 +28,7 @@ export type VideoCourse = {
   titleEn: string
   titleAr: string
   channel: string
-  category: "audit" | "accounting" | "ifrs" | "design" | "excel"
+  category: "audit" | "accounting" | "ifrs" | "cfa" | "design" | "excel"
   level: "Beginner" | "Intermediate" | "Advanced"
   language: "AR" | "EN"
   hours: string
@@ -38,6 +44,7 @@ export const VIDEO_CATEGORIES: { id: VideoCourse["category"] | "all"; labelEn: s
   { id: "audit", labelEn: "Audit", labelAr: "المراجعة" },
   { id: "accounting", labelEn: "Accounting", labelAr: "المحاسبة" },
   { id: "ifrs", labelEn: "IFRS", labelAr: "المعايير الدولية" },
+  { id: "cfa", labelEn: "CFA", labelAr: "CFA" },
   { id: "excel", labelEn: "Excel", labelAr: "إكسل" },
   { id: "design", labelEn: "Design · Illustrator", labelAr: "التصميم · إليستريتور" },
 ]
@@ -289,6 +296,165 @@ export const VIDEO_COURSES: VideoCourse[] = [
     descAr:
       "إكسل يُدرَّس عبر سياقات مالية ومحاسبية بحتة — مهارات الجداول التي يستخدمها المراجع يوميًا.",
     lessons: [{ id: "hkybRW7Z3Yk", title: "Excel for Finance and Accounting Full Course Tutorial", length: "3:58:34" }],
+  },
+  /* ==================== English — Audit (v24) ==================== */
+  {
+    id: "financeskul-f8",
+    titleEn: "ACCA F8 / AA — Audit & Assurance, the complete course",
+    titleAr: "ACCA F8 / AA — المراجعة والتأكيد، الدورة الكاملة",
+    channel: "FinanceSkul",
+    category: "audit",
+    level: "Beginner",
+    language: "EN",
+    hours: "~4.8h",
+    views: "232K",
+    descEn:
+      "A complete one-video ACCA F8/AA course — the full audit syllabus from the concept of assurance to final review and reporting, taught with clean structure.",
+    descAr:
+      "دورة ACCA F8/AA كاملة في فيديو واحد — منهج المراجعة بالكامل من مفهوم التأكيد إلى المراجعة الختامية والتقرير، بشرح منظم وواضح.",
+    lessons: [{ id: "Gw8zXmgxYMg", title: "ACCA F8: Audit and Assurance — Complete Course", length: "4:48:19" }],
+  },
+  {
+    id: "ruchi-aa-10h",
+    titleEn: "ACCA AA — all sections covered, 10-hour full course",
+    titleAr: "ACCA AA — كل أقسام المنهج في 10 ساعات",
+    channel: "ACCA With Ruchi Goyal",
+    category: "audit",
+    level: "Intermediate",
+    language: "EN",
+    hours: "~9.6h",
+    views: "23K",
+    descEn:
+      "Every section of Audit & Assurance in one marathon sitting — risk, internal control, evidence, completeness and accuracy, review and the auditor's report.",
+    descAr:
+      "كل أقسام المراجعة والتأكيد في جلسة واحدة ماراثونية — المخاطر والرقابة الداخلية والأدلة والاكتمال والدقة والمراجعة وتقرير المراجع.",
+    lessons: [{ id: "4b-nLGLgiMI", title: "ACCA AA — All Sections Covered (10-Hour Full Course)", length: "9:34:01" }],
+  },
+  {
+    id: "bisk-cpa-aud",
+    titleEn: "CPA AUD — the full 9-hour review course",
+    titleAr: "CPA AUD — دورة المراجعة الكاملة في 9 ساعات",
+    channel: "Bisk CPA Review (another71)",
+    category: "audit",
+    level: "Intermediate",
+    language: "EN",
+    hours: "~9.4h",
+    views: "38K",
+    descEn:
+      "The classic Bisk CPA review of Auditing & Attestation — engagement acceptance, risk, evidence, reports and SIM strategy, US-CPA style.",
+    descAr:
+      "مراجعة Bisk الكلاسيكية لامتحان المراجعة والتوثيق الأمريكي للسيرتيفايد بابليك أكونتنت — قبول المهمة والمخاطر والأدلة والتقارير، بأسلوب CPA الأمريكي.",
+    lessons: [{ id: "WhyUtg3Huhk", title: "Bisk CPA Review — AUD CPA Exam, Full Course (9 Hours)", length: "9:23:22" }],
+  },
+  /* ==================== English — IFRS (v24) ==================== */
+  {
+    id: "botcast-all-ifrs",
+    titleEn: "All in One IFRS — the 2025 complete standards course",
+    titleAr: "IFRS الكاملة — دورة معايير 2025 الشاملة",
+    channel: "Accounting BotCast",
+    category: "ifrs",
+    level: "Intermediate",
+    language: "EN",
+    hours: "~9.9h",
+    descEn:
+      "A ten-hour walk through the complete IFRS body of standards — every core standard explained in order, with principles, worked treatments and traps.",
+    descAr:
+      "جولة من عشر ساعات في منظومة معايير IFRS الكاملة — كل معيار أساسي بترتيبه، بالمبادئ والمعالجات المحلولة والأخطاء الشائعة.",
+    views: "9.5K",
+    lessons: [{ id: "Eb-ljgdVgpY", title: "All in One IFRS (2025 Edition) — Complete Accounting Standards & Principles", length: "9:53:25" }],
+  },
+  {
+    id: "cpdbox-consolidation",
+    titleEn: "IFRS consolidation — the complete lecture",
+    titleAr: "التجميع وفق IFRS — المحاضرة الكاملة",
+    channel: "Silvia of CPDbox",
+    category: "ifrs",
+    level: "Advanced",
+    language: "EN",
+    hours: "~1.3h",
+    views: "80K",
+    descEn:
+      "Silvia (of the legendary CPDbox IFRS training) teaches every key consolidation topic in one video — control, NCI, goodwill, intragroup eliminations, step-by-step.",
+    descAr:
+      "سيلفيا (من مدرّبة IFRS الشهيرة CPDbox) تشرح كل موضوعات التجميع الأساسية في فيديو واحد — السيطرة والحصص غير المسيطرة والشهرة واستبعادات المجموعة خطوة بخطوة.",
+    lessons: [{ id: "mHcfK0MsNBU", title: "Complete IFRS Consolidation Lecture — all key topics in one video", length: "1:19:07" }],
+  },
+  {
+    id: "tashwita-all-ifrs",
+    titleEn: "All IFRS standards in one sitting",
+    titleAr: "كل معايير IFRS في جلسة واحدة",
+    channel: "Tashwita Gupta",
+    category: "ifrs",
+    level: "Intermediate",
+    language: "EN",
+    hours: "~2h",
+    views: "211K",
+    descEn:
+      "A rapid two-hour tour of every accounting standard — the perfect pre-exam refresher with the whole IFRS/IAS map on one page.",
+    descAr:
+      "جولة سريعة في ساعتين لكل معايير المحاسبة — المراجعة المثالية قبل الامتحان وخريطة IFRS/IAS كاملة في جلسة واحدة.",
+    lessons: [{ id: "nOPUA8smHbM", title: "All Accounting Standards || IFRS", length: "1:58:50" }],
+  },
+  /* ==================== English — CFA (v24) ==================== */
+  {
+    id: "fintree-cfa-l1",
+    titleEn: "CFA Level I — the complete crash course",
+    titleAr: "CFA المستوى الأول — الدورة المكثفة الكاملة",
+    channel: "FinTree",
+    category: "cfa",
+    level: "Intermediate",
+    language: "EN",
+    hours: "~65h",
+    views: "955K+ combined",
+    descEn:
+      "FinTree's famous 8-session CFA Level I crash course — financial statement analysis (2 days), quant methods, corporate issuers & equity, portfolio & economics, fixed income, derivatives & alternatives, and the FI + ethics finale. The whole CFA Level I curriculum, free.",
+    descAr:
+      "دورة FinTree الشهيرة المكثفة لمستوى CFA الأول بجلستها الثماني — تحليل القوائم المالية (يومان)، والطرق الكمية، والمصدِرين والأسهم، والمحفظة والاقتصاد، والدخل الثابت، والمشتقات والبدائل، والختام بالدخل الثابت والأخلاقيات. منهج CFA الأول كاملًا، مجانًا.",
+    lessons: [
+      { id: "3wkW0mD21BE", title: "Session 1 — Financial Statement Analysis, Day 1", length: "7:24:13" },
+      { id: "0XU0h55bhDw", title: "Session 2 — Financial Statement Analysis, Day 2", length: "3:34:30" },
+      { id: "awwLn6C1-S4", title: "Session 3 — Corporate Issuers & Equity Investments", length: "8:38:11" },
+      { id: "VDEoxwHSIMk", title: "Session 4 — Quantitative Methods", length: "8:47:45" },
+      { id: "wBSUZlDMiqk", title: "Session 5 — Portfolio Management & Economics", length: "9:35:39" },
+      { id: "xUpN8ykkB6U", title: "Session 6 — Fixed Income", length: "8:34:04" },
+      { id: "bbn_Dm2MbJY", title: "Session 7 — Derivatives & Alternative Investments", length: "8:00:04" },
+      { id: "mPHxRUtFxbc", title: "Session 8 — Complete Crash Course: Fixed Income + Ethics", length: "10:26:26" },
+    ],
+  },
+  {
+    id: "quintedge-cfa-ethics",
+    titleEn: "CFA Level I Ethics — the full lecture",
+    titleAr: "أخلاقيات CFA للمستوى الأول — المحاضرة الكاملة",
+    channel: "QuintEdge",
+    category: "cfa",
+    level: "Beginner",
+    language: "EN",
+    hours: "~7.4h",
+    views: "344K",
+    descEn:
+      "The most-watched CFA Level I ethics lecture — the Code of Ethics and every Standard of Professional Conduct, taught with real-life-style vignettes.",
+    descAr:
+      "أشهر محاضرة أخلاقيات لمستوى CFA الأول — ميثاق الأخلاق وكل معايير السلوك المهني، بأسلوب الحالات الواقعية.",
+    lessons: [{ id: "8KhntljYnrQ", title: "CFA Level 1 Ethics — Full Lecture", length: "7:23:30" }],
+  },
+  {
+    id: "edzeb-cfa-revision",
+    titleEn: "CFA Level I revision marathons — Quant + Ethics",
+    titleAr: "مراجعات CFA للمستوى الأول — الكمية والأخلاقيات",
+    channel: "edZeb",
+    category: "cfa",
+    level: "Advanced",
+    language: "EN",
+    hours: "~18h",
+    views: "249K combined",
+    descEn:
+      "CA Vikas Vohra's revision marathons — a 12-hour Quantitative Methods one-shot and the 6-hour Ethics revision: full-coverage sprints before exam day.",
+    descAr:
+      "ماراثونات المراجعة مع فيكاس فورا — جلسة الطرق الكمية في 12 ساعة ومراجعة الأخلاقيات في 6 ساعات: غطاء كامل قبل يوم الامتحان.",
+    lessons: [
+      { id: "aBR3RYIEufg", title: "Quantitative Methods — Full Revision Lecture, Part I", length: "11:56:52" },
+      { id: "IyHK2D21oJY", title: "Ethics (Ethical & Professional Standards) — Revision Lecture", length: "6:00:08" },
+    ],
   },
   /* ==================== Design — the Course Illustrator track ==================== */
   {

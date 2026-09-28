@@ -10,7 +10,7 @@ export type FreeCourse = {
   titleAr: string
   provider: string
   /** study area chip */
-  category: "accounting" | "ifrs" | "audit" | "reference" | "arabic" | "skills"
+  category: "accounting" | "ifrs" | "audit" | "cfa" | "reference" | "arabic" | "skills"
   level: "Beginner" | "Intermediate" | "Advanced" | "Reference"
   hours: string
   language: "EN" | "AR" | "EN/AR"
@@ -342,5 +342,54 @@ export const FREE_COURSES: FreeCourse[] = [
       "Khan Academy's free computing track — spreadsheets and data literacy, the everyday toolkit of an auditor.",
     descAr:
       "مسار الحاسوب المجاني من خان أكاديمي — الجداول الإلكترونية ومحو الأمية الرقمية، العدة اليومية للمراجع.",
+  },
+  // ---- v24: CFA + ACCA specimen exams (the professional tilt) ----
+  {
+    id: "analystprep-cfa-l1",
+    titleEn: "CFA Level I — free study materials",
+    titleAr: "CFA المستوى الأول — مواد دراسية مجانية",
+    provider: "AnalystPrep",
+    category: "cfa",
+    level: "Intermediate",
+    hours: "self-paced",
+    language: "EN",
+    url: "https://analystprep.com/cfa-level-1/",
+    certificate: false,
+    descEn:
+      "AnalystPrep's free CFA Level I tier — study notes, formula sheets and practice questions for every topic area, from quant to ethics.",
+    descAr:
+      "الخطة المجانية من AnalystPrep لمستوى CFA الأول — ملخصات وصيغ وأسئلة تدريب لكل محور من الكمي حتى الأخلاقيات.",
+  },
+  {
+    id: "cfa-research-foundation",
+    titleEn: "CFA Institute Research Foundation — free publications",
+    titleAr: "مؤسسة أبحاث CFA — منشورات مجانية",
+    provider: "CFA Institute",
+    category: "cfa",
+    level: "Advanced",
+    hours: "varies",
+    language: "EN",
+    url: "https://www.cfainstitute.org/research/foundation",
+    certificate: false,
+    descEn:
+      "The CFA Institute's Research Foundation — free monographs and briefings on portfolio management, economics and ethics, written by practitioners for practitioners.",
+    descAr:
+      "مؤسسة الأبحاث لدى CFA — كتيبات وأوراق مجانية في إدارة المحافظ والاقتصاد والأخلاقيات، بقلم ممارسين وللممارسين.",
+  },
+  {
+    id: "acca-exam-resources",
+    titleEn: "ACCA exam support — FREE specimen exams for every paper",
+    titleAr: "دعم امتحانات ACCA — نماذج امتحانات مجانية لكل ورقة",
+    provider: "ACCA Global",
+    category: "audit",
+    level: "Intermediate",
+    hours: "varies",
+    language: "EN",
+    url: "https://www.accaglobal.com/gb/en/student/exam-support-resources.html",
+    certificate: false,
+    descEn:
+      "ACCA's official exam-support hub — free specimen exams, past-session Q&As and technical articles for every paper from BT to AAA. The perfect companion to AuditEdge's adapted papers.",
+    descAr:
+      "مركز دعم الامتحانات الرسمي من ACCA — نماذج امتحانات مجانية وأسئلة وجواب جلسات سابقة ومقالات تقنية لكل ورقة من BT حتى AAA. الرفيق المثالي لأوراق AuditEdge المكيفة.",
   },
 ]

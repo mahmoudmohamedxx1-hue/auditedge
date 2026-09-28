@@ -15,6 +15,8 @@ import { CertificateView } from "@/components/audit/certificate-view"
 import { AiTutor } from "@/components/audit/ai-tutor"
 import { AiAssistant } from "@/components/audit/ai-assistant"
 import { CommandPalette } from "@/components/audit/command-palette"
+import { AudioPlayer } from "@/components/audit/audio-player"
+import { usePlayerStore } from "@/lib/player"
 import { Wordmark } from "@/components/audit/shared"
 import { LangToggle } from "@/components/audit/lang-toggle"
 import { ThemeToggle } from "@/components/audit/theme-toggle"
@@ -160,6 +162,9 @@ export default function Home() {
   const hydrateBookmarks = useAppStore((s) => s.hydrateBookmarks)
   const hydrateStudied = useAppStore((s) => s.hydrateStudied)
   const navigate = useAppStore((s) => s.navigate)
+  // v24 — the in-website podcast player: one global instance, kept mounted
+  // across every view change so audio never cuts when you navigate
+  const playerActive = usePlayerStore((s) => s.queue.length > 0)
   const [menuOpen, setMenuOpen] = useState(false)
   const rtl = lang === "ar"
 
@@ -296,6 +301,10 @@ export default function Home() {
 
       {/* floating AI tutor popup (everywhere except the full AI tab) */}
       <AiAssistant />
+
+      {/* v24 — the sticky podcast player (kept alive across navigation) */}
+      <AudioPlayer />
+      {playerActive && <div className="h-[92px] print:hidden" aria-hidden />}
     </div>
     </MotionConfig>
   )

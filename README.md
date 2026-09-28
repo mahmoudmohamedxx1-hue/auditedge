@@ -14,7 +14,7 @@
 
 ## About
 
-AuditEdge Academy is a personal learning workspace built for a Senior Associate in external audit (Egypt) — designed to feel like a professional tool, not a course catalog. It carries **41 courses and 990 lessons** across the full ISA framework, IFRS core standards and the Egyptian regulatory environment (FRA decrees, Egyptian Standards on Auditing, Companies Law 159/1981), plus **146 library materials** including official standard texts.
+AuditEdge Academy is a personal learning workspace built for a Senior Associate in external audit (Egypt) — designed to feel like a professional tool, not a course catalog. It carries **41 courses and 990 lessons** across the full ISA framework, IFRS core standards and the Egyptian regulatory environment (FRA decrees, Egyptian Standards on Auditing, Companies Law 159/1981), plus **146 library materials** including official standard texts, **26 full video courses** with real YouTube thumbnails, and **16 full-length past papers covering the entire ACCA syllabus** (873-question bilingual bank).
 
 Around the curriculum sits an AI suite: a tutor that grounds its answers in your own library (RAG with cited excerpts), an industry risk analyst that streams sector-specific risk profiles, a Key Audit Matters drafter, and a trial-balance / journal-entry analyzer. Read-aloud is powered by 23 voices across two engines — including Egyptian and Gulf Arabic neural voices — with an Auto mode that matches the language of whatever is being read.
 
@@ -35,8 +35,11 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 ## Features
 
 ### Curriculum and library
-- **41 courses / 990 lessons + the IFRS 18 course** — ISA 315, 330, 240, 570, EVD 500, IFRS core, the Egyptian FRA framework, audit analytics, plus curated Arabic IFRS & auditing playlists
+- **41 courses / 990 lessons + the IFRS 18 course** — ISA 315, 330, 240, 570, EVD 500, IFRS core, the Egyptian FRA framework, audit analytics, plus curated Arabic IFRS & auditing playlists — every course carries a designed pro thumbnail
+- **26 full video courses playable in-app** — audit (CPA Talks Audit 101, FinanceSkul F8/AA, Ruchi Goyal, Bisk CPA AUD), IFRS (CPA Talks standards, BotCast, CPDbox, Tashwita), **CFA Level I** (the complete FinTree 8-session crash course + QuintEdge Ethics + edZeb marathons), Excel and the Course Illustrator design track
 - **146 library materials** with official standard texts — searchable, excerpt-served
+- **The entire ACCA syllabus as past papers** — 16 full-length timed papers (BT, MA, FA, LW, PM, TX, FR, AA, FM, SBL, SBR, AFM, APM, ATX, AAA + the Egyptian SOE paper) over an 873-question bilingual bank, plus AI-generated custom exams in micro / mini / standard / full sizes
+- **Podcasts that play in the website** — a global sticky player streams lesson episodes while you browse (queue, speed, Media-Session controls), plus 38 curated Arabic YouTube episodes
 - **Discover & Import** — search Coursera, MIT OCW, edX, OpenStax and YouTube, import as courses
 - Quizzes with certificates, XP, streaks and achievements with live earn-progress
 - Video lessons, lesson builder and full admin tooling

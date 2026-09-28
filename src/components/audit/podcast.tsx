@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { YT_CATEGORIES, YT_EPISODES, type PodcastEpisode } from "@/lib/podcast-episodes"
+import { usePlayerStore, type PlayerTrack } from "@/lib/player"
 import { courseLessons } from "./shared"
 import {
   CheckCircle2,
@@ -21,6 +22,7 @@ import {
   Headphones,
   ListVideo,
   Loader2,
+  Pause,
   Play,
   Trash2,
   Youtube,
@@ -41,6 +43,14 @@ export function Podcast() {
   const [current, setCurrent] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
 
+  // v24 — the in-website player: queue the course and listen while you browse
+  const playAll = usePlayerStore((s) => s.playAll)
+  const playerQueue = usePlayerStore((s) => s.queue)
+  const playerIndex = usePlayerStore((s) => s.index)
+  const playerStatus = usePlayerStore((s) => s.status)
+  const playerToggle = usePlayerStore((s) => s.toggle)
+  const activeTrack: PlayerTrack | null = playerQueue[playerIndex] ?? null
+
   // v22 — curated Arabic YouTube podcast section
   const [ytCat, setYtCat] = useState<(typeof YT_CATEGORIES)[number]["id"]>("all")
   const [playing, setPlaying] = useState<string | null>(null)
@@ -58,6 +68,30 @@ export function Podcast() {
   )
   const course = courses.find((c) => c.id === courseId) ?? courses[0]
   const lessons = course?.lessons ?? []
+
+  /** v24 — build player tracks for a slice of this course's lessons. */
+  const tracksOf = (from: number, langWanted: "en" | "ar"): PlayerTrack[] =>
+    lessons
+      .slice(from)
+      .filter((l) => langWanted === "en" || Boolean(l.contentAr))
+      .map((l) => ({
+        lessonId: l.id,
+        title: l.title,
+        courseCode: course?.code ?? "",
+        lang: langWanted,
+      }))
+
+  const playCourse = (l: "en" | "ar") => {
+    const tracks = tracksOf(0, l)
+    if (tracks.length) playAll(tracks, 0)
+  }
+
+  const playFrom = (lessonId: string, l: "en" | "ar") => {
+    const at = lessons.findIndex((x) => x.id === lessonId)
+    if (at < 0) return
+    const tracks = tracksOf(at, l)
+    if (tracks.length) playAll(tracks, 0)
+  }
 
   const startDownload = async (lessonId: string, title: string, ar: boolean) => {
     setCurrent(lessonId)
@@ -154,6 +188,15 @@ export function Podcast() {
           </Select>
 
           <div className="mt-3 flex flex-wrap gap-2">
+            {/* v24 — listen inside the site while you keep browsing */}
+            <Button
+              size="sm"
+              className="h-8"
+              disabled={!course || lessons.length === 0 || (lang === "ar" && !lessons.some((l) => l.contentAr))}
+              onClick={() => playCourse(lang === "ar" && lessons.some((l) => l.contentAr) ? "ar" : "en")}
+            >
+              <Play className="me-1 h-3.5 w-3.5 fill-current" /> {tt("podcast.playAll", lang)}
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -183,13 +226,28 @@ export function Podcast() {
               const hasAr = Boolean(l.contentAr)
               const busy = current === l.id || inQueue(l.id)
               const done = queue.some((q) => q.lessonId === l.id && q.status === "done")
+              // v24 — is THIS row the episode currently in the player?
+              const isNowPlaying =
+                activeTrack?.lessonId === l.id &&
+                (activeTrack.lang === "ar" ? hasAr : true) &&
+                playerStatus !== "idle"
               return (
                 <div
                   key={l.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border bg-secondary/25 px-4 py-3"
+                  className={cn(
+                    "flex items-center justify-between gap-3 rounded-xl border bg-secondary/25 px-4 py-3 transition-colors",
+                    isNowPlaying && "border-primary/35 bg-primary/[0.06]"
+                  )}
                 >
                   <div className="min-w-0" dir="auto">
                     <p className="truncate text-[13.5px] font-medium">
+                      {isNowPlaying ? (
+                        <span className="me-1.5 inline-flex h-3 items-end gap-[2px] align-middle" aria-hidden>
+                          <span className="w-[2.5px] animate-eq bg-primary" style={{ height: "55%" }} />
+                          <span className="w-[2.5px] animate-eq bg-primary [animation-delay:150ms]" style={{ height: "100%" }} />
+                          <span className="w-[2.5px] animate-eq bg-primary [animation-delay:300ms]" style={{ height: "40%" }} />
+                        </span>
+                      ) : null}
                       {i + 1}. {l.title}
                     </p>
                     <p className="text-[11.5px] text-muted-foreground">
@@ -202,28 +260,58 @@ export function Podcast() {
                         size="sm"
                         variant="outline"
                         className="h-8"
-                        disabled={busy}
-                        onClick={() => void startDownload(l.id, l.title, true)}
+                        onClick={() =>
+                          isNowPlaying && activeTrack?.lang === "ar"
+                            ? playerToggle()
+                            : playFrom(l.id, "ar")
+                        }
                       >
-                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                        {isNowPlaying && activeTrack?.lang === "ar" ? (
+                          playerStatus === "playing" ? (
+                            <Pause className="h-3.5 w-3.5 fill-current" />
+                          ) : (
+                            <Play className="h-3.5 w-3.5 fill-current" />
+                          )
+                        ) : (
+                          <Play className="h-3.5 w-3.5" />
+                        )}
                         <span className="mx-1">AR</span>
                       </Button>
                     )}
                     <Button
                       size="sm"
-                      variant={done ? "outline" : "default"}
-                      className={cn("h-8", done && "text-sage-deep")}
+                      variant="outline"
+                      className="h-8"
+                      onClick={() =>
+                        isNowPlaying && activeTrack?.lang === "en" ? playerToggle() : playFrom(l.id, "en")
+                      }
+                      aria-label={`${tt("podcast.playFromHere", lang)} — ${l.title}`}
+                    >
+                      {isNowPlaying && activeTrack?.lang === "en" ? (
+                        playerStatus === "playing" ? (
+                          <Pause className="h-3.5 w-3.5 fill-current" />
+                        ) : (
+                          <Play className="h-3.5 w-3.5 fill-current" />
+                        )
+                      ) : (
+                        <Play className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8"
                       disabled={busy}
-                      onClick={() => void startDownload(l.id, l.title, false)}
+                      onClick={() => void startDownload(l.id, l.title, lang === "ar" && hasAr)}
+                      aria-label={tt("podcast.download", lang)}
                     >
                       {busy ? (
-                        <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : done ? (
-                        <CheckCircle2 className="me-1 h-3.5 w-3.5" />
+                        <CheckCircle2 className="h-3.5 w-3.5 text-sage-deep" />
                       ) : (
-                        <Download className="me-1 h-3.5 w-3.5" />
+                        <Download className="h-3.5 w-3.5" />
                       )}
-                      {busy ? tt("podcast.downloading", lang) : done ? tt("podcast.ready", lang) : tt("podcast.download", lang)}
                     </Button>
                   </div>
                 </div>

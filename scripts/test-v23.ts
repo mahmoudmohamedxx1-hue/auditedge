@@ -46,7 +46,9 @@ async function main() {
 
   /* ---- past papers registry (offline) ---- */
   const { PAST_PAPERS } = await import("../src/lib/past-papers")
-  check("papers: 7 papers registered (5 full + FA + FM)", PAST_PAPERS.length === 7, PAST_PAPERS.map((p) => p.id).join(", "))
+  // v24 extended the registry (16 papers, grouped by syllabus level) — the
+  // v23 battery now guards the FLOOR: the seven v23 papers must remain
+  check("papers: the seven v23 papers stay registered", ["acca-aa", "acca-aaa", "acca-fr", "acca-sbr", "soe-audit", "acca-fa", "acca-fm"].every((id) => PAST_PAPERS.some((p) => p.id === id)), `${PAST_PAPERS.length} total`)
   check("papers: AA and FR are full 30-question papers", ["acca-aa", "acca-fr"].every((id) => PAST_PAPERS.find((p) => p.id === id)?.count === 30))
   check("papers: AAA / SBR / SOE are full 24-question papers", ["acca-aaa", "acca-sbr", "soe-audit"].every((id) => PAST_PAPERS.find((p) => p.id === id)?.count === 24))
   check("papers: new FA (F3) + FM (F9) papers registered", ["acca-fa", "acca-fm"].every((id) => PAST_PAPERS.some((p) => p.id === id && p.count === 18)))
@@ -75,13 +77,13 @@ async function main() {
     )
   }
   const totalPapers = await db.bankQuestion.count({ where: { source: { contains: "past paper" } } })
-  check("papers: 168 past-paper questions total (60 v22 + 108 v23)", totalPapers === 168, `${totalPapers}`)
-  check("bank: 687 questions total", (await db.bankQuestion.count()) === 687, `${await db.bankQuestion.count()}`)
+  check("papers: at least 168 past-paper questions (v22+v23 floor)", totalPapers >= 168, `${totalPapers}`)
+  check("bank: at least 687 questions total (v23 floor)", (await db.bankQuestion.count()) >= 687, `${await db.bankQuestion.count()}`)
   await db.$disconnect()
 
   /* ---- video course catalog (offline) ---- */
   const { VIDEO_COURSES, VIDEO_CATEGORIES, ytThumb, ytEmbed } = await import("../src/lib/video-courses")
-  check("video: 17 courses catalogued", VIDEO_COURSES.length === 17, `${VIDEO_COURSES.length}`)
+  check("video: at least 17 courses catalogued (v23 floor)", VIDEO_COURSES.length >= 17, `${VIDEO_COURSES.length}`)
   check("video: unique ids", new Set(VIDEO_COURSES.map((c) => c.id)).size === VIDEO_COURSES.length)
   const allLessons = VIDEO_COURSES.flatMap((c) => c.lessons)
   check("video: unique lesson video ids", new Set(allLessons.map((l) => l.id)).size === allLessons.length)
@@ -102,7 +104,7 @@ async function main() {
 
   /* ---- free course catalog growth (offline) ---- */
   const { FREE_COURSES } = await import("../src/lib/free-courses")
-  check("courses: catalog grew to 20 entries", FREE_COURSES.length === 20, `${FREE_COURSES.length}`)
+  check("courses: at least 20 free catalog entries (v23 floor)", FREE_COURSES.length >= 20, `${FREE_COURSES.length}`)
   check("courses: audit + skills categories populated", ["audit", "skills"].every((c) => FREE_COURSES.some((x) => x.category === c)))
   check("courses: CFI + AccountingCoach + World Bank + IMF represented", ["CFI", "AccountingCoach", "World Bank", "IMF"].every((p) => FREE_COURSES.some((c) => c.provider.includes(p))))
 
@@ -125,9 +127,9 @@ async function main() {
 
   /* ---- sw cache + version bump (offline) ---- */
   const sw = readFileSync("public/sw.js", "utf-8")
-  check("sw: cache bumped to auditedge-v23", sw.includes('VERSION = "auditedge-v23"'))
+  check("sw: a cache VERSION is declared", sw.includes('VERSION = "auditedge-v'))
   const pkg = JSON.parse(readFileSync("package.json", "utf-8"))
-  check("package.json: version 23.0.0", pkg.version === "23.0.0")
+  check("package.json: version at least 23.0.0", pkg.version >= "23.0.0", pkg.version)
 
   console.log(`\n${pass} passed, ${fail} failed`)
   process.exit(fail > 0 ? 1 : 0)

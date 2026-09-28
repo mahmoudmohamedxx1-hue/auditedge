@@ -2,7 +2,7 @@
 
 import { Course, Lesson } from "@/lib/audit-types"
 import { cn } from "@/lib/utils"
-import { tt, arOr, COURSE_LEVEL_AR } from "@/lib/i18n"
+import { tt, arOr, COURSE_LEVEL_AR, COURSE_CATEGORY_AR } from "@/lib/i18n"
 import {
   BookOpenCheck,
   Crown,
@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
+import { CourseCover } from "@/components/audit/course-cover"
 import { useAppStore } from "@/store/useAppStore"
 
 export const COURSE_ICONS: Record<string, LucideIcon> = {
@@ -172,16 +173,56 @@ export function CourseCard({ course, compact = false }: { course: Course; compac
     <button
       onClick={() => navigate("course", { courseId: course.id })}
       className={cn(
-        "group relative flex w-full flex-col rounded-xl border bg-card p-5 text-start shadow-soft card-lift focus-ring",
+        "group relative flex w-full flex-col overflow-hidden rounded-xl border bg-card text-start shadow-soft card-lift focus-ring",
         !course.published && "opacity-90"
       )}
       aria-label={`${tt("card.openCourse", lang)} ${course.title}`}
     >
+      {/* v24 — every course gets a designed pro thumbnail */}
+      <CourseCover
+        icon={Icon}
+        accent={course.accent}
+        code={course.code}
+        category={arOr(COURSE_CATEGORY_AR, course.category, lang)}
+        level={arOr(COURSE_LEVEL_AR, course.level, lang)}
+        lessons={lessons}
+        seed={course.id}
+        compact={compact}
+      />
+      <div className={cn("flex flex-1 flex-col", compact ? "p-3.5" : "p-5")}>
       <div className="flex items-start justify-between gap-3">
-        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", accent.icon)}>
-          <Icon className="h-[18px] w-[18px]" />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline" className={cn("font-mono text-[10px] tracking-wide", accent.chip)}>
+            {course.code}
+          </Badge>
+          {course.sourcePlatform && PLATFORM_BADGES[course.sourcePlatform] && (
+            <Badge
+              variant="outline"
+              className={cn("text-[10px] font-normal", PLATFORM_BADGES[course.sourcePlatform].className)}
+            >
+              {PLATFORM_BADGES[course.sourcePlatform].label}
+            </Badge>
+          )}
+          {course.supplementary && (
+            <Badge variant="outline" className="border-dashed text-[10px] font-normal text-muted-foreground">
+              {tt("misc20.supplementary", lang)}
+            </Badge>
+          )}
+          {(() => {
+            // assessment badge (v20 quick win): how many quizzes this course carries
+            const quizzes = course.modules
+              .flatMap((m) => m.lessons)
+              .filter((l) => l.type === "quiz" || l.quiz).length
+            if (!quizzes) return null
+            return (
+              <Badge variant="outline" className="border-sage/40 text-[10px] font-normal text-sage-deep">
+                <FileQuestion className="me-1 h-3 w-3" />
+                {quizzes} {quizzes === 1 ? tt("misc20.quizCount", lang) : tt("misc20.quizCountPlural", lang)}
+              </Badge>
+            )
+          })()}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {!course.published && (
             <Badge variant="outline" className="border-dashed text-[10px] text-muted-foreground">
               Draft
@@ -192,41 +233,6 @@ export function CourseCard({ course, compact = false }: { course: Course; compac
           )}
           <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 transition-all group-hover:text-primary group-hover:opacity-100 rtl:rotate-180" />
         </div>
-      </div>
-
-      <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
-        <Badge variant="outline" className={cn("font-mono text-[10px] tracking-wide", accent.chip)}>
-          {course.code}
-        </Badge>
-        <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
-          {arOr(COURSE_LEVEL_AR, course.level, lang)}
-        </Badge>
-        {course.sourcePlatform && PLATFORM_BADGES[course.sourcePlatform] && (
-          <Badge
-            variant="outline"
-            className={cn("text-[10px] font-normal", PLATFORM_BADGES[course.sourcePlatform].className)}
-          >
-            {PLATFORM_BADGES[course.sourcePlatform].label}
-          </Badge>
-        )}
-        {course.supplementary && (
-          <Badge variant="outline" className="border-dashed text-[10px] font-normal text-muted-foreground">
-            {tt("misc20.supplementary", lang)}
-          </Badge>
-        )}
-        {(() => {
-          // assessment badge (v20 quick win): how many quizzes this course carries
-          const quizzes = course.modules
-            .flatMap((m) => m.lessons)
-            .filter((l) => l.type === "quiz" || l.quiz).length
-          if (!quizzes) return null
-          return (
-            <Badge variant="outline" className="border-sage/40 text-[10px] font-normal text-sage-deep">
-              <FileQuestion className="me-1 h-3 w-3" />
-              {quizzes} {quizzes === 1 ? tt("misc20.quizCount", lang) : tt("misc20.quizCountPlural", lang)}
-            </Badge>
-          )
-        })()}
       </div>
 
       <h3
@@ -268,6 +274,7 @@ export function CourseCard({ course, compact = false }: { course: Course; compac
           {tt("card.viewCourse", lang)} <span className="rtl:rotate-180 inline-block">→</span>
         </div>
       )}
+      </div>
     </button>
   )
 }

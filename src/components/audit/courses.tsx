@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils"
 import { tt, arOr, COURSE_CATEGORY_AR } from "@/lib/i18n"
 import { FREE_COURSES, type FreeCourse } from "@/lib/free-courses"
+import { LinkCourseCover } from "@/components/audit/course-cover"
 import { VIDEO_CATEGORIES, VIDEO_COURSES, ytThumb, ytEmbed, type VideoCourse } from "@/lib/video-courses"
 import {
   Award,
@@ -26,6 +27,7 @@ import {
   GraduationCap,
   Landmark,
   Languages,
+  LineChart,
   MonitorPlay,
   PenTool,
   Play,
@@ -43,6 +45,7 @@ const FREE_COVER: Record<FreeCourse["category"], { icon: LucideIcon; grad: strin
   accounting: { icon: Calculator, grad: "from-olive/80 to-olive-deep/90", label: "Accounting" },
   ifrs: { icon: Scale, grad: "from-plum/80 to-plum-deep/90", label: "IFRS" },
   audit: { icon: Landmark, grad: "from-primary/70 to-primary/90", label: "Audit" },
+  cfa: { icon: LineChart, grad: "from-teal-600/80 to-cyan-800/90", label: "CFA" },
   reference: { icon: BookOpen, grad: "from-sage/80 to-sage-deep/90", label: "Reference" },
   arabic: { icon: Languages, grad: "from-gold/80 to-gold-deep/90", label: "بالعربية" },
   skills: { icon: PenTool, grad: "from-plum/60 to-primary/80", label: "Skills" },
@@ -53,6 +56,7 @@ const FREE_CATS: (FreeCourse["category"] | "all")[] = [
   "accounting",
   "ifrs",
   "audit",
+  "cfa",
   "reference",
   "arabic",
   "skills",
@@ -313,21 +317,16 @@ export function Courses() {
                 rel="noopener noreferrer"
                 className="group flex flex-col overflow-hidden rounded-xl border bg-card/80 transition-all hover:-translate-y-px hover:border-olive/40 hover:shadow-soft"
               >
-                {/* v23 — pro gradient cover with the subject mark */}
-                <span
-                  className={cn(
-                    "relative flex h-[74px] items-center justify-center bg-gradient-to-br",
-                    cover.grad
-                  )}
-                >
-                  <Icon className="h-7 w-7 text-white/90" />
-                  <span className="absolute bottom-1.5 start-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
-                    {c.provider.split("—")[0].trim()}
-                  </span>
-                  <span className="absolute bottom-1.5 end-2 rounded bg-black/25 px-1.5 py-px font-mono text-[9.5px] font-semibold text-white/95">
-                    {c.language}
-                  </span>
-                </span>
+                {/* v24 — designed pro cover (pattern + monogram + chips) */}
+                <LinkCourseCover
+                  icon={Icon}
+                  grad={cover.grad}
+                  label={cover.label}
+                  provider={c.provider}
+                  level={c.level}
+                  language={c.language}
+                  seed={c.id}
+                />
                 <span className="flex flex-1 flex-col p-4">
                   <span className="flex items-start justify-between gap-2">
                     <span dir="auto" className="text-[13.5px] font-semibold leading-snug">

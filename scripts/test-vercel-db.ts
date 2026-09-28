@@ -42,7 +42,7 @@ check("courses served", courses === 41, `${courses} courses`) // v21: +IFRS 18
 check("lessons served", lessons === 990, `${lessons} lessons`) // v21: +5 IFRS 18
 check("materials served", materials === 146, `${materials} materials`)
 const bankQ = await db.bankQuestion.count()
-check("bank questions served", bankQ === 579, `${bankQ} questions`) // v22: +60 past papers
+check("bank questions served", bankQ === 873, `${bankQ} questions`) // v24: +186 the rest of the ACCA syllabus
 check("single workspace user", users === 1, `${users} user`)
 
 // writes must work — the provisioned copy lives in writable TMPDIR

@@ -10,6 +10,7 @@ import {
   courseProgress,
   COURSE_ICONS,
 } from "./shared"
+import { CourseCover } from "./course-cover"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -70,6 +71,20 @@ export function CourseDetail() {
       >
         <ChevronLeft className="h-4 w-4 rtl:rotate-180" /> {tt("detail.allCourses", lang)}
       </button>
+
+      {/* v24 — the course hero: its designed pro thumbnail */}
+      <div className="mt-5 overflow-hidden rounded-2xl border shadow-soft">
+        <CourseCover
+          icon={Icon}
+          accent={course.accent}
+          code={course.code}
+          category={arOr(COURSE_CATEGORY_AR, course.category, lang)}
+          level={arOr(COURSE_LEVEL_AR, course.level, lang)}
+          lessons={lessons.length}
+          seed={course.id}
+          className="h-[148px] sm:h-[180px]"
+        />
+      </div>
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         {/* main column */}
