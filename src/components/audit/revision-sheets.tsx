@@ -227,6 +227,95 @@ const SHEETS: Sheet[] = [
       },
     ],
   },
+  /* ---------- v23: three new sheets ---------- */
+  {
+    id: "consolidation",
+    code: "RS-09",
+    title: { en: "Consolidation in eight moves (IFRS 3 / IFRS 10)", ar: "التجميع في ثماني خطوات (IFRS 3 / IFRS 10)" },
+    blocks: [
+      {
+        kind: "steps",
+        en: [
+          ["1 · Test control (IFRS 10)", "Power + exposure to variable returns + ability to use power. Board seats, shareholder agreements and potential voting rights all count — no bright-line %."],
+          ["2 · Set the acquisition date", "The date control passes — all fair values, consideration and NCI are measured at that single date."],
+          ["3 · Fair-value the identifiable net assets", "Every asset and liability of the acquiree — including intangibles the acquiree never recognised (brands, order book, customer lists)."],
+          ["4 · Choose the NCI measurement", "Fair value (full goodwill) OR proportionate share of net assets (partial goodwill) — decide at acquisition, disclose the choice."],
+          ["5 · Compute goodwill", "Consideration transferred + NCI − FV of identifiable net assets. Negative? Recheck the working first, then recognise a bargain-purchase gain in P/L."],
+          ["6 · Consolidate line by line", "Add parent + subsidiary (post-acquisition), remove the investment equity, present NCI separately within equity."],
+          ["7 · Eliminate intragroup", "Remove intragroup sales, balances, dividends, interest and UNREALISED profit in closing inventory (downstream hits the parent; upstream shares with NCI)."],
+          ["8 · Test goodwill annually", "Allocate goodwill to CGUs expected to benefit; impair from the top of that CGU (IAS 36) — goodwill is never amortised under IFRS."],
+        ],
+        ar: [
+          ["١ · اختبر السيطرة (IFRS 10)", "سلطة + انكشاف على عوائد متغيرة + قدرة على استخدام السلطة. مقاعد المجلس واتفاقيات المساهمين وحقوق التصويت الكامنة كلها تُحتسب — لا نسبة سحرية."],
+          ["٢ · حدد تاريخ الاستحواذ", "اليوم الذي تنتقل فيه السيطرة — وعنده تقاس كل القيم العادلة والمقابل وحصص الأقلية بتاريخ واحد."],
+          ["٣ · قيّم صافي الأصول المحددة بالعادلة", "كل أصول والتزامات المُستحوذ عليها — بما فيها غير الملموسة التي لم تعترف بها أصلًا (العلامات، محفظة الطلبات، قوائم العملاء)."],
+          ["٤ · اختر قياس الأقلية", "القيمة العادلة (شهرة كاملة) أو النسبة من صافي الأصول (شهرة جزئية) — قرار يؤخذ عند الاستحواذ ويُفصح عنه."],
+          ["٥ · احسب الشهرة", "المقابل المدفوع + حصص الأقلية − القيمة العادلة لصافي الأصول. سالبة؟ راجع الحساب أولًا ثم اعترف بربح الشراء بأقل من القيمة في الأرباح."],
+          ["٦ · جمّع بندًا بندًا", "أضف الأم والتابعة (بعد الاستحواذ)، استبعد الاستثمار وحقوق الملكية، واعرض الأقلية بندًا مستقلًا ضمن حقوق الملكية."],
+          ["٧ · استبعد داخل المجموعة", "احذف المبيعات والأرصدة والتوزيعات والفوائد داخل المجموعة وربح المخزون الختامي غير المحقق (الهابط على الأم؛ والصاعد تشارك فيه الأقلية)."],
+          ["٨ · اختبر الشهرة سنويًا", "خصص الشهرة لوحدات توليد النقد المستفيدة؛ واضمحلالها من أعلى الوحدة (IAS 36) — فالشهرة لا تُهلك إطلاقًا بموجب IFRS."],
+        ],
+      },
+    ],
+  },
+  {
+    id: "ethics-threats",
+    code: "RS-10",
+    title: { en: "The five threats & their safeguards (IESBA Code)", ar: "التهديدات الخمسة وضوابطها (ميثاق IESBA)" },
+    blocks: [
+      {
+        kind: "list",
+        en: [
+          "Self-interest — fee dominance, loans to/from client, gift of shares, partner's relative at the client, contingent fees. Safeguard: reduce dependency, independent review, divest the interest.",
+          "Self-review — auditing your own tax/valuation work, or a former audit senior now the client's CFO. Safeguard: separate teams, EQR re-performance of own-work areas, cooling-off periods.",
+          "Advocacy — promoting the client's position (tax dispute, deal promotion). For an audit client: prohibited when the matter becomes an audit matter; otherwise evaluate + safeguards.",
+          "Familiarity — long association (partner rotation!), old friendships, former partner returning, accepted hospitality. Safeguard: rotate the team, independent EQR, decline the hospitality.",
+          "Intimidation — threats of dismissal, litigation or fee pressure to agree with management; pressure to reduce work below the needed level. Safeguard: document, escalate within the firm, EQR, walk away.",
+          "Golden rule: identify → evaluate (is it at an acceptable level?) → safeguards → still not acceptable? DECLINE or END the engagement — no fee is worth the fundamental principles.",
+          "Public-interest entities: stricter — partner rotation (5–7 years), cooling-off (2 years for key roles), no tax advocacy for audit clients, fee-dependency cap (15%).",
+        ],
+        ar: [
+          "المصلحة الذاتية — هيمنة الأتعاب، قروض مع العميل، هدايا أسهم، قريب لشريك يعمل لدى العميل، أتعاب طارئة. الضابط: تقليل الاعتماد، مراجعة مستقلة، التخلي عن المصلحة.",
+          "المراجعة الذاتية — مراجعة عملك الضريبي أو التقييمي، أو رئيس مراجعة سابق صار مديرًا ماليًا للعميل. الضابط: فصل الفرق، إعادة أداء مناطق العمل الذاتي بواسطة مراجع جودة، فترات تهدئة.",
+          "المؤازرة — الدفع بموقف العميل (نزاع ضريبي أو ترويج صفقة). لعميل المراجعة: محظورة إذا أصبحت المسألة محل المراجعة؛ وإلا فتقييم وضوابط.",
+          "الأُلفة — طول الصحبة (تدوير الشركاء!)، صداقات قديمة، عودة شريك سابق، ضيافة مقبولة. الضابط: تدوير الفريق، مراجعة جودة مستقلة، رفض الضيافة.",
+          "الترهيب — تهديد بالإقالة أو التقاضي أو ضغط أتعاب للموافقة على الإدارة، أو ضغط لتقليل العمل دون المستوى. الضابط: التوثيق، التصعيد داخل المكتب، مراجعة الجودة، أو الانصراف.",
+          "القاعدة الذهبية: حدد → قيّم (هل هو في مستوى مقبول؟) → ضوابط → ما زال غير مقبول؟ ارفض أو أنهِ المهمة — ما من أتعاب تساوي المبادئ الجوهرية.",
+          "الكيانات ذات المصلحة العامة: أشد — تدوير الشركاء (٥–٧ سنوات)، تهدئة سنتين للأدوار الرئيسية، لا مؤازرة ضريبية لعملاء المراجعة، وسقف اعتماد على الأتعاب (١٥٪).",
+        ],
+      },
+    ],
+  },
+  {
+    id: "ecl-instruments",
+    code: "RS-11",
+    title: { en: "IFRS 9 in one page — classification & the ECL ladder", ar: "IFRS 9 في صفحة — التصنيف وسُلَّم الخسائر المتوقعة" },
+    blocks: [
+      {
+        kind: "steps",
+        en: [
+          ["1 · Classify by business model + SPPI", "Hold to collect → amortised cost · hold to collect AND sell → FVOCI · trading (or failing SPPI) → FVTPL. Set at initial recognition, no reconsidering later."],
+          ["2 · Day-1 measure", "Fair value plus transaction costs (FVTPL: no transaction costs). Interest: effective-rate method — the rate that exactly discounts the cash flows."],
+          ["3 · Stage the asset (ECL)", "Stage 1: no significant deterioration → 12-month ECL, interest on GROSS carrying amount."],
+          ["4 · Stage 2", "Significant increase in credit risk since origination → LIFETIME ECL, interest still on gross. 30+ days overdue is a rebuttable presumption of Stage 2."],
+          ["5 · Stage 3 (credit-impaired)", "Interest on NET carrying amount (interest revenue after the allowance), lifetime ECL, and the asset is individually provisioned."],
+          ["6 · Compute ECL", "PD × LGD × EAD — probability-weighted, forward-looking, unbiased. Never a single 'most likely' scenario."],
+          ["7 · Present", "Stage 1-2 allowance is a deduction from the asset; Stage 3 is a direct write-down. ECL delta goes to profit or loss; FVOCI debt keeps the allowance in P/L (not in OCI)."],
+          ["8 · Simplified approach (receivables)", "Trade and lease receivables may skip staging — always track LIFETIME ECL. Contract assets follow the same route."],
+        ],
+        ar: [
+          ["١ · صنّف بالنموذج ومعيار الأصل والفائدة", "التحصيل → تكلفة مطفاة · التحصيل والبيع → قيمة عادلة عبر الدخل الشامل الآخر · التداول (أو إخفاق الاختبار) → قيمة عادلة عبر الأرباح. القرار عند الاعتراف الأولي ولا يعاد النظر فيه."],
+          ["٢ · القياس يوم الأول", "القيمة العادلة زائد تكاليف التعامل (وللأرباح: دون التكاليف). والفائدة بطريقة المعدل الفعال — المعدل الذي يخصم التدفقات بالضبط."],
+          ["٣ · رتّب الأصل (الخسائر)", "المرحلة ١: لا تدهور جوهري → خسائر ١٢ شهرًا وفائدة على القيمة الإجمالية."],
+          ["٤ · المرحلة ٢", "زيادة جوهرية في مخاطر الائتمان منذ النشأة → خسائر للمدى الحياتي والفائدة على الإجمالية. وتجاوز السداد ٣٠ يومًا قرينة قابلة للدحض على المرحلة الثانية."],
+          ["٥ · المرحلة ٣ (المتعثر)", "الفائدة على القيمة الصافية (بعد المخصص)، وخسائر حياتية، والأصل مُخصص فرديًا."],
+          ["٦ · احسب الخسائر", "احتمال التعثر × الخسارة عند التعثر × الانكشاف عند التعثر — مرجح بالاحتمالات، استشرافي، غير منحاز. وليس أبدًا «السيناريو الأرجح» وحده."],
+          ["٧ · اعرض", "مخصص المرحلتين الأولى والثانية خصم من الأصل؛ والثالثة تخفيض مباشر. وفروق الخسائر تذهب للأرباح؛ وللدين المعد بالدخل الشامل الآخر يبقى المخصص في الأرباح لا في الدخل الشامل."],
+          ["٨ · النهج المبسط (الذمم)", "يجوز لمديني التشغيل والإيجار تجاوز الترتيب — تتبع دائمًا لخسائر المدى الحياتي. وتتبع أصول العقود المسار نفسه."],
+        ],
+      },
+    ],
+  },
 ]
 
 export function RevisionSheets() {

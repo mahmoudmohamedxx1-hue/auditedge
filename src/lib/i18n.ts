@@ -179,10 +179,24 @@ export const T = {
     freeCat_all: { en: "All", ar: "الكل" },
     freeCat_accounting: { en: "Accounting", ar: "المحاسبة" },
     freeCat_ifrs: { en: "IFRS", ar: "المعايير الدولية" },
+    freeCat_audit: { en: "Audit", ar: "المراجعة" },
     freeCat_reference: { en: "Reference", ar: "مراجع" },
     freeCat_arabic: { en: "بالعربية", ar: "بالعربية" },
+    freeCat_skills: { en: "Design & Excel", ar: "التصميم وإكسل" },
     freeCert: { en: "Free certificate", ar: "شهادة مجانية" },
     freeOpen: { en: "Open course", ar: "افتح الدورة" },
+    // v23 — full video courses from YouTube (with pro thumbnails)
+    videoTitle: { en: "Full video courses — free to watch", ar: "دورات فيديو كاملة — شاهد مجانًا" },
+    videoDesc: {
+      en: "Complete multi-hour courses from top educators — CPA Talks, The Accounting Planet, Tony Bell, Envato Tuts+ and more. Play them right here, lesson by lesson.",
+      ar: "دورات كاملة تمتد لساعات من أفضل المعلّمين — CPA Talks وThe Accounting Planet وTony Bell وEnvato Tuts+ وغيرهم. شاهدها هنا درسًا بدرس.",
+    },
+    videoWatch: { en: "Watch now", ar: "شاهد الآن" },
+    videoLessons: { en: "lessons", ar: "درسًا" },
+    videoFull: { en: "Full course", ar: "دورة كاملة" },
+    videoPlay: { en: "Play lesson", ar: "تشغيل الدرس" },
+    videoOpenYt: { en: "Open on YouTube", ar: "افتح على يوتيوب" },
+    videoArabic: { en: "Arabic", ar: "بالعربية" },
   },
 
   /* ---------- course detail ---------- */
@@ -305,6 +319,16 @@ export const T = {
     },
     uploadFirst: { en: "Upload the first file", ar: "ارفع أول ملف" },
     removedToast: { en: "Material removed", ar: "تم حذف المادة" },
+    // v23 — reading progress
+    studiedProgress: { en: "studied", ar: "مدروسة" },
+    studiedMark: { en: "Mark as studied", ar: "وسم كمُدروسة" },
+    studiedUnmark: { en: "Studied — click to undo", ar: "مُدروسة — انقر للتراجع" },
+    hideStudied: { en: "Hide studied", ar: "إخفاء المُدروسة" },
+    showAll: { en: "Show all", ar: "عرض الكل" },
+    studiedHint: {
+      en: "Mark what you have studied — your progress is saved on this device.",
+      ar: "وسم ما درسته — يُحفظ تقدمك على هذا الجهاز.",
+    },
     // upload dialog
     uploadTitle: { en: "Upload material", ar: "رفع مادة" },
     uploadDesc: {
@@ -483,6 +507,11 @@ export const T = {
     poweredBy: {
       en: "Powered by GLM — free for your office, with live web search.",
       ar: "مدعوم بـ GLM — مجاني لمكتبك مع بحث حي على الويب.",
+    },
+    // v23 — IndexedDB persistence hint (conversations survive sessions)
+    savedLocal: {
+      en: "Chats are saved on this device — they survive sessions.",
+      ar: "المحادثات محفوظة على هذا الجهاز — تبقى بعد إغلاق الجلسة.",
     },
     title: { en: "AI Tutor", ar: "المساعد الذكي" },
     subtitle: {
@@ -905,11 +934,12 @@ export const T = {
     examTitle: { en: "Mock exam", ar: "اختبار تجريبي" },
     examDesc: { en: "Timed, section-weighted, flag-and-review. Results feed the review queue.", ar: "محدد الوقت بتوزيع الأقسام مع تعليم للمراجعة. النتائج تغذي قائمة المراجعة." },
     // v22 — previous-exam papers + AI custom exams
-    papersTitle: { en: "Previous exam papers", ar: "امتحانات سابقة" },
+    papersTitle: { en: "Previous exam papers — full length", ar: "امتحانات سابقة — بنسخ كاملة" },
     papersDesc: {
-      en: "Real past papers adapted for AuditEdge — IFRS and auditing, ACCA-style plus the Egyptian SOE paper. Timed, with the same results and mistakes machinery.",
-      ar: "امتحانات سابقة حقيقية مكيّفة لأوديت إيدج — IFRS والمراجعة بنمط ACCA إضافة إلى ورقة الشركات الحكومية المصرية. بمواعيد محددة وبنفس منظومة النتائج والأخطاء.",
+      en: "Full-length past papers adapted for AuditEdge — IFRS and auditing, ACCA AA/AAA/FR/SBR plus FA, FM and the Egyptian SOE paper. Real exam structure, timed, with the same results and mistakes machinery.",
+      ar: "امتحانات سابقة كاملة مكيّفة لأوديت إيدج — IFRS والمراجعة بنمط ACCA ‏AA/AAA/FR/SBR إضافة إلى FA وFM وورقة الشركات الحكومية المصرية. بهيكل الامتحان الحقيقي وبتوقيت محدد وبنفس منظومة النتائج والأخطاء.",
     },
+    paperFull: { en: "Full paper", ar: "ورقة كاملة" },
     paperSit: { en: "Sit paper", ar: "ادخل الامتحان" },
     paperFailed: { en: "Could not open this paper — try again.", ar: "تعذر فتح هذا الامتحان — حاول مجددًا." },
     minutesShort: { en: "min", ar: "دقيقة" },
@@ -927,6 +957,12 @@ export const T = {
     },
     customArea: { en: "Section", ar: "القسم" },
     customDiff: { en: "Difficulty", ar: "الصعوبة" },
+    // v23 — exam sizes: micro / mini / standard / full mock
+    customSize: { en: "Exam size", ar: "حجم الاختبار" },
+    sizeMicro: { en: "Micro · 5 Q · quick check", ar: "ميكرو · ٥ أسئلة · فحص سريع" },
+    sizeMini: { en: "Mini · 10 Q · focused drill", ar: "ميني · ١٠ أسئلة · تدريب مركّز" },
+    sizeStandard: { en: "Standard · 15 Q", ar: "قياسي · ١٥ سؤالًا" },
+    sizeFull: { en: "Full mock · 24 Q", ar: "محاكاة كاملة · ٢٤ سؤالًا" },
     customCount: { en: "Questions", ar: "عدد الأسئلة" },
     customLang: { en: "Language", ar: "اللغة" },
     customLangBi: { en: "Bilingual (EN + AR)", ar: "ثنائي اللغة (إنجليزي + عربي)" },

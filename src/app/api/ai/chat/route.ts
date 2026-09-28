@@ -50,6 +50,10 @@ export async function POST(req: NextRequest) {
     /** v22: show the model's thinking process (default: on for reasoning engines) */
     thinking?: boolean
     image?: { dataUrl?: string; thumb?: string }
+    /** v23: recent transcript from the browser — used ONLY when the server
+     *  had to create a fresh conversation (ephemeral serverless database),
+     *  so a resumed chat keeps its earlier tutoring context. */
+    history?: { role?: string; content?: string }[]
   }
   try {
     body = await req.json()
@@ -83,9 +87,23 @@ export async function POST(req: NextRequest) {
   // thinking process), overridable per request from the tutor header toggle
   const wantThinking = typeof body.thinking === "boolean" ? body.thinking : getAiModel(model).reasoning
 
+  // v23: sanitize the browser-supplied history (never trusted blindly)
+  const clientHistory = Array.isArray(body.history)
+    ? body.history
+        .filter(
+          (m) =>
+            (m?.role === "user" || m?.role === "assistant") &&
+            typeof m.content === "string" &&
+            m.content.trim().length > 0
+        )
+        .slice(-12)
+        .map((m) => ({ role: m.role as "user" | "assistant", content: m.content!.slice(0, 2000) }))
+    : []
+
   // load or create conversation (must belong to the session user)
   let conversationId = typeof body.conversationId === "string" ? body.conversationId : null
   let priorSummary = ""
+  let resumedFromClient = false
   if (conversationId) {
     const convo = await db.aiConversation.findUnique({ where: { id: conversationId } })
     if (!convo || convo.userId !== me.id) conversationId = null
@@ -97,6 +115,9 @@ export async function POST(req: NextRequest) {
       data: { userId: me.id, title },
     })
     conversationId = convo.id
+    // the browser knew this conversation but the server database did not
+    // (ephemeral serverless instance) — keep the tutoring context alive
+    resumedFromClient = clientHistory.length > 0
   }
   const convoId = conversationId
 
@@ -256,6 +277,21 @@ ${summary}`,
         }
         for (const m of recent) {
           messages.push({ role: m.role === "user" ? "user" : "assistant", content: m.content })
+        }
+
+        // v23: a conversation resumed after a serverless database reset —
+        // inject the browser's copy of the earlier transcript as context
+        // (NOT persisted; the visible transcript lives in IndexedDB)
+        if (resumedFromClient) {
+          const transcript = clientHistory
+            .map((m) => `${m.role === "user" ? "Learner" : "Tutor"}: ${m.content}`)
+            .join("\n")
+            .slice(-8000)
+          messages.push({
+            role: "system",
+            content: `Earlier in this conversation (restored from the learner's browser after a server reset — treat as established context, do not re-teach unless asked):
+${transcript}`,
+          })
         }
 
         // if we searched, enrich the current user message with the results

@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import {
+  BookCheck,
   FileArchive,
   FileImage,
   FileSpreadsheet,
@@ -69,6 +70,10 @@ export function Library() {
   const [category, setCategory] = useState<string | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  // v23: reading progress — persisted studied marks + an unstudied filter
+  const studiedMaterials = useAppStore((s) => s.studiedMaterials)
+  const toggleStudied = useAppStore((s) => s.toggleStudied)
+  const [hideStudied, setHideStudied] = useState(false)
 
   // consume a deep link (e.g. an ISA chip in the Audit Program): adjust state
   // during render (official React pattern) so the search is prefilled at once
@@ -92,6 +97,7 @@ export function Library() {
     const terms = q.split(/\s+/).filter(Boolean)
     return data.materials.filter((m) => {
       if (category && m.category !== category) return false
+      if (hideStudied && studiedMaterials.includes(m.id)) return false
       if (!terms.length) return true
       const title = m.title.toLowerCase()
       const description = (m.description ?? "").toLowerCase()
@@ -100,7 +106,13 @@ export function Library() {
         (t) => title.includes(t) || description.includes(t) || originalName.includes(t)
       )
     })
-  }, [data, query, category])
+  }, [data, query, category, hideStudied, studiedMaterials])
+
+  // v23: overall reading progress across every material in the library
+  const studiedCount = useMemo(
+    () => data?.materials.filter((m) => studiedMaterials.includes(m.id)).length ?? 0,
+    [data, studiedMaterials]
+  )
 
   const categories = useMemo(() => {
     if (!data) return []
@@ -135,6 +147,44 @@ export function Library() {
 
       {/* v21: printable bilingual revision sheets (exam-night one-pagers) */}
       <RevisionSheets />
+
+      {/* v23 — reading progress: how much of the library has been studied */}
+      {data.materials.length > 0 && (
+        <section className="rounded-2xl border bg-card p-4 shadow-soft">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sage/15 text-sage-deep">
+                <BookCheck className="h-[18px] w-[18px]" />
+              </span>
+              <div>
+                <p className="text-[13px] font-semibold">
+                  <span className="tabular-nums">{studiedCount}</span>/{data.materials.length}{" "}
+                  <span className="font-normal text-muted-foreground">{tt("lib.studiedProgress", lang)}</span>
+                </p>
+                <p className="text-[11.5px] text-muted-foreground">
+                  {tt("lib.studiedHint", lang)}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setHideStudied(!hideStudied)}
+              aria-pressed={hideStudied}
+              className={cn(
+                "rounded-full border px-3 py-1.5 text-[12px] transition-colors focus-ring",
+                hideStudied
+                  ? "border-sage/40 bg-sage/15 font-semibold text-sage-deep"
+                  : "border-border bg-card text-muted-foreground hover:border-input hover:text-foreground"
+              )}
+            >
+              {hideStudied ? tt("lib.showAll", lang) : tt("lib.hideStudied", lang)}
+            </button>
+          </div>
+          <Progress
+            value={Math.round((100 * studiedCount) / Math.max(1, data.materials.length))}
+            className="mt-3 h-1.5"
+          />
+        </section>
+      )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative max-w-sm flex-1">
@@ -225,6 +275,21 @@ export function Library() {
                   {m.uploaderName ? ` · ${m.uploaderName}` : ""}
                 </div>
                 <div className="mt-4 flex items-center gap-2 border-t border-border pt-3.5">
+                  {/* v23 — mark as studied (persisted reading progress) */}
+                  <button
+                    onClick={() => toggleStudied(m.id)}
+                    aria-pressed={studiedMaterials.includes(m.id)}
+                    aria-label={studiedMaterials.includes(m.id) ? tt("lib.studiedUnmark", lang) : tt("lib.studiedMark", lang)}
+                    title={studiedMaterials.includes(m.id) ? tt("lib.studiedUnmark", lang) : tt("lib.studiedMark", lang)}
+                    className={cn(
+                      "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors focus-ring",
+                      studiedMaterials.includes(m.id)
+                        ? "border-sage/40 bg-sage/15 text-sage-deep"
+                        : "text-muted-foreground/70 hover:border-sage/40 hover:bg-sage/10 hover:text-sage-deep"
+                    )}
+                  >
+                    <BookCheck className="h-4 w-4" />
+                  </button>
                   {m.hasFile ? (
                     <>
                       <a

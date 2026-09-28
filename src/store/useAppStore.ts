@@ -182,6 +182,11 @@ interface AppState {
   bookmarks: string[]
   toggleBookmark: (lessonId: string) => void
   hydrateBookmarks: () => void
+  /** v23: library reading progress — material ids marked as studied,
+   *  persisted in localStorage so progress survives sessions. */
+  studiedMaterials: string[]
+  toggleStudied: (materialId: string) => void
+  hydrateStudied: () => void
   /** v21: one-shot weak-topic drill prefill — the analytics heatmap sets it,
    *  the Exam Center consumes it and clears it. */
   examTagPrefill: string | null
@@ -238,6 +243,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   libraryPresetQuery: null,
   examTagPrefill: null,
   bookmarks: [],
+  studiedMaterials: [],
 
   toggleBookmark: (lessonId) => {
     set((s) => ({
@@ -257,6 +263,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const raw = JSON.parse(localStorage.getItem("auditedge-bookmarks") ?? "[]")
       if (Array.isArray(raw)) set({ bookmarks: raw.filter((x) => typeof x === "string") })
+    } catch {}
+  },
+
+  toggleStudied: (materialId) => {
+    set((s) => ({
+      studiedMaterials: s.studiedMaterials.includes(materialId)
+        ? s.studiedMaterials.filter((x) => x !== materialId)
+        : [...s.studiedMaterials, materialId],
+    }))
+    try {
+      localStorage.setItem(
+        "auditedge-studied-materials",
+        JSON.stringify(useAppStore.getState().studiedMaterials)
+      )
+    } catch {}
+  },
+
+  hydrateStudied: () => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("auditedge-studied-materials") ?? "[]")
+      if (Array.isArray(raw)) set({ studiedMaterials: raw.filter((x) => typeof x === "string") })
     } catch {}
   },
 

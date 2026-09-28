@@ -30,6 +30,7 @@ import {
   FolderOpen,
   Globe,
   GraduationCap,
+  HardDriveDownload,
   History,
   ImagePlus,
   Languages,
@@ -625,9 +626,16 @@ export function AiTutor() {
           <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2 scroll-thin">
             {ConversationList}
           </div>
-          <p className="flex items-center gap-1.5 border-t px-4 py-3 text-[10.5px] leading-relaxed text-muted-foreground">
-            <Sparkles className="h-3 w-3 shrink-0 text-primary" /> {tt("ai.poweredBy", lang)}
-          </p>
+          <div className="border-t px-4 py-3">
+            <p className="flex items-center gap-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
+              <Sparkles className="h-3 w-3 shrink-0 text-primary" /> {tt("ai.poweredBy", lang)}
+            </p>
+            {/* v23 — chats are mirrored into the browser (IndexedDB), so the
+                history survives sessions even on ephemeral deployments */}
+            <p className="mt-1.5 flex items-center gap-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
+              <HardDriveDownload className="h-3 w-3 shrink-0 text-sage-deep" /> {tt("ai.savedLocal", lang)}
+            </p>
+          </div>
         </div>
       </aside>
 

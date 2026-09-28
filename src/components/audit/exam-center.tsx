@@ -281,7 +281,8 @@ export function ExamCenter() {
     setPhase("sitting")
   }
 
-  /* ---------- v22: AI custom-exam builder (client-driven chunks) ---------- */
+  /* ---------- v22: AI custom-exam builder (client-driven chunks) ----------
+   *  v23: named sizes — micro (5) / mini (10) / standard (15) / full (24) */
   const [customOpen, setCustomOpen] = useState(false)
   const [cTopic, setCTopic] = useState("")
   const [cArea, setCArea] = useState("auditing")
@@ -292,6 +293,13 @@ export function ExamCenter() {
   const [cProgress, setCProgress] = useState(0)
   const [cError, setCError] = useState<string | null>(null)
 
+  const EXAM_SIZES: { count: string; labelKey: string }[] = [
+    { count: "5", labelKey: "exam.sizeMicro" },
+    { count: "10", labelKey: "exam.sizeMini" },
+    { count: "15", labelKey: "exam.sizeStandard" },
+    { count: "24", labelKey: "exam.sizeFull" },
+  ]
+
   const startCustomExam = async () => {
     if (!cTopic.trim() || cLoading) return
     setCLoading(true)
@@ -300,7 +308,9 @@ export function ExamCenter() {
     const target = Number(cCount)
     const collected: unknown[] = []
     let failures = 0
-    // chunked generation — each request writes a small batch (serverless-safe)
+    // chunked generation — each request writes a small batch (serverless-safe);
+    // a micro exam (5) fits in a single batch
+    const batch = target <= 5 ? 5 : 3
     while (collected.length < target && failures < 2) {
       const res = await fetch("/api/ai/exam-generate", {
         method: "POST",
@@ -311,7 +321,7 @@ export function ExamCenter() {
           area: cArea,
           difficulty: Number(cDiff),
           lang: cLang,
-          count: Math.min(3, target - collected.length),
+          count: Math.min(batch, target - collected.length),
           avoid: (collected as { stem?: unknown }[]).map((q) => String(q?.stem ?? "")),
         }),
       }).catch(() => null)
@@ -625,8 +635,16 @@ export function ExamCenter() {
                   <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
                     {lang === "ar" ? p.titleAr : p.titleEn}
                   </h3>
-                  <span className="shrink-0 rounded-full border border-plum/30 bg-plum/10 px-2 py-0.5 text-[10px] font-semibold text-plum-deep">
-                    {p.body}
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="rounded-full border border-plum/30 bg-plum/10 px-2 py-0.5 text-[10px] font-semibold text-plum-deep">
+                      {p.body}
+                    </span>
+                    {/* v23 — full-length paper badge */}
+                    {p.count >= 24 && (
+                      <span className="rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
+                        {tt("exam.paperFull", lang)}
+                      </span>
+                    )}
                   </span>
                 </div>
                 <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
@@ -774,34 +792,40 @@ export function ExamCenter() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>{tt("exam.customCount", lang)}</Label>
-                  <Select value={cCount} onValueChange={setCCount}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="15">15</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* v23 — exam size: micro / mini / standard / full mock */}
+              <div className="space-y-1.5">
+                <Label>{tt("exam.customSize", lang)}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {EXAM_SIZES.map((s) => (
+                    <button
+                      key={s.count}
+                      type="button"
+                      onClick={() => setCCount(s.count)}
+                      aria-pressed={cCount === s.count}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-start text-[12px] leading-snug transition-colors focus-ring",
+                        cCount === s.count
+                          ? "border-primary/40 bg-primary/10 font-semibold text-primary"
+                          : "bg-card/60 text-muted-foreground hover:border-input hover:text-foreground"
+                      )}
+                    >
+                      {tt(s.labelKey as never, lang)}
+                    </button>
+                  ))}
                 </div>
-                <div className="space-y-1.5">
-                  <Label>{tt("exam.customLang", lang)}</Label>
-                  <Select value={cLang} onValueChange={setCLang}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bilingual">{tt("exam.customLangBi", lang)}</SelectItem>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="ar">العربية</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{tt("exam.customLang", lang)}</Label>
+                <Select value={cLang} onValueChange={setCLang}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bilingual">{tt("exam.customLangBi", lang)}</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="ar">العربية</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {cError && (
                 <p className="rounded-lg border border-gold/35 bg-gold/[0.08] px-3 py-2 text-[12.5px] text-gold-deep" dir="auto">

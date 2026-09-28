@@ -10,7 +10,7 @@ export type FreeCourse = {
   titleAr: string
   provider: string
   /** study area chip */
-  category: "accounting" | "ifrs" | "audit" | "reference" | "arabic"
+  category: "accounting" | "ifrs" | "audit" | "reference" | "arabic" | "skills"
   level: "Beginner" | "Intermediate" | "Advanced" | "Reference"
   hours: string
   language: "EN" | "AR" | "EN/AR"
@@ -229,5 +229,118 @@ export const FREE_COURSES: FreeCourse[] = [
       "Egypt's national digital library — free access for Egyptians (national ID registration) to courses, journals and references.",
     descAr:
       "المكتبة الرقمية القومية المصرية — وصول مجاني للمصريين (بالتسجيل بالرقم القومي) للدورات والدوريات والمراجع.",
+  },
+  // ---- v23: more pro free catalog entries ----
+  {
+    id: "cfi-fundamentals",
+    titleEn: "Accounting Fundamentals",
+    titleAr: "أساسيات المحاسبة",
+    provider: "CFI — Corporate Finance Institute",
+    category: "accounting",
+    level: "Beginner",
+    hours: "~5h",
+    language: "EN",
+    url: "https://corporatefinanceinstitute.com/courses/accounting-fundamentals/",
+    certificate: true,
+    descEn:
+      "CFI's free fundamentals course (free account) — the accounting cycle, debits and credits, and the three statements, taught the analyst way.",
+    descAr:
+      "دورة CFI الأساسية المجانية (بحساب مجاني) — الدورة المحاسبية والقيود المزدوجة والقوائم الثلاث بأسلوب المحللين.",
+  },
+  {
+    id: "accountingcoach",
+    titleEn: "AccountingCoach — the classic free tutor",
+    titleAr: "AccountingCoach — المعلّم المجاني الكلاسيكي",
+    provider: "AccountingCoach",
+    category: "reference",
+    level: "Beginner",
+    hours: "self-paced",
+    language: "EN",
+    url: "https://www.accountingcoach.com/",
+    certificate: false,
+    descEn:
+      "The internet's friendliest free accounting explanation site — every topic from journal entries to depreciation, with quizzes. PRO certificates optional.",
+    descAr:
+      "أوضح موقع مجاني لشرح المحاسبة على الإنترنت — كل موضوع من القيود إلى الإهلاك مع اختبارات قصيرة. شهادات PRO اختيارية.",
+  },
+  {
+    id: "ohsc-bookkeeping",
+    titleEn: "Bookkeeping — free course",
+    titleAr: "مسك الدفاتر — دورة مجانية",
+    provider: "Oxford Home Study Centre",
+    category: "accounting",
+    level: "Beginner",
+    hours: "~20h",
+    language: "EN",
+    url: "https://www.oxfordhomestudy.com/listing/bookkeeping-q-a-level-1",
+    certificate: true,
+    descEn:
+      "OHSC's free bookkeeping programme — study free, with an optional paid certificate. A structured, assignment-based path.",
+    descAr:
+      "برنامج مسك الدفاتر المجاني من أوكسفورد هوم ستادي — تعلم مجانًا مع شهادة اختيارية. مسار منظم بواجبات وتقييم.",
+  },
+  {
+    id: "worldbank-pfm",
+    titleEn: "Public Financial Management — free courses",
+    titleAr: "إدارة المالية العامة — دورات مجانية",
+    provider: "World Bank — Open Learning Campus",
+    category: "audit",
+    level: "Intermediate",
+    hours: "varies",
+    language: "EN",
+    url: "https://olc.worldbank.org/",
+    certificate: true,
+    descEn:
+      "The World Bank's free Open Learning Campus — budgeting, public financial management and governance: directly relevant to public-sector and SOE audit.",
+    descAr:
+      "حرم التعلم المفتوح المجاني من البنك الدولي — الموازنة وإدارة المالية العامة والحوكمة: صلة مباشرة بمراجعة القطاع العام وشركات قطاع الأعمال.",
+  },
+  {
+    id: "imf-pfm",
+    titleEn: "Public Financial Management (IMFx)",
+    titleAr: "إدارة المالية العامة (IMFx)",
+    provider: "IMF — on edX",
+    category: "audit",
+    level: "Advanced",
+    hours: "~8h",
+    language: "EN",
+    url: "https://www.edx.org/learn/public-finance/international-monetary-fund-public-financial-management",
+    certificate: false,
+    descEn:
+      "The IMF's free PFM course on edX — budget preparation, execution, and fiscal reporting: the core of state-sector audit work.",
+    descAr:
+      "دورة صندوق النقد المجانية عن إدارة المالية العامة على edX — إعداد الموازنة وتنفيذها والتقرير المالي: جوهر عمل مراجعة القطاع الحكومي.",
+  },
+  {
+    id: "futurelearn-bookkeeping",
+    titleEn: "Bookkeeping and accounting (free access)",
+    titleAr: "مسك الدفاتر والمحاسبة (وصول مجاني)",
+    provider: "FutureLearn",
+    category: "accounting",
+    level: "Beginner",
+    hours: "~4h/wk",
+    language: "EN",
+    url: "https://www.futurelearn.com/courses/subjects/accounting-and-finance-courses",
+    certificate: false,
+    descEn:
+      "FutureLearn's accounting & finance subject page — university-led short courses with a free-to-learn window.",
+    descAr:
+      "صفحة المحاسبة والمالية في فيوتشر ليرن — دورات قصيرة بقيادة جامعية مع فترة تعلم مجانية.",
+  },
+  {
+    id: "khan-excel",
+    titleEn: "Excel basics & data skills",
+    titleAr: "أساسيات إكسل ومهارات البيانات",
+    provider: "Khan Academy",
+    category: "skills",
+    level: "Beginner",
+    hours: "~8h",
+    language: "EN",
+    url: "https://www.khanacademy.org/computing",
+    certificate: false,
+    descEn:
+      "Khan Academy's free computing track — spreadsheets and data literacy, the everyday toolkit of an auditor.",
+    descAr:
+      "مسار الحاسوب المجاني من خان أكاديمي — الجداول الإلكترونية ومحو الأمية الرقمية، العدة اليومية للمراجع.",
   },
 ]

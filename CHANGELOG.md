@@ -4,6 +4,52 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 23.0.0 — The sessions-that-remember release
+
+Tutor conversations now **survive sessions**: every chat is mirrored into the
+browser's IndexedDB, so the history rail persists even on ephemeral
+serverless deployments (where the sanitized demo database wiped
+conversations on every instance recycle). The browser is the durable store;
+the server stays the source of truth whenever it is reachable — after each
+answer the client caches the authoritative copy (title + final messages,
+with the locally-streamed thinking process merged in), and when a wiped
+server re-issues a new conversation id the browser record migrates
+seamlessly. Resuming an old chat on a fresh server even carries the recent
+transcript to the model as context, so the tutor still "remembers".
+
+- **IndexedDB chat persistence** — zero-dependency store (`auditedge-chat`),
+  instant local-first rail, server back-fill for pre-v23 history, migration
+  on id re-issue, delete/rename/pin mirrored, "saved on this device" hint.
+- **Full-length past papers** — every v22 paper extended to a complete
+  sitting: AA 30 Q / 90 min, FR 30 / 90, AAA 24 / 72, SBR 24 / 72, SOE 24 /
+  72 — plus TWO NEW ACCA papers: **FA (F3)** 18 Q foundations paper and
+  **FM (F9)** 18 Q financial-management paper (incl. Islamic finance). 108
+  new bilingual scenario questions; the bank grows 579 → **687**.
+- **AI custom exams — micro & mini** — the builder now offers named sizes:
+  Micro · 5 Q (single-batch generation), Mini · 10, Standard · 15 and Full
+  mock · 24, each labelled with its intent.
+- **Full video courses with pro thumbnails** — 17 complete multi-hour
+  YouTube courses playable in-app (lesson list + embedded player): the
+  complete **CPA Talks Audit 101** series (14 episodes), The Accounting
+  Planet's 2-hour and 6-hour courses, Tony Bell's 10- and 11-hour marathons,
+  Excel for Finance, and the **Course Illustrator** design track (Envato
+  Tuts+'s 12M-view free course, Learn Skills Daily 6h, Flux Academy
+  Arabic, Will Paterson 2025) with real YouTube thumbnails.
+- **More podcasts** — 15 new CPA Talks episodes (Materiality, Assertions,
+  ECL + workshop, IFRS 15 parts 1–2, IFRS 16, DipIFR, Gulf careers…), 23 → 38
+  episodes total.
+- **More pro free courses** — CFI Accounting Fundamentals, AccountingCoach,
+  Oxford Home Study bookkeeping, World Bank OLC (public financial
+  management), IMFx PFM on edX, FutureLearn and Khan Academy computing —
+  plus new Audit and Design & Excel category filters, and gradient subject
+  covers on every link-course card.
+- **Library** — reading-progress tracking (mark materials as studied,
+  persisted on-device, with an X/Y progress bar and a hide-studied filter)
+  and three new revision sheets: consolidation in eight moves, the IESBA
+  five threats & safeguards, and IFRS 9 classification + the ECL ladder
+  (11 total).
+- SW cache `auditedge-v23`.
+
 ## 22.0.0 — The keyless AI + exam-readiness release
 
 The AI stack now works with **zero setup**: a keyless community engine pool

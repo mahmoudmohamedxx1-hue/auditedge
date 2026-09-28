@@ -158,6 +158,7 @@ export default function Home() {
   const hydrateSidebar = useAppStore((s) => s.hydrateSidebar)
   const hydrateTutorRail = useAppStore((s) => s.hydrateTutorRail)
   const hydrateBookmarks = useAppStore((s) => s.hydrateBookmarks)
+  const hydrateStudied = useAppStore((s) => s.hydrateStudied)
   const navigate = useAppStore((s) => s.navigate)
   const [menuOpen, setMenuOpen] = useState(false)
   const rtl = lang === "ar"
@@ -171,7 +172,8 @@ export default function Home() {
     hydrateSidebar()
     hydrateTutorRail()
     hydrateBookmarks()
-  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateAiThinking, hydrateTtsPrefs, hydrateSidebar, hydrateTutorRail, hydrateBookmarks])
+    hydrateStudied()
+  }, [hydrateLang, hydrateTheme, hydrateAiModel, hydrateAiThinking, hydrateTtsPrefs, hydrateSidebar, hydrateTutorRail, hydrateBookmarks, hydrateStudied])
 
   useEffect(() => {
     void checkAuth()

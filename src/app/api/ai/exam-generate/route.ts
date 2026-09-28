@@ -182,7 +182,8 @@ export async function POST(req: Request) {
           .map((s) => s.slice(0, 160))
           .slice(0, 24)
       : []
-    const ask = Math.min(3, Math.max(1, Number(body.count) || 3))
+    // v23: micro exams (≤5) ask for the whole batch in one request
+    const ask = Math.min(5, Math.max(1, Number(body.count) || 3))
     const avoidBlock = avoid.length
       ? `\nQuestions already written in earlier batches (do NOT repeat or paraphrase them):\n${avoid
           .map((s) => `- ${s}`)

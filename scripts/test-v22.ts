@@ -46,7 +46,9 @@ async function main() {
 
   /* ---- past papers registry + seed (db) ---- */
   const { PAST_PAPERS } = await import("../src/lib/past-papers")
-  check("papers: 5 papers registered", PAST_PAPERS.length === 5, PAST_PAPERS.map((p) => p.id).join(", "))
+  // v23 extended the registry (7 papers, full lengths) — the v22 battery
+  // now guards the FLOOR: the five v22 papers must remain registered
+  check("papers: the five v22 papers stay registered", ["acca-aa", "acca-aaa", "acca-fr", "acca-sbr", "soe-audit"].every((id) => PAST_PAPERS.some((p) => p.id === id)), `${PAST_PAPERS.length} total`)
   check("papers: IFRS + auditing + egypt coverage", ["auditing", "accounting", "egypt"].every((a) => PAST_PAPERS.some((p) => p.area === a)))
   check("papers: every paper bilingual + timed", PAST_PAPERS.every((p) => p.titleEn && p.titleAr && p.blurbEn && p.blurbAr && p.durationMin > 0))
 
@@ -65,7 +67,9 @@ async function main() {
     )
   }
   const totalPapers = await db.bankQuestion.count({ where: { source: { contains: "past paper" } } })
-  check("papers: 60 past-paper questions total", totalPapers === 60, `${totalPapers}`)
+  // v23 grew the bank to 168 past-paper questions (687 total) — keep the
+  // v22 floor so regressions below the original release still fail
+  check("papers: at least 60 past-paper questions seeded", totalPapers >= 60, `${totalPapers}`)
   const aiLeftovers = await db.bankQuestion.count({ where: { source: "AI custom exam" } })
   check("no stray AI custom exams in the snapshot db", aiLeftovers === 0, `${aiLeftovers}`)
   await db.$disconnect()
