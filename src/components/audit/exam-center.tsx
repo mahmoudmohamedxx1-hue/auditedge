@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { tt, dateLocaleOf } from "@/lib/i18n"
-import { PAST_PAPERS, PAPER_GROUPS, getPastPaper } from "@/lib/past-papers"
+import { PAPER_FAMILIES, PAPER_GROUPS, PAPER_SITTINGS, getPastPaper } from "@/lib/past-papers"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
@@ -44,6 +44,7 @@ import {
   ListChecks,
   Loader2,
   RotateCcw,
+  Search,
   Sparkles,
   Target,
   Timer,
@@ -261,6 +262,9 @@ export function ExamCenter() {
 
   /* ---------- v22: previous-exam paper sitting ---------- */
   const [paperLoading, setPaperLoading] = useState<string | null>(null)
+  // v25 — papers search ("ifrs", "tax", "aa"…) so any family is one keystroke away
+  const [familyQuery, setFamilyQuery] = useState("")
+  const familyQ = familyQuery.trim().toLowerCase()
   const startPaper = async (paperId: string) => {
     setPaperLoading(paperId)
     const res = await fetch("/api/bank/exam", {
@@ -619,16 +623,36 @@ export function ExamCenter() {
           </section>
         </div>
 
-        {/* v22–v24 — previous exam papers (grouped by syllabus level) + AI custom exam builder */}
+        {/* v22–v25 — previous exam papers: every family grouped by syllabus
+            *  level, each carrying FIVE sittings (flagship + four dated
+            *  years) + a search box so the IFRS diploma is impossible to miss. */}
         <section className="mt-6 rounded-2xl border bg-card p-6 shadow-soft" aria-label={tt("exam.papersTitle", lang)}>
           <h2 className="flex items-center gap-2 font-serif text-[18px] font-semibold">
             <FileText className="h-4 w-4 text-primary" /> {tt("exam.papersTitle", lang)}
           </h2>
           <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{tt("exam.papersDesc", lang)}</p>
 
+          {/* v25 — find-any-paper search ("ifrs", "tax", "aa"…) */}
+          <div className="relative mt-4 max-w-sm">
+            <Search className="pointer-events-none absolute start-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={familyQuery}
+              onChange={(e) => setFamilyQuery(e.target.value)}
+              placeholder={tt("exam.paperSearchPh", lang)}
+              className="h-9 bg-background ps-8 text-[13px]"
+            />
+          </div>
+
           {PAPER_GROUPS.map((g) => {
-            const papers = PAST_PAPERS.filter((p) => p.group === g.id)
-            if (!papers.length) return null
+            const fams = PAPER_FAMILIES.filter(
+              (f) =>
+                f.group === g.id &&
+                (!familyQ ||
+                  `${f.titleEn} ${f.titleAr} ${f.flagship.body} ${f.flagship.blurbEn} ${f.flagship.blurbAr}`
+                    .toLowerCase()
+                    .includes(familyQ))
+            )
+            if (!fams.length) return null
             return (
               <div key={g.id} className="mt-5">
                 {/* syllabus-level header */}
@@ -636,6 +660,7 @@ export function ExamCenter() {
                   <span
                     className={cn(
                       "h-1.5 w-1.5 rounded-full",
+                      g.id === "ifrs" && "bg-olive",
                       g.id === "knowledge" && "bg-olive",
                       g.id === "skills" && "bg-primary",
                       g.id === "strategic" && "bg-plum",
@@ -646,46 +671,71 @@ export function ExamCenter() {
                     {lang === "ar" ? g.labelAr : g.labelEn}
                   </h3>
                   <span className="rounded-full bg-secondary px-1.5 py-px text-[10px] tabular-nums text-muted-foreground">
-                    {papers.length}
+                    {fams.length}
                   </span>
                   <span className="h-px flex-1 bg-border" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {papers.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex flex-col rounded-xl border bg-secondary/25 p-4 transition-colors hover:border-primary/30"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
-                          {lang === "ar" ? p.titleAr : p.titleEn}
-                        </h3>
-                        <span className="flex shrink-0 flex-col items-end gap-1">
-                          <span className="rounded-full border border-plum/30 bg-plum/10 px-2 py-0.5 text-[10px] font-semibold text-plum-deep">
-                            {p.body}
-                          </span>
-                          {/* v23 — full-length paper badge */}
-                          {p.count >= 24 && (
-                            <span className="rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
-                              {tt("exam.paperFull", lang)}
+                  {fams.map((f) => {
+                    const flagship = f.flagship
+                    return (
+                      <div
+                        key={f.id}
+                        className="flex flex-col rounded-xl border bg-secondary/25 p-4 transition-colors hover:border-primary/30"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
+                            {lang === "ar" ? f.titleAr : f.titleEn}
+                          </h3>
+                          <span className="flex shrink-0 flex-col items-end gap-1">
+                            <span className="rounded-full border border-plum/30 bg-plum/10 px-2 py-0.5 text-[10px] font-semibold text-plum-deep">
+                              {flagship.body}
                             </span>
-                          )}
-                        </span>
+                            {/* full-length flagship badge */}
+                            {flagship.count >= 24 && (
+                              <span className="rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
+                                {tt("exam.paperFull", lang)}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
+                          {lang === "ar" ? flagship.blurbAr : flagship.blurbEn}
+                        </p>
+                        {/* v25 — five sittings per family: flagship + four dated years */}
+                        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                          <button
+                            onClick={() => void startPaper(flagship.id)}
+                            disabled={paperLoading !== null || eLoading !== null}
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full border border-primary/35 bg-primary/[0.07] px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/[0.14] focus-ring disabled:opacity-50"
+                            )}
+                          >
+                            {paperLoading === flagship.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <ClipboardCheck className="h-3 w-3" />
+                            )}
+                            {tt("exam.sitFull", lang)} · {flagship.count} Q · {flagship.durationMin}{tt("exam.minutesShort", lang)}
+                          </button>
+                          {f.sittings.map((s) => (
+                            <button
+                              key={s.id}
+                              onClick={() => void startPaper(s.id)}
+                              disabled={paperLoading !== null || eLoading !== null}
+                              className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 text-[11px] font-medium text-foreground/75 transition-colors hover:border-primary/35 hover:text-foreground focus-ring disabled:opacity-50"
+                            >
+                              {paperLoading === s.id && <Loader2 className="h-3 w-3 animate-spin" />}
+                              {lang === "ar"
+                                ? PAPER_SITTINGS.find((x) => x.slug === s.id.split("-").pop())?.labelAr
+                                : s.titleEn.split(" — ").pop()}
+                              <span className="text-muted-foreground">· {s.count} Q</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
-                        {lang === "ar" ? p.blurbAr : p.blurbEn}
-                      </p>
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
-                          <Timer className="h-3 w-3" /> {p.count} Q · {p.durationMin} {tt("exam.minutesShort", lang)}
-                        </span>
-                        <Button size="sm" className="h-8" onClick={() => void startPaper(p.id)} disabled={paperLoading !== null || eLoading !== null}>
-                          {paperLoading === p.id ? <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" /> : <ClipboardCheck className="me-1 h-3.5 w-3.5" />}
-                          {tt("exam.paperSit", lang)}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
 
                   {/* AI custom exam builder card rides along the last group */}
                   {g.id === "egypt" && (

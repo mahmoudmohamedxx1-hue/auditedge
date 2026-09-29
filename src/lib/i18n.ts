@@ -189,8 +189,8 @@ export const T = {
     // v23 — full video courses from YouTube (with pro thumbnails)
     videoTitle: { en: "Full video courses — free to watch", ar: "دورات فيديو كاملة — شاهد مجانًا" },
     videoDesc: {
-      en: "Complete multi-hour courses from top educators — CPA Talks, The Accounting Planet, Tony Bell, Envato Tuts+ and more. Play them right here, lesson by lesson.",
-      ar: "دورات كاملة تمتد لساعات من أفضل المعلّمين — CPA Talks وThe Accounting Planet وTony Bell وEnvato Tuts+ وغيرهم. شاهدها هنا درسًا بدرس.",
+      en: "Complete multi-hour courses from top educators — organised by track: audit, IFRS, ACCA, CPA, CMA, CFA and more, with a strong Arabic library (CPA Talks, The Accounting Planet, Doms Academy, Hossam Saad, Dr. Mohamed Ismail). Play them right here, lesson by lesson.",
+      ar: "دورات كاملة تمتد لساعات من أفضل المعلّمين — منظمة حسب المسار: المراجعة وIFRS وACCA وCPA وCMA وCFA وغيرها، مع مكتبة عربية قوية (CPA Talks وThe Accounting Planet وأكاديمية دومز وحسام سعد ود. محمد إسماعيل). شاهدها هنا درسًا بدرس.",
     },
     videoWatch: { en: "Watch now", ar: "شاهد الآن" },
     videoLessons: { en: "lessons", ar: "درسًا" },
@@ -935,11 +935,13 @@ export const T = {
     examTitle: { en: "Mock exam", ar: "اختبار تجريبي" },
     examDesc: { en: "Timed, section-weighted, flag-and-review. Results feed the review queue.", ar: "محدد الوقت بتوزيع الأقسام مع تعليم للمراجعة. النتائج تغذي قائمة المراجعة." },
     // v22 — previous-exam papers + AI custom exams
-    papersTitle: { en: "Previous exam papers — full length", ar: "امتحانات سابقة — بنسخ كاملة" },
+    papersTitle: { en: "Previous exam papers — 5 sittings per exam", ar: "امتحانات سابقة — ٥ جلسات لكل امتحان" },
     papersDesc: {
-      en: "Full-length past papers adapted for AuditEdge — the ENTIRE ACCA syllabus (BT, MA, FA, LW, PM, TX, FR, AA, FM, SBL, SBR, AFM, APM, ATX, AAA) grouped by level, plus the Egyptian SOE paper. Real exam structure, timed, with the same results and mistakes machinery.",
-      ar: "امتحانات سابقة كاملة مكيّفة لأوديت إيدج — منهج ACCA بأكمله (BT، MA، FA، LW، PM، TX، FR، AA، FM، SBL، SBR، AFM، APM، ATX، AAA) مجمّعة حسب المستوى، إضافة إلى ورقة الشركات الحكومية المصرية. بهيكل الامتحان الحقيقي وبتوقيت محدد وبنفس منظومة النتائج والأخطاء.",
+      en: "Five years of past papers for EVERY exam — the whole ACCA syllabus (BT…AAA) with its flagship paper plus four dated sittings each, the new IFRS diploma family, and the Egyptian SOE paper. Real exam structure, timed, with the same results and mistakes machinery.",
+      ar: "خمس سنوات من الامتحانات السابقة لكل مادة — منهج ACCA كاملًا (BT حتى AAA) بورقة رئيسية وأربع جلسات مؤرخة لكل منها، مع عائلة دبلومة IFRS الجديدة وورقة الشركات الحكومية المصرية. بهيكل الامتحان الحقيقي وبتوقيت محدد وبنفس منظومة النتائج والأخطاء.",
     },
+    paperSearchPh: { en: "Find a paper — IFRS, audit, tax, AA…", ar: "ابحث عن ورقة — IFRS، مراجعة، ضرائب…" },
+    sitFull: { en: "Full paper", ar: "الورقة الكاملة" },
     paperFull: { en: "Full paper", ar: "ورقة كاملة" },
     paperSit: { en: "Sit paper", ar: "ادخل الامتحان" },
     paperFailed: { en: "Could not open this paper — try again.", ar: "تعذر فتح هذا الامتحان — حاول مجددًا." },
@@ -1114,8 +1116,8 @@ export const T = {
     // v22 — curated Arabic YouTube podcasts
     youtubeTitle: { en: "From YouTube — بالعربي", ar: "من يوتيوب — بالعربي" },
     youtubeDesc: {
-      en: "Hand-picked Arabic audit & accounting channels — CPA Talks, Mahmoud Hamouda, ESAA and more. Friendly, clear, easy to follow.",
-      ar: "قنوات عربية مختارة بعناية في المراجعة والمحاسبة — CPA Talks ومحمود حمودة وجمعية المحاسبين وغيرها. ودودة وواضحة وسهلة الفهم.",
+      en: "Real podcasts AND explainer videos, separated honestly: start with 'Real podcasts · conversations' — genuine two-person interviews and shows (the KPMG CEO sit-down, an accountant's journey, the Qawaim accounting podcast). The other tabs keep the friendly single-presenter explainers you already know.",
+      ar: "بودكاست حقيقي وفيديوهات شرح، مفصولة بصدق: ابدأ بتبويب «بودكاست حقيقي · حوارات» — لقاءات وبرامج حوارية فعلية بين شخصين (لقاء رئيس KPMG، رحلة محاسب، بودكاست قوائم). وتبقي التبويبات الأخرى فيديوهات الشرح الودودة التي تعرفها.",
     },
     youtubeOpen: { en: "Open on YouTube", ar: "افتح على يوتيوب" },
     views: { en: "views", ar: "مشاهدة" },

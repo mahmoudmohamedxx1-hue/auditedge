@@ -51,8 +51,8 @@ export const AI_MODELS: AiModelInfo[] = [
     vision: false,
     reasoning: true,
     note: {
-      en: "Keyless · thinking process · zero setup — GLM whenever available, community pool as backup",
-      ar: "بدون مفتاح · يعرض عملية التفكير · بدون إعداد — محرك GLM عند توفره ومجموعة مجتمعية كاحتياط",
+      en: "Real GLM first — your Z.ai key, the workspace engine, or a free LLM7 key (LLM7_API_KEY, dash.llm7.io); community pool only as failover · shows thinking",
+      ar: "GLM الحقيقي أولًا — مفتاح Z.ai أو محرك مساحة العمل أو مفتاح LLM7 مجاني (LLM7_API_KEY) والمجموعة المجتمعية احتياط فقط · يعرض التفكير",
     },
   },
   {
@@ -173,6 +173,7 @@ export type EngineId =
   | "workspace" // the built-in workspace GLM engine (SDK, keyless in-workspace)
   | "kilo" // Kilo Gateway community route
   | "llm7" // LLM7 community route
+  | "llm7-glm" // v25 — real GLM-5.3 served through LLM7 (free key)
   | "pollinations" // Pollinations community route
   | "ovh" // OVHcloud community route
   | "ovh-vision" // OVHcloud keyless vision route (Qwen2.5-VL)
@@ -191,6 +192,8 @@ export function describeEngine(used: string | null | undefined): {
       return { label: "Kilo Gateway · keyless pool", tone: "keyless" }
     case "llm7":
       return { label: "LLM7 · keyless pool", tone: "keyless" }
+    case "llm7-glm":
+      return { label: "GLM-5.3 · LLM7", tone: "keyless" }
     case "pollinations":
       return { label: "Pollinations · keyless pool", tone: "keyless" }
     case "ovh":

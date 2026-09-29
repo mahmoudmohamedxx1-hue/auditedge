@@ -448,7 +448,7 @@ export async function buildContextBlock(
 
 import type { AiModelId } from "@/lib/models"
 import { DEFAULT_MODEL, KEYED_FALLBACK_MODEL, getAiModel, resolveModel, type EngineId } from "@/lib/models"
-import { POOL, callPoolOnce, callPoolStream, type PoolEngineId } from "@/lib/keyless-pool"
+import { POOL, callPoolOnce, callPoolStream, llm7Key, type PoolEngineId } from "@/lib/keyless-pool"
 
 const ZAI_OPEN_BASE = process.env.ZAI_OPEN_BASE_URL || "https://api.z.ai/api/paas/v4"
 const ZAI_OPEN_KEY = process.env.ZAI_OPEN_API_KEY || ""
@@ -610,17 +610,23 @@ export function planEngineChain(
 
   switch (model) {
     case "glm-5.3-flash":
-      // the keyless GLM flagship — real GLM whenever any GLM is reachable
+      /* v25 — the flagship must serve REAL GLM whenever any GLM route is
+       * reachable, and only then fall back to the community pool:
+       *   1. the user's Z.ai key (real GLM)
+       *   2. the keyless workspace GLM engine (in-workspace deployments)
+       *   3. GLM-5.3 via LLM7 — a real glm-5.3 route behind a FREE
+       *      LLM7_API_KEY (dash.llm7.io); skipped when no key is set
+       *   4. the keyless community pool (Pollinations' reasoning route
+       *      first when the thinking process is on), honestly labelled */
       if (hasKey) steps.push({ kind: "key", model: KEYED_FALLBACK_MODEL })
+      steps.push({ kind: "workspace" })
+      if (llm7Key()) steps.push({ kind: "pool", engine: "llm7-glm" })
       if (thinking) {
-        // prefer routes that stream a visible thinking process — Pollinations'
-        // gpt-oss-20b is consistent (always streams reasoning, solid audit
-        // knowledge); Kilo's auto-lottery is the wider-capacity second hop
         steps.push({ kind: "pool", engine: "pollinations" }, { kind: "pool", engine: "kilo" })
-        steps.push({ kind: "workspace" }, { kind: "pool", engine: "ovh" }, { kind: "pool", engine: "llm7" })
       } else {
-        steps.push(...UNIVERSAL_TAIL)
+        steps.push({ kind: "pool", engine: "kilo" }, { kind: "pool", engine: "pollinations" })
       }
+      steps.push({ kind: "pool", engine: "ovh" }, { kind: "pool", engine: "llm7" })
       return steps
     case "pool-kilo-auto":
       steps.push(
@@ -755,10 +761,16 @@ export async function generateStream(opts: {
     const stream = await callPoolStream(step.engine, opts.messages)
     if (stream) {
       const label = POOL[step.engine].label
-      const notice =
-        getAiModel(opts.model).group === "zai"
-          ? `The key engine was unavailable — answered by the keyless community pool (${label}, via freellmpool).`
-          : `Answered by the keyless community pool — ${label} (via freellmpool).`
+      let notice: string
+      if (step.engine === "llm7-glm") {
+        notice = `Answered by GLM-5.3 through LLM7 (free-key community route) — real GLM with the visible thinking process.`
+      } else if (opts.model === "glm-5.3-flash") {
+        notice = `GLM-5.3 Flash was requested, but no GLM route is currently reachable — answered by the keyless community pool (${label}). Add ZAI_OPEN_API_KEY or a free LLM7 key (LLM7_API_KEY) for real GLM.`
+      } else if (getAiModel(opts.model).group === "zai") {
+        notice = `The key engine was unavailable — answered by the keyless community pool (${label}, via freellmpool).`
+      } else {
+        notice = `Answered by the keyless community pool — ${label} (via freellmpool).`
+      }
       return { stream, modelUsed: opts.model, engine: step.engine, notice }
     }
   }

@@ -134,8 +134,9 @@ bun scripts/seed/index.ts I-UNDERSTAND-THIS-WIPES-THE-DB
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
 | `DATABASE_URL` | yes | `file:./db/custom.db` | SQLite database file |
-| `ZAI_OPEN_API_KEY` | for AI features | — | Z.ai open-platform API key |
+| `ZAI_OPEN_API_KEY` | for real-GLM answers | — | Z.ai open-platform API key (serves the GLM-5.3 Flash flagship directly) |
 | `ZAI_OPEN_BASE_URL` | no | `https://api.z.ai/api/paas/v4` | API base URL override |
+| `LLM7_API_KEY` | no | — | FREE key from [dash.llm7.io](https://dash.llm7.io) — unlocks the real `glm-5.3` route on LLM7 (reasoning-capable) with zero cost; without it the tutor still works via the keyless community pool |
 
 ## Deploying to Vercel
 
@@ -191,6 +192,7 @@ The repo ships with the verification suites used during development:
 
 | Suite | Checks | Covers |
 |---|---|---|
+| `bun scripts/test-v25.ts` | 50 | Five sittings per exam family, the IFRS diploma family, generator determinism/uniqueness, Arabic track courses, real conversation podcasts |
 | `bun scripts/test-sectors-v15.ts` | 515 | 20 sector risk profiles — risk matrices, assertions, deep-dive presets |
 | `bun scripts/test-sectors-v13.ts` | 351 | Sector library structural integrity |
 | `bun scripts/test-engagement-v12.ts` | 28 | Audit-program engagement objects |

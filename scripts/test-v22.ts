@@ -36,7 +36,7 @@ async function main() {
   const pool = await import("../src/lib/keyless-pool")
   check("registry: default engine is the keyless glm-5.3-flash", models.DEFAULT_MODEL === "glm-5.3-flash")
   check("registry: keyless group has 4 models", models.SELECTABLE_MODELS.filter((m) => m.group === "keyless").length === 4)
-  check("pool: 5 catalogued routes", Object.keys(pool.POOL).length === 5)
+  check("pool: 6 catalogued routes (v25 adds llm7-glm)", Object.keys(pool.POOL).length === 6)
   check("pool: kilo route has no auth header", Object.keys(pool.POOL.kilo.headers).length === 0)
   check("pool: llm7 uses the unused-bearer convention", pool.POOL.llm7.headers.Authorization === "Bearer unused")
 

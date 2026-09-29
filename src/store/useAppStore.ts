@@ -159,7 +159,6 @@ interface AppState {
 
   // AI tutor state
   aiContext: AiContext | null
-  aiPopupOpen: boolean
   aiConversationId: string | null
   /** Question pre-filled into the full AI tutor (e.g. from the Audit Program) */
   aiPresetQuestion: string | null
@@ -173,8 +172,9 @@ interface AppState {
   bootstrap: () => Promise<void>
 
   setAiContext: (ctx: AiContext | null) => void
-  openAiPopup: (ctx?: AiContext) => void
-  closeAiPopup: () => void
+  /** v25 — opening the tutor always lands on the FULL chat page (the
+   *  learner's request): sets the lesson context (if any) and navigates. */
+  openTutor: (ctx?: AiContext) => void
   setAiConversationId: (id: string | null) => void
   setAiPresetQuestion: (q: string | null) => void
   setLibraryPresetQuery: (q: string | null) => void
@@ -237,7 +237,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   theme: "light",
 
   aiContext: null,
-  aiPopupOpen: false,
   aiConversationId: null,
   aiPresetQuestion: null,
   libraryPresetQuery: null,
@@ -495,8 +494,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setAiContext: (ctx) => set({ aiContext: ctx }),
-  openAiPopup: (ctx) => set((s) => ({ aiPopupOpen: true, aiContext: ctx ?? s.aiContext })),
-  closeAiPopup: () => set({ aiPopupOpen: false }),
+  openTutor: (ctx) =>
+    set((s) => ({
+      aiContext: ctx ?? s.aiContext,
+      view: "ai" as ViewName,
+      prevView: s.view,
+    })),
   setAiConversationId: (id) => set({ aiConversationId: id }),
   setAiPresetQuestion: (q) => set({ aiPresetQuestion: q }),
   setLibraryPresetQuery: (q) => set({ libraryPresetQuery: q }),

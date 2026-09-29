@@ -96,7 +96,7 @@ async function main() {
 
   /* ---- podcast expansion (offline) ---- */
   const { YT_EPISODES } = await import("../src/lib/podcast-episodes")
-  check("podcasts: 38 episodes catalogued", YT_EPISODES.length === 38, `${YT_EPISODES.length}`)
+  check("podcasts: ≥38 episodes catalogued (v25 adds conversations)", YT_EPISODES.length >= 38, `${YT_EPISODES.length}`)
   check("podcasts: unique video ids", new Set(YT_EPISODES.map((e) => e.id)).size === YT_EPISODES.length)
   const cpaTalks = YT_EPISODES.filter((e) => e.channel === "CPA Talks").length
   check("podcasts: CPA Talks expanded to 23 episodes", cpaTalks === 23, `${cpaTalks}`)

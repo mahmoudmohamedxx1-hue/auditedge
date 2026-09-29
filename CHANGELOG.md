@@ -4,6 +4,50 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 25.0.0 — The five-years-of-papers + real-podcasts release
+
+**Five years of past papers for every exam.** Each of the 17 exam families
+(15 ACCA subjects, the Egyptian SOE paper and a brand-new findable **IFRS
+diploma** family) now carries its flagship paper plus four dated sittings —
+Dec 2021, June 2022, Sept 2023 and June 2024 — 85 papers in all. The 1,236
+new bilingual scenario questions were generated deterministically by a
+parameterized past-paper factory (`scripts/seed/v25`): every sitting draws
+fresh numbers and entities from exam-style templates, answer positions are
+balanced across A–D, and no stem repeats anywhere in the set. The question
+bank grows 873 → **2,109**. The papers grid is reorganised into family cards
+with sitting chips and a search box, so the IFRS exam is one keystroke away.
+
+**Real podcasts, not explainers.** The Podcasts section now separates
+`Real podcasts \u00b7 conversations` — genuine two-person interviews and
+shows — from the friendly single-presenter videos (which stay untouched):
+the KPMG-CEO sit-down and five more Accounting-Club guest interviews in the
+8–20-minute range, the Qawaim accounting podcast (an accountant's journey,
+career paths, opening your own firm, fraud), an ACCA-experience conversation
+from the Kenaz podcast, a father-and-son accounting partnership story, and
+more — 15 conversation episodes, all verified live.
+
+**Courses reorganised by track, with the Arabic library the learner asked
+for.** New ACCA / CPA / CMA track tabs (with counts) join audit, IFRS and
+CFA; ten new Arabic courses: the complete 12.5-hour CertIFR certificate
+course, Hossam Saad's IFRS standards series, Dr. Mohamed Ismail's DipIFR
+intro and CMA Part 1 marathons, Doms Academy's quarter-million-view CMA
+Unit 1, Mirchawala's ACCA FA control accounts, an ACCA FA specimen
+walkthrough, Sara AlAbdullah's CMA opener, and CPA Talks' certification
+track — 33 → 36 courses, every id oEmbed-verified.
+
+**The tutor opens the full chat page by default** — the floating button,
+Alt+T and every lesson "Ask the tutor" entry point now land on the complete
+page (conversations rail, thinking panel, voice tools) instead of the old
+corner popup.
+
+**Honest GLM routing.** The GLM-5.3 Flash flagship now serves REAL GLM
+first — your Z.ai key, the workspace GLM engine, or GLM-5.3 via LLM7 behind
+a FREE `LLM7_API_KEY` (dash.llm7.io) — with the community pool only as a
+clearly-labelled failover whose notice explains how to get real GLM.
+
+Also: `test-v25` battery (50 checks), v22–v24 assertions updated, SW cache
+`auditedge-v25`, and the YouTube sourcing scripts (`yt-search` / `yt-verify`).
+
 ## 24.0.0 — The listen-in-app + whole-ACCA-syllabus release
 
 Podcasts now **play inside the website**: a sticky, global player bar streams

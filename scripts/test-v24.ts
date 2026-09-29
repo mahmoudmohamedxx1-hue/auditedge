@@ -73,7 +73,7 @@ async function main() {
   /* ---- past papers: the full ACCA syllabus (offline) ---- */
   const { PAST_PAPERS, PAPER_GROUPS, getPastPaper } = await import("../src/lib/past-papers")
   const NEW_IDS = ["acca-bt", "acca-ma", "acca-lw", "acca-pm", "acca-tx", "acca-sbl", "acca-afm", "acca-apm", "acca-atx"]
-  check("papers: 16 papers registered (whole ACCA syllabus + Egypt)", PAST_PAPERS.length === 16, `${PAST_PAPERS.length}`)
+  check("papers: ≥16 papers registered (v25 grows to 85)", PAST_PAPERS.length >= 16, `${PAST_PAPERS.length}`)
   check("papers: all nine v24 papers registered", NEW_IDS.every((id) => PAST_PAPERS.some((p) => p.id === id)))
   check("papers: every paper has a group", PAST_PAPERS.every((p) => p.group && PAPER_GROUPS.some((g) => g.id === p.group)))
   check("papers: groups are bilingual", PAPER_GROUPS.every((g) => g.labelEn && g.labelAr))
@@ -106,8 +106,9 @@ async function main() {
     )
   }
   const totalPapers = await db.bankQuestion.count({ where: { source: { contains: "past paper" } } })
-  check("papers: 354 past-paper questions total (873-question bank)", totalPapers === 354, `${totalPapers}`)
-  check("bank: 873 questions total", (await db.bankQuestion.count()) === 873, `${await db.bankQuestion.count()}`)
+  // v25 relaxed to floors: the v25 release adds ~1,222 more past-paper questions
+  check("papers: ≥354 past-paper questions (v25 adds more)", totalPapers >= 354, `${totalPapers}`)
+  check("bank: ≥873 questions total (v25 grows the bank)", (await db.bankQuestion.count()) >= 873, `${await db.bankQuestion.count()}`)
   // answer positions must never collapse onto a single option
   const v24Rows = await db.bankQuestion.findMany({ where: { source: { contains: "v24" } } , select: { answerIndex: true } }).catch(() => [])
   if (v24Rows.length) {
@@ -119,7 +120,7 @@ async function main() {
 
   /* ---- the professional course tilt (offline) ---- */
   const { VIDEO_COURSES, VIDEO_CATEGORIES } = await import("../src/lib/video-courses")
-  check("video: 26 courses catalogued (+9 v24)", VIDEO_COURSES.length === 26, `${VIDEO_COURSES.length}`)
+  check("video: ≥26 courses catalogued (+9 v24, v25 adds tracks)", VIDEO_COURSES.length >= 26, `${VIDEO_COURSES.length}`)
   check("video: unique ids + unique video ids", new Set(VIDEO_COURSES.map((c) => c.id)).size === VIDEO_COURSES.length && new Set(VIDEO_COURSES.flatMap((c) => c.lessons.map((l) => l.id))).size === VIDEO_COURSES.flatMap((c) => c.lessons).length)
   check("video: CFA category exists + bilingual", VIDEO_CATEGORIES.some((c) => c.id === "cfa" && c.labelEn === "CFA" && c.labelAr === "CFA"))
   const cfaCourses = VIDEO_COURSES.filter((c) => c.category === "cfa")
@@ -128,7 +129,8 @@ async function main() {
   check("video: 3 new English audit courses (FinanceSkul / Ruchi / Bisk)", ["financeskul-f8", "ruchi-aa-10h", "bisk-cpa-aud"].every((id) => VIDEO_COURSES.some((c) => c.id === id && c.category === "audit")))
   check("video: 3 new English IFRS courses (BotCast / CPDbox / Tashwita)", ["botcast-all-ifrs", "cpdbox-consolidation", "tashwita-all-ifrs"].every((id) => VIDEO_COURSES.some((c) => c.id === id && c.category === "ifrs")))
   const beforeV23 = 17
-  check("video: zero new accounting courses in v24", VIDEO_COURSES.filter((c) => c.category === "accounting").length === 9)
+  // v25 note: Tony Bell FA/MA recategorised to the new ACCA track → Foundations now 7, still zero new accounting courses
+  check("video: accounting stays legacy-only (≤9, no v25 additions)", VIDEO_COURSES.filter((c) => c.category === "accounting").length <= 9)
   check("video: every v24 course bilingual with lengths", VIDEO_COURSES.slice(beforeV23).every((c) => c.titleEn && c.titleAr && c.descEn && c.descAr && c.lessons.length > 0 && c.lessons.every((l) => l.id && l.title && l.length)))
 
   /* ---- free course catalog: CFA + ACCA specimen exams (offline) ---- */
@@ -150,9 +152,9 @@ async function main() {
 
   /* ---- sw cache + version bump (offline) ---- */
   const sw = readFileSync("public/sw.js", "utf-8")
-  check("sw: cache bumped to auditedge-v24", sw.includes('VERSION = "auditedge-v24"'))
+  check("sw: cache bumped past v24 (v25 = auditedge-v25)", /auditedge-v2[4-9]/.test(sw) && !sw.includes('VERSION = "auditedge-v23"'))
   const pkg = JSON.parse(readFileSync("package.json", "utf-8"))
-  check("package.json: version 24.0.0", pkg.version === "24.0.0")
+  check("package.json: version ≥24 (v25 = 25.0.0)", Number(pkg.version.split(".")[0]) >= 24, pkg.version)
   const playerSrc = readFileSync("src/components/audit/audio-player.tsx", "utf-8")
   check("player: MediaSession wired", playerSrc.includes("mediaSession") && playerSrc.includes("MediaMetadata"))
   const page = readFileSync("src/app/page.tsx", "utf-8")

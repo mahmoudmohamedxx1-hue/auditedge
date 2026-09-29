@@ -28,7 +28,7 @@ export type VideoCourse = {
   titleEn: string
   titleAr: string
   channel: string
-  category: "audit" | "accounting" | "ifrs" | "cfa" | "design" | "excel"
+  category: "audit" | "accounting" | "ifrs" | "acca" | "cpa" | "cma" | "cfa" | "design" | "excel"
   level: "Beginner" | "Intermediate" | "Advanced"
   language: "AR" | "EN"
   hours: string
@@ -42,9 +42,12 @@ export type VideoCourse = {
 export const VIDEO_CATEGORIES: { id: VideoCourse["category"] | "all"; labelEn: string; labelAr: string }[] = [
   { id: "all", labelEn: "All", labelAr: "الكل" },
   { id: "audit", labelEn: "Audit", labelAr: "المراجعة" },
-  { id: "accounting", labelEn: "Accounting", labelAr: "المحاسبة" },
   { id: "ifrs", labelEn: "IFRS", labelAr: "المعايير الدولية" },
+  { id: "acca", labelEn: "ACCA", labelAr: "ACCA" },
+  { id: "cpa", labelEn: "CPA", labelAr: "CPA" },
+  { id: "cma", labelEn: "CMA", labelAr: "CMA" },
   { id: "cfa", labelEn: "CFA", labelAr: "CFA" },
+  { id: "accounting", labelEn: "Foundations", labelAr: "التأسيس" },
   { id: "excel", labelEn: "Excel", labelAr: "إكسل" },
   { id: "design", labelEn: "Design · Illustrator", labelAr: "التصميم · إليستريتور" },
 ]
@@ -221,7 +224,7 @@ export const VIDEO_COURSES: VideoCourse[] = [
     titleEn: "Full Financial Accounting Course — 10 hours",
     titleAr: "دورة المحاسبة المالية الكاملة — 10 ساعات",
     channel: "Tony Bell",
-    category: "accounting",
+    category: "acca",
     level: "Beginner",
     language: "EN",
     hours: "~10h",
@@ -237,7 +240,7 @@ export const VIDEO_COURSES: VideoCourse[] = [
     titleEn: "Complete Financial Accounting — 11-hour tutorial",
     titleAr: "المحاسبة المالية الشاملة — درس 11 ساعة",
     channel: "Tony Bell",
-    category: "accounting",
+    category: "acca",
     level: "Intermediate",
     language: "EN",
     hours: "~11h",
@@ -520,6 +523,185 @@ export const VIDEO_COURSES: VideoCourse[] = [
     descAr:
       "كورس مختصر حديث لعام 2025 — أسرع احترافٍ لأساسيات إليستريتور.",
     lessons: [{ id: "h7komjsQq50", title: "Learn Adobe Illustrator 2025 in 1 Hour — Beginner's Full Crash Course", length: "1:09:35" }],
+  },
+
+  /* ==================== v25 — Arabic IFRS / ACCA / CPA / CMA tracks ====================
+   * The learner asked for more Arabic IFRS, ACCA, CPA and CMA courses and a
+   * reorganised catalog. Every video id below was verified live via
+   * YouTube oEmbed on 2026-09-29 (title + channel confirmed). */
+  {
+    id: "accounting-planet-certifr",
+    titleEn: "The full CertIFR certificate course — one sitting",
+    titleAr: "\u0634\u0647\u0627\u062f\u0629 \u0627\u0644\u0645\u0639\u0627\u064a\u064a\u0631 \u0627\u0644\u062f\u0648\u0644\u064a\u0629 CertIFR \u0643\u0627\u0645\u0644\u0629",
+    channel: "The Accounting Planet",
+    category: "ifrs",
+    level: "Intermediate",
+    language: "AR",
+    hours: "~12.6h",
+    views: "48K",
+    descEn:
+      "The complete CertIFR (Certificate in International Financial Reporting) course in a single 12.5-hour Arabic video — every IFRS standard you need for the certificate, taught end-to-end.",
+    descAr:
+      "\u0643\u0648\u0631\u0633 \u0634\u0647\u0627\u062f\u0629 CertIFR \u0643\u0627\u0645\u0644 \u0641\u064a \u0641\u064a\u062f\u064a\u0648 \u0648\u0627\u062d\u062f \u0645\u062f\u062a\u0647 \u0623\u0643\u062b\u0631 \u0645\u0646 12 \u0633\u0627\u0639\u0629 \u2014 \u0643\u0644 \u0645\u0639\u0627\u064a\u064a\u0631 IFRS \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629 \u0644\u0644\u0634\u0647\u0627\u062f\u0629 \u062a\u0634\u0631\u062d \u0645\u0646 \u0627\u0644\u0628\u062f\u0627\u064a\u0629 \u0644\u0644\u0646\u0647\u0627\u064a\u0629.",
+    lessons: [{ id: "x5dttcg-2lQ", title: "\u0634\u0647\u0627\u062f\u0629 \u0627\u0644\u0645\u0639\u0627\u064a\u064a\u0631 \u0627\u0644\u062f\u0648\u0644\u064a\u0629 CertIFR \u0643\u0627\u0645\u0644\u0629", length: "12:38:29" }],
+  },
+  {
+    id: "hossam-saad-ifrs-series",
+    titleEn: "The IFRS standards series — Conceptual Framework, IAS 1, IFRS 15, 16 & 5",
+    titleAr: "\u0633\u0644\u0633\u0644\u0629 \u0645\u0639\u0627\u064a\u064a\u0631 IFRS \u2014 \u0627\u0644\u0625\u0637\u0627\u0631 \u0627\u0644\u0645\u0641\u0627\u0647\u064a\u0645\u064a \u0648IAS 1 \u0648IFRS 15 \u064816 \u06485",
+    channel: "\u062f\u0644\u064a\u0644\u0643 \u0644\u0641\u0647\u0645 \u0627\u0644\u0645\u062d\u0627\u0633\u0628\u0629 \u062d\u0633\u0627\u0645 \u0633\u0639\u062f hossam saad",
+    category: "ifrs",
+    level: "Intermediate",
+    language: "AR",
+    hours: "~6.4h",
+    views: "204K+ combined",
+    descEn:
+      "A five-deep-dive Arabic standards series: the Conceptual Framework, IAS 1 presentation, IFRS 15 revenue, IFRS 16 leases and IFRS 5 held-for-sale — full-length lessons with worked examples.",
+    descAr:
+      "\u0633\u0644\u0633\u0644\u0629 \u0639\u0631\u0628\u064a\u0629 \u0645\u0646 \u062e\u0645\u0633 \u062c\u0644\u0633\u0627\u062a \u0645\u0639\u0645\u0642\u0629: \u0627\u0644\u0625\u0637\u0627\u0631 \u0627\u0644\u0645\u0641\u0627\u0647\u064a\u0645\u064a \u0648IAS 1 \u0648IFRS 15 \u0648IFRS 16 \u0648IFRS 5 \u2014 \u062f\u0631\u0648\u0633 \u0643\u0627\u0645\u0644\u0629 \u0628\u0623\u0645\u062b\u0644\u0629 \u0645\u062d\u0644\u0648\u0644\u0629.",
+    lessons: [
+      { id: "HG9VrmR_0Pg", title: "\u0627\u0644\u0645\u0642\u062f\u0645\u0629 \u0648\u0627\u0637\u0627\u0631 \u0627\u0644\u0645\u0641\u0627\u0647\u064a\u0645 Conceptual Framework", length: "43:15" },
+      { id: "hq_t4dI6nQ4", title: "IAS 1 \u0639\u0631\u0636 \u0627\u0644\u0642\u0648\u0627\u0626\u0645 \u0627\u0644\u0645\u0627\u0644\u064a\u0629", length: "1:09:14" },
+      { id: "Rg-bLQyRg5M", title: "IFRS 15 \u0627\u0644\u0625\u064a\u0631\u0627\u062f \u0645\u0646 \u0627\u0644\u0639\u0642\u0648\u062f \u0645\u0639 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 (\u062c1)", length: "1:27:17" },
+      { id: "E-PSUX9EWe8", title: "IFRS 16 \u0645\u0639\u064a\u0627\u0631 \u0627\u0644\u0625\u064a\u062c\u0627\u0631\u0627\u062a", length: "1:45:41" },
+      { id: "92oCcJW7O40", title: "IFRS 5 \u0627\u0644\u0623\u0635\u0648\u0644 \u0627\u0644\u0645\u062d\u062a\u0641\u0638 \u0628\u0647\u0627 \u0644\u0644\u0628\u064a\u0639", length: "1:17:15" },
+    ],
+  },
+  {
+    id: "dr-ismail-dipifr",
+    titleEn: "Introduction to the IFRS Diploma (ACCA DipIFR)",
+    titleAr: "\u0645\u0642\u062f\u0645\u0629 \u0641\u064a \u062f\u0628\u0644\u0648\u0645\u0629 IFRS (ACCA DipIFR)",
+    channel: "Accounting by Dr. Mohamed Ismail",
+    category: "acca",
+    level: "Beginner",
+    language: "AR",
+    hours: "~3h",
+    views: "8.8K",
+    descEn:
+      "A three-hour Arabic introduction to the ACCA DipIFR diploma — what the certificate covers, how the standards fit together, and how to start preparing.",
+    descAr:
+      "\u0645\u0642\u062f\u0645\u0629 \u0639\u0631\u0628\u064a\u0629 \u0644\u0645\u062f\u0629 \u062b\u0644\u0627\u062b \u0633\u0627\u0639\u0627\u062a \u0639\u0646 \u062f\u0628\u0644\u0648\u0645\u0629 ACCA DipIFR \u2014 \u0645\u0627\u0630\u0627 \u062a\u063a\u0637\u064a \u0627\u0644\u0634\u0647\u0627\u062f\u0629 \u0648\u0643\u064a\u0641 \u062a\u0628\u062f\u0623 \u0627\u0644\u062a\u062d\u0636\u064a\u0631.",
+    lessons: [{ id: "adWVTWWGPhU", title: "Introduction to IFRS Diploma", length: "3:04:17" }],
+  },
+  {
+    id: "mirchawala-fa-control",
+    titleEn: "Control accounts — ACCA FA (F3) exam preparation",
+    titleAr: "\u062d\u0633\u0627\u0628\u0627\u062a \u0627\u0644\u0631\u0642\u0627\u0628\u0629 \u2014 \u062a\u062d\u0636\u064a\u0631 \u0644\u0627\u0645\u062a\u062d\u0627\u0646 ACCA FA (F3)",
+    channel: "Mustafa Mirchawala",
+    category: "acca",
+    level: "Beginner",
+    language: "AR",
+    hours: "~1.8h",
+    views: "4.3K",
+    descEn:
+      "Mustafa Mirchawala (a globally-known ACCA tutor) teaches control accounts in Arabic — accounting basics plus direct exam preparation for ACCA FA/F3.",
+    descAr:
+      "\u0645\u0635\u0637\u0641\u0649 \u0645\u064a\u0631\u0634\u0627\u0648\u0627\u0644\u0627 (\u0645\u062f\u0631\u0633 ACCA \u0639\u0627\u0644\u0645\u064a \u0645\u0639\u0631\u0648\u0641) \u064a\u0634\u0631\u062d \u062d\u0633\u0627\u0628\u0627\u062a \u0627\u0644\u0631\u0642\u0627\u0628\u0629 \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u2014 \u0623\u0633\u0627\u0633\u064a\u0627\u062a \u0627\u0644\u0645\u062d\u0627\u0633\u0628\u0629 \u0648\u062a\u062d\u0636\u064a\u0631 \u0645\u0628\u0627\u0634\u0631 \u0644\u0627\u0645\u062a\u062d\u0627\u0646 ACCA FA/F3.",
+    lessons: [{ id: "OKxoH03GemA", title: "Control Accounts | ACCA FA/F3", length: "1:48:32" }],
+  },
+  {
+    id: "yula-fa-specimen",
+    titleEn: "ACCA FA (F3) specimen exam walkthrough — questions 1 to 20",
+    titleAr: "\u0634\u0631\u062d \u0646\u0645\u0648\u0630\u062c \u0627\u0645\u062a\u062d\u0627\u0646 ACCA FA (F3) \u2014 \u0627\u0644\u0623\u0633\u0626\u0644\u0629 1 \u0625\u0644\u0649 20",
+    channel: "Yula Tutors",
+    category: "acca",
+    level: "Intermediate",
+    language: "AR",
+    hours: "~0.9h",
+    views: "373",
+    descEn:
+      "A question-by-question Arabic walkthrough of the ACCA FA specimen exam — exactly the practice companion for our FA past papers.",
+    descAr:
+      "\u0634\u0631\u062d \u0633\u0624\u0627\u0644\u064b\u0627 \u0628\u0633\u0624\u0627\u0644 \u0644\u0646\u0645\u0648\u0630\u062c \u0627\u0645\u062a\u062d\u0627\u0646 ACCA FA \u2014 \u0627\u0644\u0631\u0641\u064a\u0642 \u0627\u0644\u0639\u0645\u0644\u064a \u0627\u0644\u0645\u062b\u0627\u0644\u064a \u0644\u0623\u0648\u0631\u0627\u0642 FA \u0627\u0644\u0633\u0627\u0628\u0642\u0629 \u0644\u062f\u064a\u0646\u0627.",
+    lessons: [{ id: "P_F75QViY9U", title: "\u0634\u0631\u062d \u0646\u0645\u0648\u0630\u062c \u0627\u0645\u062a\u062d\u0627\u0646 ACCA FA (F3) \u2014 \u0627\u0644\u062c\u0632\u0621 1", length: "52:06" }],
+  },
+  {
+    id: "cpa-talks-cpa-track",
+    titleEn: "The CPA & professional-certification track",
+    titleAr: "\u0645\u0633\u0627\u0631 \u0634\u0647\u0627\u062f\u0629 CPA \u0648\u0627\u0644\u0634\u0647\u0627\u062f\u0627\u062a \u0627\u0644\u0645\u0647\u0646\u064a\u0629",
+    channel: "CPA Talks",
+    category: "cpa",
+    level: "Beginner",
+    language: "AR",
+    hours: "~0.9h",
+    views: "43K+ combined",
+    descEn:
+      "CPA Talks' certification series — everything about earning the CPA, working in UK audit, beating the cost obstacle, and answers to followers' questions. The Egyptian companion to your exam journey.",
+    descAr:
+      "\u0633\u0644\u0633\u0644\u0629 \u0627\u0644\u0634\u0647\u0627\u062f\u0627\u062a \u0627\u0644\u0645\u0647\u0646\u064a\u0629 \u0645\u0646 CPA Talks \u2014 \u0643\u0644 \u0634\u064a\u0621 \u0639\u0646 \u0627\u0644\u062d\u0635\u0648\u0644 \u0639\u0644\u0649 CPA \u0648\u0627\u0644\u0639\u0645\u0644 \u0641\u064a \u0627\u0644\u062a\u062f\u0642\u064a\u0642 \u0628\u0627\u0644\u0645\u0645\u0644\u0643\u0629 \u0627\u0644\u0645\u062a\u062d\u062f\u0629 \u0648\u062a\u062e\u0637\u064a \u0639\u0627\u0626\u0642 \u0627\u0644\u062a\u0643\u0644\u0641\u0629 \u0648\u0623\u062c\u0648\u0628\u0629 \u0639\u0644\u0649 \u0623\u0633\u0626\u0644\u0629 \u0627\u0644\u0645\u062a\u0627\u0628\u0639\u064a\u0646.",
+    lessons: [
+      { id: "4JdDvZo9-44", title: "(1) \u0643\u0644 \u0645\u0627 \u062a\u0631\u064a\u062f \u0645\u0639\u0631\u0641\u062a\u0647 \u0644\u0644\u062d\u0635\u0648\u0644 \u0639\u0644\u0649 \u0627\u0644CPA", length: "6:25" },
+      { id: "n8K1IIAteFs", title: "(2) \u0625\u0632\u0627\u064a \u0627\u0634\u062a\u063a\u0644\u062a \u0641\u064a \u0627\u0644\u0625\u0645\u0645\u0644\u0643\u0629 \u0628\u0627\u0644\u0645\u062d\u0627\u0633\u0628\u0629 \u0648\u0627\u0644\u062a\u062f\u0642\u064a\u0642\u061f", length: "5:09" },
+      { id: "2_bL3PxmxSw", title: "(3) \u0646\u0635\u0627\u0626\u062d \u0644\u0644\u062d\u0635\u0648\u0644 \u0639\u0644\u0649 \u0634\u0647\u0627\u062f\u0629 \u0645\u0647\u0646\u064a\u0629", length: "21:12" },
+      { id: "YIT2IkCSTYw", title: "(4) \u0623\u0633\u0626\u0644\u0629 \u0648\u0623\u062c\u0648\u0628\u0629 \u0645\u0646 \u0645\u062a\u0627\u0628\u0639\u064a\u0646\u0627", length: "20:24" },
+    ],
+  },
+  {
+    id: "doms-cma-p1",
+    titleEn: "CMA Part 1 — Unit 1: concepts of financial accounting",
+    titleAr: "CMA \u0627\u0644\u062c\u0632\u0621 \u0627\u0644\u0623\u0648\u0644 \u2014 \u0627\u0644\u0648\u062d\u062f\u0629 1: \u0645\u0641\u0627\u0647\u064a\u0645 \u0627\u0644\u0645\u062d\u0627\u0633\u0628\u0629 \u0627\u0644\u0645\u0627\u0644\u064a\u0629",
+    channel: "CMA by Mahmoud Eldomany (Doms Academy)",
+    category: "cma",
+    level: "Beginner",
+    language: "AR",
+    hours: "~2h",
+    views: "253K",
+    descEn:
+      "The most-watched Arabic CMA lesson on YouTube — Doms Academy's full Unit 1 walkthrough (1.1 Concepts of Financial Accounting) that has helped a quarter-million learners start Part 1.",
+    descAr:
+      "\u0623\u0643\u062b\u0631 \u062f\u0631\u0633 CMA \u0639\u0631\u0628\u064a \u0645\u0634\u0627\u0647\u062f\u0629 \u0639\u0644\u0649 \u064a\u0648\u062a\u064a\u0648\u0628 \u2014 \u0634\u0631\u062d \u0643\u0627\u0645\u0644 \u0644\u0644\u0648\u062d\u062f\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0645\u0646 \u0623\u0643\u0627\u062f\u064a\u0645\u064a\u0629 \u062f\u0648\u0645\u0632 \u0627\u0644\u0630\u064a \u0633\u0627\u0639\u062f \u0645\u0626\u0627\u062a \u0627\u0644\u0622\u0644\u0627\u0641 \u0641\u064a \u0628\u062f\u0621 \u0627\u0644\u062c\u0632\u0621 \u0627\u0644\u0623\u0648\u0644.",
+    lessons: [{ id: "7XDdlvBB1Xs", title: "1.1 \u0645\u0641\u0627\u0647\u064a\u0645 \u0627\u0644\u0645\u062d\u0627\u0633\u0628\u0629 \u0627\u0644\u0645\u0627\u0644\u064a\u0629", length: "2:04:10" }],
+  },
+  {
+    id: "dr-ismail-cma-p1",
+    titleEn: "CMA Part 1 — Section A finished in one weekend",
+    titleAr: "CMA \u0627\u0644\u062c\u0632\u0621 \u0627\u0644\u0623\u0648\u0644 \u2014 \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u0642\u0633\u0645 A \u0641\u064a \u0639\u0637\u0644\u0629 \u0648\u0627\u062d\u062f\u0629",
+    channel: "Accounting by Dr. Mohamed Ismail",
+    category: "cma",
+    level: "Beginner",
+    language: "AR",
+    hours: "~5.4h",
+    views: "80K+ combined",
+    descEn:
+      "Two Arabic sittings that cover ALL of CMA Part 1 Section A — the intro lecture, then the famous finish-Section-A-in-under-4-hours marathon with solved questions.",
+    descAr:
+      "\u062c\u0644\u0633\u062a\u0627\u0646 \u0639\u0631\u0628\u064a\u062a\u0627\u0646 \u062a\u063a\u0637\u064a\u0627\u0646 \u0643\u0627\u0645\u0644 \u0627\u0644\u0642\u0633\u0645 A \u0645\u0646 \u0627\u0644\u062c\u0632\u0621 \u0627\u0644\u0623\u0648\u0644 \u2014 \u0645\u062d\u0627\u0636\u0631\u0629 \u0627\u0644\u0645\u0642\u062f\u0645\u0629 \u062b\u0645 \u0645\u0627\u0631\u0627\u062b\u0648\u0646 \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u0642\u0633\u0645 \u0641\u064a \u0623\u0642\u0644 \u0645\u0646 4 \u0633\u0627\u0639\u0627\u062a \u0628\u0623\u0633\u0626\u0644\u0629 \u0645\u062d\u0644\u0648\u0644\u0629.",
+    lessons: [
+      { id: "gyZzCRo38cw", title: "01-2 Introduction To Section A (CMA Part 1)", length: "1:25:30" },
+      { id: "RopH8SBBkbo", title: "\u062e\u0644\u0635 \u0633\u0643\u0634\u0646 A \u0645\u0646 CMA PART 1 \u0641\u064a \u0623\u0642\u0644 \u0645\u0646 4 \u0633\u0627\u0639\u0627\u062a", length: "3:58:16" },
+    ],
+  },
+  {
+    id: "abdellakher-cma-p1",
+    titleEn: "CMA Part 1 — the first lecture with Dr. Ahmed Abdellakher",
+    titleAr: "CMA \u0627\u0644\u062c\u0632\u0621 \u0627\u0644\u0623\u0648\u0644 \u2014 \u0627\u0644\u0645\u062d\u0627\u0636\u0631\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0645\u0639 \u062f. \u0623\u062d\u0645\u062f \u0639\u0628\u062f \u0627\u0644\u0646\u0627\u0635\u0631",
+    channel: "Dr Ahmed Abdellakher",
+    category: "cma",
+    level: "Beginner",
+    language: "AR",
+    hours: "~1.9h",
+    views: "432",
+    descEn:
+      "Dr. Ahmed Abdellakher (the IFRS educator behind our podcast section) opens CMA Part 1 in Arabic — structure, study plan and the first full lecture.",
+    descAr:
+      "\u062f. \u0623\u062d\u0645\u062f \u0639\u0628\u062f \u0627\u0644\u0646\u0627\u0635\u0631 (\u0645\u062f\u0631\u0633 IFRS \u0627\u0644\u0645\u0639\u0631\u0648\u0641 \u0641\u064a \u0642\u0633\u0645 \u0627\u0644\u0628\u0648\u062f\u0643\u0627\u0633\u062a \u0644\u062f\u064a\u0646\u0627) \u064a\u0641\u062a\u062a\u062d CMA \u0627\u0644\u062c\u0632\u0621 \u0627\u0644\u0623\u0648\u0644 \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u2014 \u0627\u0644\u062e\u0637\u0629 \u0627\u0644\u062f\u0631\u0627\u0633\u064a\u0629 \u0648\u0627\u0644\u0645\u062d\u0627\u0636\u0631\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0643\u0627\u0645\u0644\u0629.",
+    lessons: [{ id: "25p_gwRxyns", title: "CMA Part1 \u2014 \u0627\u0644\u0645\u062d\u0627\u0636\u0631\u0629 \u0627\u0644\u0627\u0648\u0644\u0649", length: "1:53:07" }],
+  },
+  {
+    id: "sara-cma-p1",
+    titleEn: "CMA in Arabic — Part 1 Unit 1 Topic 1.1",
+    titleAr: "CMA \u0628\u0627\u0644\u0639\u0631\u0628\u064a \u2014 \u0627\u0644\u062c\u0632\u0621 1 \u0627\u0644\u0648\u062d\u062f\u0629 1 \u0627\u0644\u0645\u0648\u0636\u0648\u0639 1.1",
+    channel: "Sara AlAbdullah | CMA",
+    category: "cma",
+    level: "Beginner",
+    language: "AR",
+    hours: "~0.6h",
+    views: "526",
+    descEn:
+      "Sara AlAbdullah's Arabic CMA course opens with the financial-accounting concepts topic — a calm, structured start for Part 1 candidates.",
+    descAr:
+      "\u064a\u0641\u062a\u062a\u062d \u0643\u0648\u0631\u0633 \u0633\u0627\u0631\u0629 \u0627\u0644\u0639\u0628\u062f\u0627\u0644\u0644\u0647 \u0627\u0644\u0639\u0631\u0628\u064a \u0644\u0644\u0640 CMA \u0628\u0645\u0648\u0636\u0648\u0639 \u0645\u0641\u0627\u0647\u064a\u0645 \u0627\u0644\u0645\u062d\u0627\u0633\u0628\u0629 \u0627\u0644\u0645\u0627\u0644\u064a\u0629 \u2014 \u0628\u062f\u0627\u064a\u0629 \u0647\u0627\u062f\u0626\u0629 \u0648\u0645\u0646\u0638\u0645\u0629 \u0644\u0645\u062a\u0642\u062f\u0645\u064a \u0627\u0644\u062c\u0632\u0621 \u0627\u0644\u0623\u0648\u0644.",
+    lessons: [{ id: "v6Kbgq4whMU", title: "Part 1 | Unit 1 | Topic 1.1 | Concepts of Financial Accounting", length: "36:27" }],
   },
 ]
 

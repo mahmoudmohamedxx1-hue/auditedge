@@ -15,7 +15,7 @@
 import type { EngineMessage } from "@/lib/ai"
 import { withTimeout } from "@/lib/ai"
 
-export type PoolEngineId = "kilo" | "llm7" | "pollinations" | "ovh" | "ovh-vision"
+export type PoolEngineId = "kilo" | "llm7" | "llm7-glm" | "pollinations" | "ovh" | "ovh-vision"
 
 export type PoolEngine = {
   id: PoolEngineId
@@ -28,6 +28,24 @@ export type PoolEngine = {
   reasoning: boolean
   /** Accepts OpenAI image_url content parts */
   vision: boolean
+  /** v25 — when set, this route needs the named env var (a FREE key from
+   *  the provider's dashboard) and is skipped when it is not configured.
+   *  LLM7's `default` route stays keyless; its named models (glm-5.3) need
+   *  a free key — dash.llm7.io. */
+  keyEnv?: string
+}
+
+/** v25 — the optional free LLM7 key unlocks the real glm-5.3 route. */
+export function llm7Key(): string {
+  return (process.env.LLM7_API_KEY ?? "").trim()
+}
+
+/** Auth headers for an engine — LLM7 routes attach the free key when set. */
+function engineHeaders(engine: PoolEngine): Record<string, string> {
+  if ((engine.id === "llm7" || engine.id === "llm7-glm") && llm7Key()) {
+    return { Authorization: `Bearer ${llm7Key()}` }
+  }
+  return engine.headers
 }
 
 export const POOL: Record<PoolEngineId, PoolEngine> = {
@@ -48,6 +66,16 @@ export const POOL: Record<PoolEngineId, PoolEngine> = {
     headers: { Authorization: "Bearer unused" },
     reasoning: false,
     vision: false,
+  },
+  "llm7-glm": {
+    id: "llm7-glm",
+    label: "GLM-5.3 via LLM7",
+    url: "https://api.llm7.io/v1/chat/completions",
+    model: "glm-5.3",
+    headers: {},
+    reasoning: true,
+    vision: false,
+    keyEnv: "LLM7_API_KEY",
   },
   pollinations: {
     id: "pollinations",
@@ -127,7 +155,7 @@ export async function callPoolStream(
     const res = await withTimeout(
       fetch(engine.url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...engine.headers },
+        headers: { "Content-Type": "application/json", ...engineHeaders(engine) },
         body: JSON.stringify({
           model: engine.model,
           messages: toPoolMessages(messages, engine),
@@ -167,7 +195,7 @@ export async function callPoolOnce(
     const res = await withTimeout(
       fetch(engine.url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...engine.headers },
+        headers: { "Content-Type": "application/json", ...engineHeaders(engine) },
         body: JSON.stringify({
           model: engine.model,
           messages: toPoolMessages(messages, engine),

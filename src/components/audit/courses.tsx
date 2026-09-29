@@ -197,20 +197,30 @@ export function Courses() {
             </div>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {VIDEO_CATEGORIES.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setVideoCat(c.id)}
-                className={cn(
-                  "rounded-full border px-2.5 py-1 text-[11px] transition-colors",
-                  videoCat === c.id
-                    ? "border-plum/40 bg-plum/15 font-medium text-plum-deep"
-                    : "bg-card/60 text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {lang === "ar" ? c.labelAr : c.labelEn}
-              </button>
-            ))}
+            {VIDEO_CATEGORIES.map((c) => {
+              // v25 — per-track count chip so the reorganised catalog reads at a glance
+              const n =
+                c.id === "all"
+                  ? VIDEO_COURSES.length
+                  : VIDEO_COURSES.filter((v) => v.category === c.id).length
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setVideoCat(c.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                    videoCat === c.id
+                      ? "border-plum/40 bg-plum/15 font-medium text-plum-deep"
+                      : "bg-card/60 text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {lang === "ar" ? c.labelAr : c.labelEn}
+                  <span className={cn("tabular-nums", videoCat === c.id ? "text-plum-deep/70" : "text-muted-foreground/60")}>
+                    {n}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
 

@@ -63,7 +63,7 @@ async function main() {
     getAiModel,
     SELECTABLE_MODELS,
   } = await import("../src/lib/models")
-  const { POOL } = await import("../src/lib/keyless-pool")
+  const { POOL, llm7Key } = await import("../src/lib/keyless-pool")
 
   const hasKey = userKeyEngineReady()
   console.log(`engine ready (key configured): ${hasKey}\n`)
@@ -92,7 +92,23 @@ async function main() {
   const glmFast = planEngineChain("glm-5.3-flash", false, plain)
   const firstPool = (steps: ReturnType<typeof planEngineChain>) =>
     steps.find((s) => s.kind === "pool") as { kind: "pool"; engine: string } | undefined
-  check("chain: glm-5.3-flash thinking prefers a reasoning pool route first", firstPool(glmThinking)?.engine === "pollinations")
+  // v25: real-GLM routes (key → workspace → llm7-glm) must precede the generic community pool
+  const firstGenericPoolIdx = glmThinking.findIndex(
+    (s) => s.kind === "pool" && (s as { engine: string }).engine !== "llm7-glm"
+  )
+  const workspaceIdx = glmThinking.findIndex((s) => s.kind === "workspace")
+  check(
+    "chain: glm-5.3-flash serves real GLM (workspace) before generic pool routes",
+    workspaceIdx !== -1 && (firstGenericPoolIdx === -1 || workspaceIdx < firstGenericPoolIdx)
+  )
+  check(
+    "chain: glm-5.3-flash (llm7 key set) tries the real glm-5.3 pool route before generic pools",
+    !llm7Key() || firstPool(glmThinking)?.engine === "llm7-glm"
+  )
+  check(
+    "chain: glm-5.3-flash thinking keeps pollinations (reasoning) as the first generic hop",
+    firstPool(glmThinking)?.engine === (llm7Key() ? "llm7-glm" : "pollinations")
+  )
   check("chain: glm-5.3-flash without thinking prefers the workspace engine", glmFast[0]?.kind === "workspace" || (hasKey && glmFast[0]?.kind === "key"))
   check("chain: keyed model leads with the key step", planEngineChain("glm-4-plus", false, plain)[0]?.kind === (hasKey ? "key" : "key"))
   check("chain: every chain ends with pool failover hops", planEngineChain("glm-4.7-flash", false, plain).some((s) => s.kind === "pool"))
@@ -107,8 +123,9 @@ async function main() {
   ]
   const imgChain = planEngineChain(VISION_MODEL, false, imgMsgs)
   check("chain: image messages insert the keyless vision hop", imgChain.some((s) => s.kind === "pool" && (s as { engine: string }).engine === "ovh-vision"))
-  check("pool: 5 routes catalogued (kilo/llm7/pollinations/ovh/vision)", Object.keys(POOL).length === 5)
+  check("pool: 6 routes catalogued (kilo/llm7/llm7-glm/pollinations/ovh/vision)", Object.keys(POOL).length === 6)
   check("pool: kilo and pollinations stream reasoning", POOL.kilo.reasoning && POOL.pollinations.reasoning)
+  check("pool: llm7-glm serves the real glm-5.3 model", POOL["llm7-glm"].model === "glm-5.3" && POOL["llm7-glm"].keyEnv === "LLM7_API_KEY")
 
   /* ---- live: keyless flagship, non-streaming ---- */
   console.log("\n[1] glm-5.3-flash — non-streaming (keyless chain)")

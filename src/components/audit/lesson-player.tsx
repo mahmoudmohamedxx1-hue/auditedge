@@ -85,8 +85,7 @@ export function LessonPlayer() {
   const lessonId = useAppStore((s) => s.selectedLessonId)
   const navigate = useAppStore((s) => s.navigate)
   const completeLesson = useAppStore((s) => s.completeLesson)
-  const openAiPopup = useAppStore((s) => s.openAiPopup)
-  const setAiContext = useAppStore((s) => s.setAiContext)
+  const openTutor = useAppStore((s) => s.openTutor)
   const setAiPresetQuestion = useAppStore((s) => s.setAiPresetQuestion)
   const lang = useAppStore((s) => s.lang)
   // v21: lesson bookmark (saved lessons, Home card)
@@ -306,8 +305,7 @@ export function LessonPlayer() {
             )}
             <button
               onClick={() => {
-                setAiContext({ view: "lesson", courseId: course.id, lessonId: lesson.id })
-                openAiPopup()
+                openTutor({ view: "lesson", courseId: course.id, lessonId: lesson.id })
               }}
               className="ms-auto inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.06] px-3 py-1.5 text-[12px] font-medium text-primary transition-all hover:-translate-y-px hover:border-primary/50 hover:bg-primary/[0.12] hover:shadow-soft focus-ring"
             >
@@ -629,9 +627,8 @@ export function LessonPlayer() {
 
             <button
               onClick={() => {
-                setAiContext({ view: "lesson", courseId: course.id, lessonId: lesson.id })
+                openTutor({ view: "lesson", courseId: course.id, lessonId: lesson.id })
                 setNotesOpen(false)
-                openAiPopup()
               }}
               className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/[0.05] px-4 py-3 text-[13px] font-medium text-primary transition-colors hover:bg-primary/[0.1] focus-ring"
             >

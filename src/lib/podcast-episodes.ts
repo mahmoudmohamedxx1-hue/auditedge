@@ -15,7 +15,7 @@ export type PodcastEpisode = {
   /** "PT" style display length, e.g. "1:34:52" */
   length: string
   views: string
-  category: "external-audit" | "ifrs" | "egypt" | "internal-audit" | "career"
+  category: "conversations" | "external-audit" | "ifrs" | "egypt" | "internal-audit" | "career"
   /** Short EN blurb */
   blurbEn: string
   /** Short AR blurb */
@@ -28,6 +28,9 @@ export const YT_CATEGORIES: {
   labelAr: string
 }[] = [
   { id: "all", labelEn: "All", labelAr: "الكل" },
+  // v25 — REAL podcasts: two people talking (interviews & conversations),
+  // the format the learner asked for, kept separate from the explainer videos
+  { id: "conversations", labelEn: "Real podcasts · conversations", labelAr: "بودكاست حقيقي · حوارات" },
   { id: "external-audit", labelEn: "External audit", labelAr: "التدقيق الخارجي" },
   { id: "ifrs", labelEn: "IFRS & accounting", labelAr: "المعايير والمحاسبة" },
   { id: "egypt", labelEn: "Egyptian standards", labelAr: "المعايير المصرية" },
@@ -425,5 +428,168 @@ export const YT_EPISODES: PodcastEpisode[] = [
     category: "ifrs",
     blurbEn: "A focused DipIFR-style clip on revenue recognition under IFRS 15.",
     blurbAr: "مقطع مركز بنمط دبلومة IFRS عن الاعتراف بالإيراد وفق IFRS 15.",
+  },
+
+  /* ==================== v25 — REAL podcasts: two people talking ====================
+   * The learner's ask: "podcasts aren't podcasts — someone illustrates. I
+   * want two people talking, around the 20-minute range; keep the videos."
+   * These are genuine conversation/interview episodes — guest and host (or
+   * two hosts) — from real Arabic podcast shows. The Accounting Club
+   * interviews run 8–20 minutes; the Qawaim and Bitrolly conversations run
+   * longer but are the real two-person format. Every id verified live via
+   * YouTube oEmbed on 2026-09-29. The explainer videos stay untouched in
+   * their own categories above. */
+  // ---- نادي المحاسبة (Accounting Club) — the ضيف_المحاسبة guest interviews ----
+  {
+    id: "O3yCuohfTvw",
+    title: "لقاء مع أ. عبدالله الفوزان الرئيس التنفيذي لشركة KPMG",
+    channel: "نادي المحاسبة",
+    length: "12:57",
+    views: "8.2K",
+    category: "conversations",
+    blurbEn: "A rare sit-down with KPMG's country CEO — the path to the top of a Big-Four firm, and what he looks for in young accountants.",
+    blurbAr: "حوار نادر مع رئيس KPMG في الإقليم — الطريق إلى قمة شركة من الأربع الكبارى وماذا يبحث عنه في المحاسبين الشباب.",
+  },
+  {
+    id: "uC8dJ92bR-c",
+    title: "لقاء أ. طارق بن عبدالرحمن السدحان",
+    channel: "نادي المحاسبة",
+    length: "19:14",
+    views: "7K",
+    category: "conversations",
+    blurbEn: "A 19-minute career conversation — building an accounting career, professional growth, and the habits that compound.",
+    blurbAr: "حوار مهني من 19 دقيقة عن بناء المسار المحاسبي والنمو المهني والعادات التي تتراكم.",
+  },
+  {
+    id: "WcRVDuc_j3g",
+    title: "لقاء أ. محمد بن عبدالله القويز",
+    channel: "نادي المحاسبة",
+    length: "20:29",
+    views: "1.7K",
+    category: "conversations",
+    blurbEn: "A full-length guest interview at the 20-minute sweet spot — leadership in finance and the profession's future.",
+    blurbAr: "لقاء كامل في حدود العشرين دقيقة — القيادة في المالية ومستقبل المهنة.",
+  },
+  {
+    id: "969x9wzkwuA",
+    title: "لقاء الدكتور عبدالله الفوزان",
+    channel: "نادي المحاسبة",
+    length: "17:19",
+    views: "1.8K",
+    category: "conversations",
+    blurbEn: "An interview with a leading voice of the profession — qualification, practice and giving back.",
+    blurbAr: "لقاء مع أحد أبرز أصوات المهنة — المؤهلات والممارسة والعطاء.",
+  },
+  {
+    id: "qksSUQ2Mi8E",
+    title: "لقاء م. طارق بن عثمان القصبي",
+    channel: "نادي المحاسبة",
+    length: "12:37",
+    views: "1.8K",
+    category: "conversations",
+    blurbEn: "The Accounting Club's guest series — a seasoned practitioner on the profession's real-world side.",
+    blurbAr: "سلسلة ضيف المحاسبة — ممارس خبير عن الواجهة الحقيقية للمهنة.",
+  },
+  {
+    id: "KseNc-kR8bk",
+    title: "لقاء أ. سعد بن محمد الهويمل",
+    channel: "نادي المحاسبة",
+    length: "8:30",
+    views: "1K",
+    category: "conversations",
+    blurbEn: "A short, sharp guest conversation — perfect for a coffee-break listen between study blocks.",
+    blurbAr: "حوار قصير مركز — مثالي للاستماع بين جلستي مذاكرة.",
+  },
+  // ---- بودكاست قوائم (The Stage) — deep accounting conversations ----
+  {
+    id: "JEwSK7CVHBg",
+    title: "بودكاست قوائم | رحلة محاسب",
+    channel: "The Stage l ذا ستيج",
+    length: "1:04:01",
+    views: "48K",
+    category: "conversations",
+    blurbEn: "The most-listened Arabic accounting podcast episode: an accountant's full journey — the decisions, detours and lessons.",
+    blurbAr: "أكثر حلقات البودكاست المحاسبي العربي استماعًا: رحلة محاسب كاملة — القرارات والمناطق والدروس.",
+  },
+  {
+    id: "v50Zzhsxtjk",
+    title: "بودكاست قوائم | المسارات المحاسبية؛ كما تُعاش لا كما تُدرس",
+    channel: "The Stage l ذا ستيج",
+    length: "1:10:33",
+    views: "16K",
+    category: "conversations",
+    blurbEn: "Accounting career paths as they are actually lived — a candid two-person conversation that no textbook mirrors.",
+    blurbAr: "المسارات المحاسبية كما تعاش فعلًا — حوار صريح لا تقلده أي محاضرة.",
+  },
+  {
+    id: "o4jVZw-y88E",
+    title: "بودكاست مجتمع قوائم | كيف تفتح مكتبك المحاسبي؟",
+    channel: "The Stage l ذا ستيج",
+    length: "52:22",
+    views: "11K",
+    category: "conversations",
+    blurbEn: "How to open your own accounting firm — licences, first clients, pricing and the mistakes to avoid, from those who did it.",
+    blurbAr: "كيف تفتح مكتبك المحاسبي الخاص — التراخيص وأول العملاء والتسعير والأخطاء الواجب تجنبها.",
+  },
+  {
+    id: "fnYqTLvtc7w",
+    title: "بودكاست قوائم | الاحتيال المحاسبي",
+    channel: "The Stage l ذا ستيج",
+    length: "45:53",
+    views: "6.1K",
+    category: "conversations",
+    blurbEn: "Accounting fraud — how schemes are built, how they unravel, and the red flags professionals should never ignore.",
+    blurbAr: "الاحتيال المحاسبي — كيف تبنى المخططات وكيف تنكشف والأعلام الحمراء التي لا يجوز تجاهلها.",
+  },
+  {
+    id: "uFoo6WVLWfU",
+    title: "بودكاست قوائم | من المحاسبة الأكاديمية إلى المهنية",
+    channel: "The Stage l ذا ستيج",
+    length: "59:32",
+    views: "10K",
+    category: "conversations",
+    blurbEn: "The leap from academic accounting to professional practice — the gap nobody warns you about, discussed honestly.",
+    blurbAr: "القفزة من المحاسبة الأكاديمية إلى الممارسة المهنية — الفجوة التي لا يحذرك منها أحد.",
+  },
+  // ---- كناز (Kenaz) · إذاعة مختلف (بترولي) · Fatih Mohamed ----
+  {
+    id: "NGMwBWptBtw",
+    title: "تجربة حازم ومُخلص في شهادة ACCA | بودكاست كِنـــاز",
+    channel: "Kenaz - كِنـــاز",
+    length: "1:22:37",
+    views: "7.4K",
+    category: "conversations",
+    blurbEn: "Two ACCA candidates sit with the host and talk honestly about how they are passing the exams — the companion listen to our ACCA papers.",
+    blurbAr: "متقدما ACCA يتحدثان بوضوح عن اجتياز الامتحانات — الرفيق المسمعي لأوراق ACCA لدينا.",
+  },
+  {
+    id: "zch1iq8LOR0",
+    title: "قصة شراكة ناجحة بين أب وابنه في عالم المحاسبة | أصدقاء بترولي",
+    channel: "إذاعة مختلف",
+    length: "1:34:16",
+    views: "10K",
+    category: "conversations",
+    blurbEn: "A father and son who built an accounting practice together — succession, partnership and family business, in their own words.",
+    blurbAr: "أب وابن بنيا مكتب محاسبة معًا — التوريث والشراكة والعمل الأسري بألفاظهما.",
+  },
+  {
+    id: "nPFm_CEg4go",
+    title: "العمل في مجال المخاطرة المالية مع فيصل الجاسر | بودكاست بترولي",
+    channel: "إذاعة مختلف",
+    length: "1:38:39",
+    views: "37K",
+    category: "conversations",
+    blurbEn: "A risk professional's career conversation — what financial-risk work really involves and how to enter it from accounting.",
+    blurbAr: "حوار مساري مع أحد متخصصي المخاطرة المالية — ماذا تنطوي الوظيفة وكيف تدخلها من المحاسبة.",
+  },
+  {
+    id: "IViBzDwpCcc",
+    title: "كيف تتطور مهنيًا — بودكاست محاسبي مع أ. أحمد يوسف",
+    channel: "Fatih Mohamed",
+    length: "1:54:14",
+    views: "6.1K",
+    category: "conversations",
+    blurbEn: "A host-and-guest accounting podcast — how to develop professionally, move between roles, and keep growing.",
+    blurbAr: "بودكاست محاسبي بإدارة وضيف — كيف تتطور مهنيًا وتنتقل بين الوظائف وتواصل النمو.",
   },
 ]
