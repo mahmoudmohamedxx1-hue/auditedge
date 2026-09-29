@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { tt } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -24,6 +25,8 @@ import {
   Loader2,
   Pause,
   Play,
+  Search,
+  Sparkles,
   Trash2,
   Youtube,
 } from "lucide-react"
@@ -33,6 +36,236 @@ type QueueItem = {
   title: string
   courseCode: string
   status: "waiting" | "preparing" | "done"
+}
+
+/* ==================== v26 — the AI podcast studio ==================== */
+
+type StudioTurn = { speaker: "host" | "guest"; text: string }
+
+type StudioScript = {
+  title: string
+  lang: "en" | "ar"
+  minutes: number
+  host: string
+  guest: string
+  turns: StudioTurn[]
+  engine: string
+  notice: string | null
+}
+
+const STUDIO_MINUTES = [10, 15, 20] as const
+const STUDIO_STYLES = [
+  { id: "interview", en: "Interview", ar: "لقاء" },
+  { id: "lesson", en: "Guided lesson", ar: "درس موجّه" },
+  { id: "debate", en: "Friendly debate", ar: "مناظرة ودية" },
+  { id: "examprep", en: "Exam coaching", ar: "تدريب امتحاني" },
+] as const
+
+/** Settings panel → AI writes a two-person script → the sticky player voices
+ *  it with two different neural voices (host + guest). */
+function PodcastStudio({ lang }: { lang: "en" | "ar" }) {
+  const playTrack = usePlayerStore((s) => s.playTrack)
+  const [topic, setTopic] = useState("")
+  const [pLang, setPLang] = useState<"en" | "ar">(lang)
+  const [minutes, setMinutes] = useState<(typeof STUDIO_MINUTES)[number]>(15)
+  const [style, setStyle] = useState<(typeof STUDIO_STYLES)[number]["id"]>("interview")
+  const [host, setHost] = useState("")
+  const [guest, setGuest] = useState("")
+  const [script, setScript] = useState<StudioScript | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
+
+  const generate = async () => {
+    if (topic.trim().length < 3 || loading) return
+    setLoading(true)
+    setError(null)
+    setScript(null)
+    try {
+      const res = await fetch("/api/ai/podcast/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: topic.trim(), lang: pLang, minutes, style, host, guest }),
+      })
+      if (!res.ok) throw new Error("generation failed")
+      const data = (await res.json()) as StudioScript & { error?: string }
+      if (data.error) throw new Error(data.error)
+      setScript(data)
+    } catch {
+      setError(tt("podcast.studioFailed", lang))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const play = () => {
+    if (!script) return
+    playTrack({
+      lessonId: `custom-pod-${Date.now()}`,
+      title: script.title,
+      courseCode: tt("podcast.studioBadge", lang),
+      lang: script.lang,
+      speak: { turns: script.turns },
+    })
+  }
+
+  const download = async () => {
+    if (!script || downloading) return
+    setDownloading(true)
+    try {
+      const res = await fetch("/api/ai/podcast/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lang: script.lang, turns: script.turns }),
+      })
+      if (!res.ok) throw new Error("synthesis failed")
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `auditedge-custom-podcast-${script.lang}.mp3`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      setError(tt("podcast.studioSpeakFailed", lang))
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  const chip = (active: boolean) =>
+    cn(
+      "rounded-full border px-3 py-1 text-[11.5px] transition-colors",
+      active
+        ? "border-primary/40 bg-primary/10 font-medium text-primary"
+        : "bg-secondary/40 text-muted-foreground hover:text-foreground"
+    )
+
+  return (
+    <section className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.05] via-card to-card p-6 shadow-soft">
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Sparkles className="h-[18px] w-[18px]" />
+        </span>
+        <div>
+          <h2 className="font-serif text-[17px] font-semibold">{tt("podcast.studioTitle", lang)}</h2>
+          <p className="text-[12.5px] text-muted-foreground">{tt("podcast.studioDesc", lang)}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <Input
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void generate()}
+            placeholder={tt("podcast.studioTopicPh", lang)}
+            className="h-10 bg-background text-[13.5px]"
+            aria-label={tt("podcast.studioTopicPh", lang)}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2">
+          <span className="me-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {tt("podcast.studioLang", lang)}
+          </span>
+          <button type="button" onClick={() => setPLang("en")} className={chip(pLang === "en")}>English</button>
+          <button type="button" onClick={() => setPLang("ar")} className={chip(pLang === "ar")}>العربية</button>
+          <span className="mx-1 hidden h-4 w-px bg-border sm:block" />
+          <span className="me-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {tt("podcast.studioMinutes", lang)}
+          </span>
+          {STUDIO_MINUTES.map((m) => (
+            <button key={m} type="button" onClick={() => setMinutes(m)} className={chip(minutes === m)}>
+              ~{m} min{lang === "ar" ? " د" : ""}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2">
+          <span className="me-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {tt("podcast.studioStyle", lang)}
+          </span>
+          {STUDIO_STYLES.map((s) => (
+            <button key={s.id} type="button" onClick={() => setStyle(s.id)} className={chip(style === s.id)}>
+              {lang === "ar" ? s.ar : s.en}
+            </button>
+          ))}
+        </div>
+        <Input
+          value={host}
+          onChange={(e) => setHost(e.target.value)}
+          placeholder={tt("podcast.studioHostPh", lang)}
+          className="h-9 bg-background text-[13px]"
+          aria-label={tt("podcast.studioHostPh", lang)}
+        />
+        <Input
+          value={guest}
+          onChange={(e) => setGuest(e.target.value)}
+          placeholder={tt("podcast.studioGuestPh", lang)}
+          className="h-9 bg-background text-[13px]"
+          aria-label={tt("podcast.studioGuestPh", lang)}
+        />
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Button size="sm" className="h-9" disabled={loading || topic.trim().length < 3} onClick={() => void generate()}>
+          {loading ? <Loader2 className="me-1.5 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="me-1.5 h-3.5 w-3.5" />}
+          {loading ? tt("podcast.studioGenerating", lang) : tt("podcast.studioGenerate", lang)}
+        </Button>
+        {script && (
+          <span className="text-[11.5px] text-muted-foreground">
+            {tt("podcast.studioTurns", lang).replace("{n}", String(script.turns.length))} · ~{script.minutes} min
+          </span>
+        )}
+      </div>
+
+      {error && (
+        <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+          {error}
+        </p>
+      )}
+
+      {script && (
+        <div className="mt-4 rounded-xl border bg-background/70 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p dir="auto" className="text-[14px] font-semibold leading-snug">{script.title}</p>
+            <div className="flex gap-2">
+              <Button size="sm" className="h-8" onClick={play}>
+                <Play className="me-1 h-3.5 w-3.5 fill-current" /> {tt("podcast.studioPlay", lang)}
+              </Button>
+              <Button size="sm" variant="outline" className="h-8" disabled={downloading} onClick={() => void download()}>
+                {downloading ? <Loader2 className="me-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="me-1.5 h-3.5 w-3.5" />}
+                {tt("podcast.download", lang)}
+              </Button>
+            </div>
+          </div>
+          {script.notice === "script-fallback" && (
+            <p className="mt-2 text-[11.5px] text-muted-foreground">{tt("podcast.studioFallback", lang)}</p>
+          )}
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {tt("podcast.studioHostLabel", lang)}: {script.host} · {tt("podcast.studioGuestLabel", lang)}: {script.guest}
+          </p>
+          {/* script preview — the first turns, the whole conversation in order */}
+          <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pe-1">
+            {script.turns.map((t, i) => (
+              <div key={i} className="text-[12.5px] leading-relaxed">
+                <span
+                  className={cn(
+                    "me-1.5 font-semibold",
+                    t.speaker === "host" ? "text-primary" : "text-plum-deep"
+                  )}
+                >
+                  {t.speaker === "host" ? script.host : script.guest}:
+                </span>
+                <span dir="auto">{t.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  )
 }
 
 export function Podcast() {
@@ -54,10 +287,17 @@ export function Podcast() {
   // v22 — curated Arabic YouTube podcast section
   const [ytCat, setYtCat] = useState<(typeof YT_CATEGORIES)[number]["id"]>("all")
   const [playing, setPlaying] = useState<string | null>(null)
-  const ytEpisodes = useMemo(
-    () => (ytCat === "all" ? YT_EPISODES : YT_EPISODES.filter((e) => e.category === ytCat)),
-    [ytCat]
-  )
+  // v26 — bilingual search: every episode is findable in English AND Arabic
+  // ("qawain" / "قوائم" both land the Qawaim accounting podcast)
+  const [ytQuery, setYtQuery] = useState("")
+  const ytQ = ytQuery.trim().toLowerCase()
+  const ytEpisodes = useMemo(() => {
+    const byCat = ytCat === "all" ? YT_EPISODES : YT_EPISODES.filter((e) => e.category === ytCat)
+    if (!ytQ) return byCat
+    return byCat.filter((e) =>
+      `${e.titleEn} ${e.titleAr} ${e.channel} ${e.blurbEn} ${e.blurbAr}`.toLowerCase().includes(ytQ)
+    )
+  }, [ytCat, ytQ])
 
   const courses = useMemo(
     () =>
@@ -171,6 +411,11 @@ export function Podcast() {
           </div>
         </div>
       </header>
+
+      {/* v26 — the AI podcast studio: the learner's ask was "make a podcast
+          with the settings I want, by the AI" — topic, language, length,
+          style and host names, then two AI voices carry the episode. */}
+      <PodcastStudio lang={lang} />
 
       <div className="grid gap-5 lg:grid-cols-3">
         <section className="lg:col-span-2 rounded-2xl border bg-card p-6 shadow-soft">
@@ -363,38 +608,57 @@ export function Podcast() {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {YT_CATEGORIES.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => {
-                setYtCat(c.id)
-                setPlaying(null)
-              }}
-              className={cn(
-                "rounded-full border px-3 py-1 text-[11.5px] transition-colors",
-                ytCat === c.id
-                  ? "border-primary/40 bg-primary/10 font-medium text-primary"
-                  : "bg-secondary/40 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {lang === "ar" ? c.labelAr : c.labelEn}
-            </button>
-          ))}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/* v26 — find-any-episode search across BOTH languages */}
+          <div className="relative sm:w-72">
+            <Search className="pointer-events-none absolute start-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={ytQuery}
+              onChange={(e) => setYtQuery(e.target.value)}
+              placeholder={tt("podcast.searchPh", lang)}
+              className="h-9 bg-background ps-8 text-[13px]"
+              aria-label={tt("podcast.searchPh", lang)}
+            />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {YT_CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  setYtCat(c.id)
+                  setPlaying(null)
+                }}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-[11.5px] transition-colors",
+                  ytCat === c.id
+                    ? "border-primary/40 bg-primary/10 font-medium text-primary"
+                    : "bg-secondary/40 text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {lang === "ar" ? c.labelAr : c.labelEn}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          {ytEpisodes.map((ep) => (
-            <YtEpisodeCard
-              key={ep.id}
-              ep={ep}
-              lang={lang}
-              playing={playing === ep.id}
-              onPlay={() => setPlaying(playing === ep.id ? null : ep.id)}
-            />
-          ))}
-        </div>
+        {ytEpisodes.length === 0 ? (
+          <p className="mt-5 rounded-xl border border-dashed p-6 text-center text-[12.5px] text-muted-foreground">
+            {tt("podcast.searchNone", lang)}
+          </p>
+        ) : (
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            {ytEpisodes.map((ep) => (
+              <YtEpisodeCard
+                key={ep.id}
+                ep={ep}
+                lang={lang}
+                playing={playing === ep.id}
+                onPlay={() => setPlaying(playing === ep.id ? null : ep.id)}
+              />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   )
@@ -413,23 +677,27 @@ function YtEpisodeCard({
   playing: boolean
   onPlay: () => void
 }) {
+  // v26 — both languages always visible: the active one leads, the other
+  // sits right under it, so the catalog is English AND Arabic at once
+  const title = lang === "ar" ? ep.titleAr : ep.titleEn
+  const altTitle = lang === "ar" ? ep.titleEn : ep.titleAr
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border bg-secondary/20">
       {playing ? (
         <div className="aspect-video w-full bg-black">
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${ep.id}?autoplay=1&rel=0`}
-            title={ep.title}
+            title={title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             className="h-full w-full"
           />
         </div>
       ) : (
-        <button type="button" onClick={onPlay} className="group relative aspect-video w-full" aria-label={ep.title}>
+        <button type="button" onClick={onPlay} className="group relative aspect-video w-full" aria-label={title}>
           <img
             src={`https://i.ytimg.com/vi/${ep.id}/hqdefault.jpg`}
-            alt={ep.title}
+            alt={title}
             loading="lazy"
             className="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
           />
@@ -444,7 +712,10 @@ function YtEpisodeCard({
         </button>
       )}
       <div className="flex flex-1 flex-col p-3.5">
-        <p dir="auto" className="text-[13px] font-semibold leading-snug">{ep.title}</p>
+        <p dir="auto" className="text-[13px] font-semibold leading-snug">{title}</p>
+        <p dir="auto" className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground/75">
+          {altTitle}
+        </p>
         <p className="mt-1 text-[11.5px] text-muted-foreground">
           {ep.channel} · {ep.views} {tt("podcast.views", lang)}
         </p>

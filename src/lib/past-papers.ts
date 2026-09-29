@@ -17,11 +17,16 @@
  *  v25 seed (scripts/seed/v25), on top of its flagship paper. A brand-new
  *  findable "IFRS diploma" family (DipIFR style) ships its own flagship
  *  (24 questions) + the four dated sittings — so an "IFRS exam" is now
- *  impossible to miss. `group` drives the grouped papers grid. */
+ *  impossible to miss. `group` drives the grouped papers grid.
+ *
+ *  v26 — PAST PAPERS FOR EVERY COURSE TRACK: six new families join the 17 —
+ *  CPA AUD / FAR / REG, CFA Level I, and CMA Part 1 & Part 2 — each with
+ *  its own 24-question flagship plus the four dated sittings (seeded by
+ *  scripts/seed/v26). Every track you can study now has an exam shelf. */
 
 import type { BankArea } from "@/lib/exam-blueprint"
 
-export type PaperGroup = "ifrs" | "knowledge" | "skills" | "strategic" | "egypt"
+export type PaperGroup = "ifrs" | "knowledge" | "skills" | "strategic" | "egypt" | "cpa" | "cfa" | "cma"
 
 export type PastPaper = {
   id: string
@@ -47,6 +52,10 @@ export const PAPER_GROUPS: { id: PaperGroup; labelEn: string; labelAr: string }[
   { id: "skills", labelEn: "ACCA — Applied Skills", labelAr: "ACCA — المستوى المهاري" },
   { id: "strategic", labelEn: "ACCA — Strategic Professional", labelAr: "ACCA — المستوى الاستراتيجي" },
   { id: "egypt", labelEn: "Egyptian practice", labelAr: "التطبيق المصري" },
+  // v26 — past papers for every course track ("like CPA and CFA for example")
+  { id: "cpa", labelEn: "CPA — AUD · FAR · REG", labelAr: "CPA — المراجعة والمحاسبة والتنظيم" },
+  { id: "cfa", labelEn: "CFA — Level I", labelAr: "CFA — المستوى الأول" },
+  { id: "cma", labelEn: "CMA — Part 1 & Part 2", labelAr: "CMA — الجزءان الأول والثاني" },
 ]
 
 /* ---------------- family table (v25) ---------------- */
@@ -85,6 +94,13 @@ const FAMILIES: FamilyDef[] = [
   { flagship: "acca-aaa", base: "acca-aaa", titleEn: "Advanced Audit & Assurance", titleAr: "المراجعة والتأكيد المتقدمة", body: "ACCA AAA style", area: "auditing", sourceLabel: "ACCA AAA past paper", group: "strategic", difficulty: 3 },
   { flagship: "soe-audit", base: "soe-audit", titleEn: "Egyptian state-sector audit", titleAr: "مراجعة قطاع الأعمال العام", body: "SOE / EEC style", area: "egypt", sourceLabel: "Egypt SOE audit past paper", group: "egypt", difficulty: 2 },
   { flagship: "ifrs-dip", base: "ifrs-dip", titleEn: "IFRS diploma — financial reporting", titleAr: "دبلومة IFRS — التقارير المالية", body: "DipIFR style", area: "accounting", sourceLabel: "IFRS diploma past paper", group: "ifrs", difficulty: 2 },
+  /* v26 — the CPA / CFA / CMA course tracks (seeded by scripts/seed/v26) */
+  { flagship: "cpa-aud", base: "cpa-aud", titleEn: "CPA Auditing & Attestation (AUD)", titleAr: "CPA المراجعة والتأكيد (AUD)", body: "CPA AUD style", area: "auditing", sourceLabel: "CPA AUD past paper", group: "cpa", difficulty: 2 },
+  { flagship: "cpa-far", base: "cpa-far", titleEn: "CPA Financial Accounting & Reporting (FAR)", titleAr: "CPA المحاسبة والتقارير المالية (FAR)", body: "CPA FAR style", area: "accounting", sourceLabel: "CPA FAR past paper", group: "cpa", difficulty: 3 },
+  { flagship: "cpa-reg", base: "cpa-reg", titleEn: "CPA Regulation (REG)", titleAr: "CPA التنظيم والضرائب (REG)", body: "CPA REG style", area: "accounting", sourceLabel: "CPA REG past paper", group: "cpa", difficulty: 2 },
+  { flagship: "cfa-l1", base: "cfa-l1", titleEn: "CFA Level I — financial reporting & analysis", titleAr: "CFA المستوى الأول — التقارير والتحليل المالي", body: "CFA Level I style", area: "accounting", sourceLabel: "CFA Level I past paper", group: "cfa", difficulty: 2 },
+  { flagship: "cma-p1", base: "cma-p1", titleEn: "CMA Part 1 — financial reporting, planning & performance", titleAr: "CMA الجزء الأول — التقارير والتخطيط والأداء", body: "CMA Part 1 style", area: "accounting", sourceLabel: "CMA Part 1 past paper", group: "cma", difficulty: 2 },
+  { flagship: "cma-p2", base: "cma-p2", titleEn: "CMA Part 2 — financial decision making", titleAr: "CMA الجزء الثاني — القرارات المالية", body: "CMA Part 2 style", area: "accounting", sourceLabel: "CMA Part 2 past paper", group: "cma", difficulty: 3 },
 ]
 
 /** The four dated sittings added to every family (v25 seed). */
@@ -406,6 +422,103 @@ const FLAGSHIPS: PastPaper[] = [
       "The full Egyptian practice paper for state-owned enterprises — EAS/ISA alignment, governance, syndicate rules, review engagements and public-sector audit types.",
     blurbAr:
       "الورقة المصرية الكاملة لشركات قطاع الأعمال العام — التوافق بين المعايير المصرية والدولية، الحوكمة، قواعد النقابة، الفحص المحدود وأنواع مراجعة القطاع العام.",
+  },
+  /* ==================== v26 — CPA / CFA / CMA course tracks ==================== */
+  {
+    id: "cpa-aud",
+    titleEn: "CPA Auditing & Attestation (AUD) — full past paper",
+    titleAr: "CPA المراجعة والتأكيد (AUD) — امتحان سابق كامل",
+    body: "CPA AUD style",
+    area: "auditing",
+    source: "CPA AUD past paper (adapted)",
+    count: 24,
+    durationMin: 72,
+    difficulty: 2,
+    group: "cpa",
+    blurbEn:
+      "The companion paper to our full Arabic CPA AUD course — engagement acceptance, risk and evidence, professional ethics, reviews and reporting, in AICPA-style scenarios.",
+    blurbAr:
+      "الورقة الرفيقة لكورس CPA AUD العربي الكامل لدينا — قبول الارتباط والمخاطر والأدلة وأخلاقيات المهنة والفحوص والتقارير، بمواقف بنمط معهد المحاسبين الأمريكي.",
+  },
+  {
+    id: "cpa-far",
+    titleEn: "CPA Financial Accounting & Reporting (FAR) — full past paper",
+    titleAr: "CPA المحاسبة والتقارير المالية (FAR) — امتحان سابق كامل",
+    body: "CPA FAR style",
+    area: "accounting",
+    source: "CPA FAR past paper (adapted)",
+    count: 24,
+    durationMin: 72,
+    difficulty: 3,
+    group: "cpa",
+    blurbEn:
+      "The FAR shelf — framework and statements, revenue, leases, financial instruments, pensions, income taxes and consolidation-style judgement items at full length.",
+    blurbAr:
+      "رف FAR — الإطار والقوائم والإيرادات والإيجارات والأدوات المالية والمعاشات والضرائب وبنود الحكم بأسلوب التجميع وبطول كامل.",
+  },
+  {
+    id: "cpa-reg",
+    titleEn: "CPA Regulation (REG) — full past paper",
+    titleAr: "CPA التنظيم والضرائب (REG) — امتحان سابق كامل",
+    body: "CPA REG style",
+    area: "accounting",
+    source: "CPA REG past paper (adapted)",
+    count: 24,
+    durationMin: 72,
+    difficulty: 2,
+    group: "cpa",
+    blurbEn:
+      "Taxation and business law for the REG section — federal taxation of individuals and entities, property transactions, ethics and professional responsibilities.",
+    blurbAr:
+      "الضرائب وقانون الأعمال لفرع التنظيم — الضرائب الفيدرالية للأفراد والمنشآت ومعاملات الأملاك والأخلاقيات والمسؤوليات المهنية.",
+  },
+  {
+    id: "cfa-l1",
+    titleEn: "CFA Level I — full past paper",
+    titleAr: "CFA المستوى الأول — امتحان سابق كامل",
+    body: "CFA Level I style",
+    area: "accounting",
+    source: "CFA Level I past paper (adapted)",
+    count: 24,
+    durationMin: 72,
+    difficulty: 2,
+    group: "cfa",
+    blurbEn:
+      "The Level I shelf for the accounting-and-finance half of the curriculum — financial reporting & analysis, corporate issuers, equity and fixed-income basics, ratios and time value.",
+    blurbAr:
+      "رف المستوى الأول للنصف المحاسبي والمالي من المنهج — التقارير والتحليل المالي ومصدِرو الأسهم وأساسيات الأسهم والدخل الثابت والنسب والقيمة الزمنية.",
+  },
+  {
+    id: "cma-p1",
+    titleEn: "CMA Part 1 — full past paper",
+    titleAr: "CMA الجزء الأول — امتحان سابق كامل",
+    body: "CMA Part 1 style",
+    area: "accounting",
+    source: "CMA Part 1 past paper (adapted)",
+    count: 24,
+    durationMin: 72,
+    difficulty: 2,
+    group: "cma",
+    blurbEn:
+      "The Part 1 companion — external financial reporting decisions, planning and budgeting, performance and cost management, and internal controls, in ICMA-style scenarios.",
+    blurbAr:
+      "الرفيقة للجزء الأول — قرارات التقارير المالية الخارجية والتخطيط والموازنات وإدارة الأداء والتكاليف والرقابة الداخلية، بمواقف بنمط معهد المحاسبين الإداريين.",
+  },
+  {
+    id: "cma-p2",
+    titleEn: "CMA Part 2 — full past paper",
+    titleAr: "CMA الجزء الثاني — امتحان سابق كامل",
+    body: "CMA Part 2 style",
+    area: "accounting",
+    source: "CMA Part 2 past paper (adapted)",
+    count: 24,
+    durationMin: 72,
+    difficulty: 3,
+    group: "cma",
+    blurbEn:
+      "The Part 2 shelf — financial statement analysis, corporate finance, decision analysis, risk management and investment decisions, at full 24-question length.",
+    blurbAr:
+      "رف الجزء الثاني — تحليل القوائم المالية وتمويل الشركات وتحليل القرارات وإدارة المخاطر وقرارات الاستثمار، بطول 24 سؤالًا كاملًا.",
   },
 ]
 

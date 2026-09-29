@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { tt, arOr, COURSE_CATEGORY_AR } from "@/lib/i18n"
+import { PAPER_FAMILIES } from "@/lib/past-papers"
 import { FREE_COURSES, type FreeCourse } from "@/lib/free-courses"
 import { LinkCourseCover } from "@/components/audit/course-cover"
 import { VIDEO_CATEGORIES, VIDEO_COURSES, ytThumb, ytEmbed, type VideoCourse } from "@/lib/video-courses"
@@ -21,6 +22,7 @@ import {
   Award,
   BookOpen,
   Calculator,
+  ClipboardCheck,
   ExternalLink,
   Eye,
   FileSpreadsheet,
@@ -67,6 +69,7 @@ export function Courses() {
   const query = useAppStore((s) => s.catalogQuery)
   const setQuery = useAppStore((s) => s.setCatalogQuery)
   const navigate = useAppStore((s) => s.navigate)
+  const setExamSearch = useAppStore((s) => s.setExamSearch)
   const lang = useAppStore((s) => s.lang)
   // category + query live together in the store so filters persist across navigation
   const category = useAppStore((s) => s.catalogCategory)
@@ -255,9 +258,15 @@ export function Courses() {
                   <span className="rounded bg-black/70 px-1.5 py-0.5 text-[9.5px] font-semibold text-white">
                     {c.language === "AR" ? tt("courses.videoArabic", lang) : "English"}
                   </span>
-                  {c.lessons.length > 1 && (
+                  {c.lessons.length > 1 ? (
                     <span className="rounded bg-plum-deep/85 px-1.5 py-0.5 text-[9.5px] font-semibold text-white">
                       {c.lessons.length} {tt("courses.videoLessons", lang)}
+                    </span>
+                  ) : (
+                    /* v26 — one video CAN be the whole course; say so, so it
+                       never reads as a missing-lecture fragment again */
+                    <span className="rounded bg-olive-deep/85 px-1.5 py-0.5 text-[9.5px] font-semibold text-white">
+                      {tt("courses.videoOneSitting", lang)}
                     </span>
                   )}
                 </span>
@@ -394,6 +403,53 @@ export function Courses() {
           )}
         </div>
       )}
+
+      {/* v26 — past papers & exams for EVERY course track: the learner's
+          ask was "all the past exams for all courses — CPA and CFA for
+          example — in the courses section". Each chip jumps to the Exam
+          Center with that track's families pre-filtered (five sittings each). */}
+      <section className="rounded-2xl border border-olive/25 bg-gradient-to-br from-olive/[0.06] via-card to-card p-6 shadow-soft">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-olive/15 text-olive-deep">
+            <ClipboardCheck className="h-[18px] w-[18px]" />
+          </span>
+          <div>
+            <h2 className="font-serif text-[17px] font-semibold">{tt("courses.examsTitle", lang)}</h2>
+            <p className="text-[12.5px] text-muted-foreground">{tt("courses.examsDesc", lang)}</p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {(
+            [
+              { q: "acca", labelEn: "ACCA — 15 papers", labelAr: "ACCA — 15 ورقة" },
+              { q: "cpa", labelEn: "CPA — AUD · FAR · REG", labelAr: "CPA — المراجعة والمحاسبة والتنظيم" },
+              { q: "cfa", labelEn: "CFA — Level I", labelAr: "CFA — المستوى الأول" },
+              { q: "cma", labelEn: "CMA — Part 1 & 2", labelAr: "CMA — الجزءان 1 و2" },
+              { q: "ifrs", labelEn: "IFRS diploma", labelAr: "دبلومة IFRS" },
+              { q: "egypt", labelEn: "Egyptian practice", labelAr: "التطبيق المصري" },
+            ] as const
+          ).map((t) => {
+            const n = PAPER_FAMILIES.filter((f) =>
+              t.q === "acca" ? ["knowledge", "skills", "strategic"].includes(f.group) : f.group === t.q
+            ).length
+            return (
+              <button
+                key={t.q}
+                type="button"
+                onClick={() => {
+                  setExamSearch(t.q)
+                  navigate("exam")
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-olive/30 bg-olive/[0.07] px-3.5 py-1.5 text-[12px] font-medium text-olive-deep transition-colors hover:border-olive/50 hover:bg-olive/[0.14] focus-ring"
+              >
+                <ClipboardCheck className="h-3.5 w-3.5" />
+                {lang === "ar" ? t.labelAr : t.labelEn}
+                <span className="rounded-full bg-olive/15 px-1.5 py-px text-[10px] tabular-nums">{n}</span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
       {/* v23 — in-app video course player */}
       <Dialog open={!!openCourse} onOpenChange={(v) => !v && setOpenCourse(null)}>

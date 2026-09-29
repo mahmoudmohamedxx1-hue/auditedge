@@ -92,7 +92,15 @@ export function AudioPlayer() {
       }
       try {
         setStatus("loading")
-        const res = await fetch(`/api/podcast/lesson/${track.lessonId}${track.lang === "ar" ? "?lang=ar" : ""}`)
+        // v26 — custom AI podcasts voice their two-person script instead of
+        // fetching a lesson; the blob flow (cache, download) is identical
+        const res = track.speak
+          ? await fetch("/api/ai/podcast/speak", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ lang: track.lang, turns: track.speak.turns }),
+            })
+          : await fetch(`/api/podcast/lesson/${track.lessonId}${track.lang === "ar" ? "?lang=ar" : ""}`)
         if (!res.ok) throw new Error("synthesis failed")
         const blob = await res.blob()
         if (cancelled) return
@@ -178,7 +186,9 @@ export function AudioPlayer() {
     if (!track || !objectUrlRef.current) return
     const a = document.createElement("a")
     a.href = objectUrlRef.current
-    a.download = `auditedge-${track.courseCode.toLowerCase()}-${track.lessonId.slice(-6)}${track.lang === "ar" ? "-ar" : ""}.mp3`
+    a.download = track.speak
+      ? `auditedge-custom-podcast-${track.lang}.mp3`
+      : `auditedge-${track.courseCode.toLowerCase()}-${track.lessonId.slice(-6)}${track.lang === "ar" ? "-ar" : ""}.mp3`
     document.body.appendChild(a)
     a.click()
     a.remove()

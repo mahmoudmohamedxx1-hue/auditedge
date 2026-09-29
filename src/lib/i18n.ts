@@ -170,6 +170,12 @@ export const T = {
     },
     noneInCategory: { en: "No courses in this category yet.", ar: "لا توجد دورات في هذا التصنيف بعد." },
     clearFilters: { en: "Clear filters", ar: "مسح الفلاتر" },
+    // v26 — past papers for every course track (Courses page strip)
+    examsTitle: { en: "Past papers & exams for every track", ar: "الامتحانات السابقة لكل مسار" },
+    examsDesc: {
+      en: "Every qualification you can study here carries five exam sittings — jump straight to your track's papers in the Exam Center.",
+      ar: "كل مؤهل يمكنك دراسته هنا معه خمس جلسات امتحان — انتقل مباشرة إلى أوراق مسارك في مركز الامتحانات.",
+    },
     // v22 — pro free courses catalog
     freeTitle: { en: "Pro free courses — open to everyone", ar: "دورات احترافية مجانية — متاحة للجميع" },
     freeDesc: {
@@ -194,6 +200,7 @@ export const T = {
     },
     videoWatch: { en: "Watch now", ar: "شاهد الآن" },
     videoLessons: { en: "lessons", ar: "درسًا" },
+    videoOneSitting: { en: "Full course · 1 video", ar: "كورس كامل · فيديو واحد" },
     videoFull: { en: "Full course", ar: "دورة كاملة" },
     videoPlay: { en: "Play lesson", ar: "تشغيل الدرس" },
     videoOpenYt: { en: "Open on YouTube", ar: "افتح على يوتيوب" },
@@ -937,8 +944,8 @@ export const T = {
     // v22 — previous-exam papers + AI custom exams
     papersTitle: { en: "Previous exam papers — 5 sittings per exam", ar: "امتحانات سابقة — ٥ جلسات لكل امتحان" },
     papersDesc: {
-      en: "Five years of past papers for EVERY exam — the whole ACCA syllabus (BT…AAA) with its flagship paper plus four dated sittings each, the new IFRS diploma family, and the Egyptian SOE paper. Real exam structure, timed, with the same results and mistakes machinery.",
-      ar: "خمس سنوات من الامتحانات السابقة لكل مادة — منهج ACCA كاملًا (BT حتى AAA) بورقة رئيسية وأربع جلسات مؤرخة لكل منها، مع عائلة دبلومة IFRS الجديدة وورقة الشركات الحكومية المصرية. بهيكل الامتحان الحقيقي وبتوقيت محدد وبنفس منظومة النتائج والأخطاء.",
+      en: "Five years of past papers for EVERY exam, on every track you can study: the whole ACCA syllabus (BT…AAA), the IFRS diploma, the Egyptian SOE paper — and now CPA AUD/FAR/REG, CFA Level I and CMA Parts 1 & 2. Real exam structure, timed, with the same results and mistakes machinery.",
+      ar: "خمس سنوات من الامتحانات السابقة لكل مادة في كل مسار يمكنك دراسته: منهج ACCA كاملًا (BT حتى AAA) ودبلومة IFRS والورقة المصرية للشركات الحكومية — وأيضًا الآن CPA (المراجعة والمحاسبة والتنظيم) وCFA المستوى الأول وجزءا CMA. بهيكل الامتحان الحقيقي وبتوقيت محدد وبنفس منظومة النتائج والأخطاء.",
     },
     paperSearchPh: { en: "Find a paper — IFRS, audit, tax, AA…", ar: "ابحث عن ورقة — IFRS، مراجعة، ضرائب…" },
     sitFull: { en: "Full paper", ar: "الورقة الكاملة" },
@@ -1116,13 +1123,40 @@ export const T = {
     // v22 — curated Arabic YouTube podcasts
     youtubeTitle: { en: "From YouTube — بالعربي", ar: "من يوتيوب — بالعربي" },
     youtubeDesc: {
-      en: "Real podcasts AND explainer videos, separated honestly: start with 'Real podcasts · conversations' — genuine two-person interviews and shows (the KPMG CEO sit-down, an accountant's journey, the Qawaim accounting podcast). The other tabs keep the friendly single-presenter explainers you already know.",
-      ar: "بودكاست حقيقي وفيديوهات شرح، مفصولة بصدق: ابدأ بتبويب «بودكاست حقيقي · حوارات» — لقاءات وبرامج حوارية فعلية بين شخصين (لقاء رئيس KPMG، رحلة محاسب، بودكاست قوائم). وتبقي التبويبات الأخرى فيديوهات الشرح الودودة التي تعرفها.",
+      en: "Real podcasts AND explainer videos, each titled in English AND Arabic so search works in both — 'qawain' or 'قوائم' lands the Qawaim accounting podcast, 'leases' finds IFRS 16, 'KPMG' the CEO interview.",
+      ar: "بودكاست حقيقي وفيديوهات شرح، وكل حلقة معنونة بالإنجليزية والعربية معًا — ابحث «قوائم» أو «qawain» عن بودكاست قوائم، أو «الإيجارات» عن IFRS 16، أو «KPMG» عن لقاء الرئيس التنفيذي.",
     },
+    searchPh: { en: "Search podcasts — English or عربي…", ar: "ابحث في البودكاست — عربي أو English…" },
+    searchNone: { en: "No episodes match that word — try the other language or a shorter term.", ar: "لا حلقات تطابق هذه الكلمة — جرّب اللغة الأخرى أو كلمة أقصر." },
     youtubeOpen: { en: "Open on YouTube", ar: "افتح على يوتيوب" },
     views: { en: "views", ar: "مشاهدة" },
     // v24 — in-website playback
     playLesson: { en: "Play", ar: "تشغيل" },
+    // v26 — the AI podcast studio ("make a podcast with my settings")
+    studioTitle: { en: "Make your own podcast — by the AI", ar: "اصنع بودكاستك — بالذكاء الاصطناعي" },
+    studioDesc: {
+      en: "Pick the settings — topic, language, length, style and hosts — and two AI voices record a real two-person conversation for you.",
+      ar: "اختر الإعدادات — الموضوع واللغة والمدة والأسلوب والمضيفين — ويسجّل صوتان ذكيان لك حوارًا حقيقيًا بين شخصين.",
+    },
+    studioTopicPh: { en: "Topic — e.g. 'IFRS 16 leases from zero', 'audit evidence'…", ar: "الموضوع — مثل «الإيجارات IFRS 16 من الصفر»، «أدلة المراجعة»…" },
+    studioLang: { en: "Language", ar: "اللغة" },
+    studioMinutes: { en: "Length", ar: "المدة" },
+    studioStyle: { en: "Style", ar: "الأسلوب" },
+    studioHostPh: { en: "Host name (optional)", ar: "اسم المُقدّم (اختياري)" },
+    studioGuestPh: { en: "Guest name (optional)", ar: "اسم الضيف (اختياري)" },
+    studioGenerate: { en: "Generate podcast", ar: "أنشئ البودكاست" },
+    studioGenerating: { en: "Writing the episode…", ar: "جارٍ كتابة الحلقة…" },
+    studioFailed: { en: "Could not write the episode — try again in a moment.", ar: "تعذّت كتابة الحلقة — حاول بعد لحظات." },
+    studioSpeakFailed: { en: "Voice synthesis is busy — try again shortly.", ar: "تحضير الصوت مشغول — حاول قريبًا." },
+    studioTurns: { en: "{n} turns", ar: "{n} مداخلة" },
+    studioPlay: { en: "Play episode", ar: "شغّل الحلقة" },
+    studioHostLabel: { en: "Host", ar: "المُقدّم" },
+    studioGuestLabel: { en: "Guest", ar: "الضيف" },
+    studioBadge: { en: "AI podcast", ar: "بودكاست AI" },
+    studioFallback: {
+      en: "The AI engines were quiet, so a starter two-person script was written for you — press Generate again for a fresh attempt.",
+      ar: "كانت محركات الذكاء الاصطناعي صامتة، فكُتب لك سيناريو حواري مبدئي — اضغط «أنشئ» مرة أخرى لمحاولة جديدة.",
+    },
     playLessonAr: { en: "Play (Arabic)", ar: "تشغيل بالعربية" },
     playAll: { en: "Play course", ar: "شغّل الدورة" },
     playFromHere: { en: "Play from here", ar: "شغّل من هنا" },

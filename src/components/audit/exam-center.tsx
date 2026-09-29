@@ -262,8 +262,11 @@ export function ExamCenter() {
 
   /* ---------- v22: previous-exam paper sitting ---------- */
   const [paperLoading, setPaperLoading] = useState<string | null>(null)
-  // v25 — papers search ("ifrs", "tax", "aa"…) so any family is one keystroke away
-  const [familyQuery, setFamilyQuery] = useState("")
+  // v26 — papers search lifted to the store ("ifrs", "cpa", "aa"…): the
+  // Courses page deep-links here with the track pre-filled, and the query
+  // survives navigation like the catalog filters do
+  const familyQuery = useAppStore((s) => s.examSearch)
+  const setFamilyQuery = useAppStore((s) => s.setExamSearch)
   const familyQ = familyQuery.trim().toLowerCase()
   const startPaper = async (paperId: string) => {
     setPaperLoading(paperId)
@@ -664,7 +667,11 @@ export function ExamCenter() {
                       g.id === "knowledge" && "bg-olive",
                       g.id === "skills" && "bg-primary",
                       g.id === "strategic" && "bg-plum",
-                      g.id === "egypt" && "bg-gold"
+                      g.id === "egypt" && "bg-gold",
+                      // v26 — the CPA / CFA / CMA course tracks
+                      g.id === "cpa" && "bg-clay-deep",
+                      g.id === "cfa" && "bg-teal-600",
+                      g.id === "cma" && "bg-sage-deep"
                     )}
                   />
                   <h3 className="text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">

@@ -1,6 +1,6 @@
 {
   "name": "auditedge",
-  "version": "25.0.0",
+  "version": "26.0.0",
   "description": "Bilingual (EN/AR) AI-powered audit & accounting academy - AI tutor with RAG, industry risk analyst, engagement workspaces, and 23 neural read-aloud voices.",
   "private": true,
   "license": "MIT",

@@ -36,6 +36,10 @@ export const AI_POLICIES = {
   draft: { key: "ai-draft", limit: 8, windowMs: 120_000 },
   /** v22: AI custom-exam generation (chunked: ~2-7 calls per exam build) */
   examGen: { key: "ai-examgen", limit: 8, windowMs: 120_000 },
+  /** v26: AI custom-podcast script writing (one call per episode) */
+  podcast: { key: "ai-podcast", limit: 6, windowMs: 120_000 },
+  /** v26: custom-podcast voice synthesis (one call per full episode) */
+  podcastSpeak: { key: "ai-podcast-speak", limit: 12, windowMs: 120_000 },
 } as const satisfies Record<string, RateLimitPolicy>
 
 export function clientIpOf(req: Request): string {

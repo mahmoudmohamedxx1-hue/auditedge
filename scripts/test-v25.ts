@@ -28,12 +28,12 @@ async function main() {
   console.log("── 1. Paper registry (families × sittings) ────")
   const papers = await import("../src/lib/past-papers")
   const { PAST_PAPERS, PAPER_FAMILIES, PAPER_GROUPS, getPastPaper } = papers
-  check("registry: 17 paper families", PAPER_FAMILIES.length === 17, `${PAPER_FAMILIES.length}`)
+  check("registry: 23 paper families (17 v25 + 6 v26 track families)", PAPER_FAMILIES.length === 23, `${PAPER_FAMILIES.length}`)
   check(
     "registry: every family has flagship + 4 dated sittings",
     PAPER_FAMILIES.every((f) => f.sittings.length === 4)
   )
-  check("registry: 85 papers total (17×5)", PAST_PAPERS.length === 85, `${PAST_PAPERS.length}`)
+  check("registry: 115 papers total (23×5)", PAST_PAPERS.length === 115, `${PAST_PAPERS.length}`)
   check("registry: every paper id resolves", PAST_PAPERS.every((p) => getPastPaper(p.id)?.id === p.id))
   const ifrsGroup = PAPER_GROUPS.find((g) => g.id === "ifrs")
   check("registry: the IFRS diploma group exists and is listed FIRST", PAPER_GROUPS[0]?.id === "ifrs" && !!ifrsGroup)
@@ -58,7 +58,7 @@ async function main() {
     where: { source: { contains: "past paper" } },
     _count: { _all: true },
   })
-  check("bank: 85 seeded past-paper sources", paperSources.length === 85, `${paperSources.length}`)
+  check("bank: 115 seeded past-paper sources", paperSources.length === 115, `${paperSources.length}`)
   let familiesWithFive = 0
   for (const fam of PAPER_FAMILIES) {
     const mine = [fam.flagship, ...fam.sittings].filter((p) =>
@@ -66,7 +66,7 @@ async function main() {
     )
     if (mine.length === 5) familiesWithFive++
   }
-  check("bank: all 17 families fully seeded (5 × ≥count)", familiesWithFive === 17, `${familiesWithFive}/17`)
+  check("bank: all 23 families fully seeded (5 × ≥count)", familiesWithFive === 23, `${familiesWithFive}/23`)
 
   // spot-check three sittings fully (FR 2022, IFRS dip flagship, SOE 2024)
   const spotIds = ["acca-fr-2022j", "ifrs-dip", "soe-audit-2024j"]
@@ -103,12 +103,15 @@ async function main() {
     check(`courses: the ${track.toUpperCase()} track exists with a bilingual label`, VIDEO_CATEGORIES.some((c) => c.id === track && c.labelEn && c.labelAr))
   }
   const byCat = (id: string) => VIDEO_COURSES.filter((c) => c.category === id).length
-  check("courses: ACCA track carries 5 courses (incl. Tony Bell recategorised)", byCat("acca") === 5, `${byCat("acca")}`)
-  check("courses: CMA track carries 4 Arabic courses", byCat("cma") === 4, `${byCat("cma")}`)
-  check("courses: CPA track present (CPA Talks certification series)", byCat("cpa") >= 1, `${byCat("cpa")}`)
-  check("courses: IFRS track grew to 6 (CertIFR + Hossam Saad series)", byCat("ifrs") === 6, `${byCat("ifrs")}`)
-  check("courses: the 12.5-hour Arabic CertIFR course catalogued", VIDEO_COURSES.some((c) => c.id === "accounting-planet-certifr" && c.language === "AR"))
-  check("courses: new track courses are all Arabic", ["accounting-planet-certifr", "hossam-saad-ifrs-series", "dr-ismail-dipifr", "mirchawala-fa-control", "yula-fa-specimen", "cpa-talks-cpa-track", "doms-cma-p1", "dr-ismail-cma-p1", "abdellakher-cma-p1", "sara-cma-p1"].every((id) => VIDEO_COURSES.find((c) => c.id === id)?.language === "AR"))
+  // v26 — fragments replaced by full playlist courses: acca 3 (2 Tony Bell +
+  // Sowmya F3), cma 3 full Arabic courses, cpa 3 (track + full AUD + FAR), ifrs 7
+  check("courses: ACCA track carries 3 courses (Tony Bell ×2 + full F3 chapters)", byCat("acca") === 3, `${byCat("acca")}`)
+  check("courses: CMA track carries 3 FULL Arabic courses (P1, P2, 2026 P1)", byCat("cma") === 3, `${byCat("cma")}`)
+  check("courses: CPA track carries the full AUD + FAR courses (Amro Taison)", byCat("cpa") === 3, `${byCat("cpa")}`)
+  check("courses: IFRS track grew to 7 (full DipIFR + full CertIFR sessions)", byCat("ifrs") === 7, `${byCat("ifrs")}`)
+  check("courses: the full 51-session Arabic CertIFR course catalogued", VIDEO_COURSES.some((c) => c.id === "certifr-planet-full" && c.language === "AR" && c.lessons.length === 51))
+  check("courses: the fragment era is over — every v26 pro course is multi-lecture", ["cma-p1-amro", "cma-p2-amro", "cpa-aud-amro", "cpa-far-amro", "dipifr-abdelnaim", "certifr-planet-full", "cma-p1-efham", "acca-f3-sowmya"].every((id) => (VIDEO_COURSES.find((c) => c.id === id)?.lessons.length ?? 0) >= 19))
+  check("courses: no CMA/CPA/DipIFR fragment courses remain", !["doms-cma-p1", "dr-ismail-cma-p1", "abdellakher-cma-p1", "sara-cma-p1", "dr-ismail-dipifr", "mirchawala-fa-control", "yula-fa-specimen", "accounting-planet-certifr"].some((id) => VIDEO_COURSES.some((c) => c.id === id)))
 
   console.log("── 5. Real conversation podcasts (offline) ──")
   const { YT_EPISODES, YT_CATEGORIES } = await import("../src/lib/podcast-episodes")
@@ -120,7 +123,7 @@ async function main() {
   check("podcasts: KPMG-CEO interview catalogued", conv.some((e) => e.id === "O3yCuohfTvw" && e.channel === "نادي المحاسبة"))
   const shortConv = conv.filter((e) => e.length.split(":").length === 2).length
   check("podcasts: 6 Accounting-Club interviews inside the ~20-minute range", shortConv >= 6, `${shortConv}`)
-  check("podcasts: every episode bilingual", YT_EPISODES.every((e) => e.blurbEn && e.blurbAr && e.title && e.length))
+  check("podcasts: every episode bilingual", YT_EPISODES.every((e) => e.blurbEn && e.blurbAr && e.titleEn && e.titleAr && e.length))
   check("podcasts: explainer episodes kept untouched (23 CPA Talks remain)", YT_EPISODES.filter((e) => e.channel === "CPA Talks").length === 23)
   const { composeV25 } = await import("../scripts/seed/v25/families")
   const gen1 = composeV25()

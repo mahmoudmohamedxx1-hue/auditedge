@@ -4,6 +4,51 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 26.0.0 — The bilingual-podcasts + AI-podcast-studio + full-courses + track-exams release
+
+**Every podcast findable in English AND Arabic.** All 53 curated YouTube
+episodes now carry both a `titleEn` and a `titleAr`; the active language
+leads on each card with the other language as its second line, and a new
+bilingual search box filters titles, channels and blurbs in both languages
+at once. Searching "qawain" — or "قوائم" — now lands the **Qawaim
+accounting podcast** instantly (its five episodes carry the literal English
+title "Qawaim (Qawain) accounting podcast"), "leases" finds IFRS 16, and
+"KPMG" finds the CEO interview.
+
+**Make your own podcast, by the AI.** A new studio card tops the Podcast
+page: pick the topic, the language (English or العربية), the length
+(~10/15/20 minutes), the style (interview, guided lesson, friendly debate
+or exam coaching) and optional host/guest names — and the AI writes a real
+two-person script (two attempts before an honest fallback notice). Playing
+it sends the turns to the new `/api/ai/podcast/speak` route, which voices
+the host and the guest with **two different Edge neural voices**
+(Ryan/Christopher in English, Salma/Shakir in Arabic) into one MP3 that the
+global sticky player streams like any episode — cache, speed, seek and
+download all work; both routes are rate-limited.
+
+**Full courses, not one-lecture fragments.** The v25 Arabic track additions
+that shipped as single videos ("Unit 1", "Topic 1.1", "the first lecture")
+are replaced by eight complete playlist courses, every lesson id, title and
+duration captured live from YouTube: **CMA Part 1 (30 lectures, 76.6h)** and
+**Part 2 (19 lectures, 47.6h)** by Amro Taison, **CMA Part 1 2026 edition**
+(47 sessions) by Efham CMA, **CPA AUD (21 lectures, 43h)** and **CPA FAR
+(29 lectures, 57.5h)** by Amro Taison, the **full ACCA DipIFR diploma**
+(51 lectures, 108h) by Abdalla Abdelnaim, the **complete CertIFR session
+course** (51 sessions) by The Accounting Planet, and the **chapter-by-
+chapter ACCA FA (F3) course** (32 videos) by Sowmya Sasun. Single-video
+courses that genuinely are the whole course now wear a "Full course · 1
+video" badge.
+
+**Past papers for every course track.** Six new exam families join the 17 —
+**CPA AUD, FAR and REG**, **CFA Level I** and **CMA Parts 1 & 2** — each
+with a 24-question flagship plus the same four dated sittings as every
+other family: 30 new papers, 576 new bilingual questions seeded
+deterministically (bank 2,109 → **2,685**; answer positions balanced
+A=145/B=147/C=143/D=141). The papers grid gains three new groups with their
+own accents, and the Courses page now carries a **"Past papers & exams for
+every track"** strip — ACCA, CPA, CFA, CMA, IFRS and Egyptian chips that
+deep-link into the Exam Center with that track's families pre-filtered.
+
 ## 25.0.0 — The five-years-of-papers + real-podcasts release
 
 **Five years of past papers for every exam.** Each of the 17 exam families

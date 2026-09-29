@@ -9,8 +9,10 @@
 export type PodcastEpisode = {
   /** YouTube video id */
   id: string
-  /** Original (Arabic) title */
-  title: string
+  /** English title (searchable — "Qawain", "leases", "internal audit"…) */
+  titleEn: string
+  /** Arabic title (searchable — قوائم، الإيجارات، المراجعة…) */
+  titleAr: string
   channel: string
   /** "PT" style display length, e.g. "1:34:52" */
   length: string
@@ -42,7 +44,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- CPA Talks (the learner's requested channel) ----
   {
     id: "6sEAi4AQFAk",
-    title: "Steps of External Audit لايف — أهم خطوات التدقيق لكل مدقق حسابات خارجي",
+    titleEn: "Steps of External Audit — LIVE: the key steps every external auditor follows",
+    titleAr: "Steps of External Audit لايف — أهم خطوات التدقيق لكل مدقق حسابات خارجي",
     channel: "CPA Talks",
     length: "1:34:52",
     views: "39K",
@@ -52,7 +55,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "UlXAY_gALWI",
-    title: "القوائم المالية المجمعة | شرح مفصل طبقا لمعايير المحاسبة الدولية",
+    titleEn: "Consolidated financial statements — the detailed IFRS walkthrough",
+    titleAr: "القوائم المالية المجمعة | شرح مفصل طبقا لمعايير المحاسبة الدولية",
     channel: "CPA Talks",
     length: "2:07:03",
     views: "12K",
@@ -62,7 +66,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "6EP6b1U9UoY",
-    title: "الأدوات المالية IFRS 9 | شرح مفصل طبقا لمعايير المحاسبة الدولية",
+    titleEn: "Financial instruments (IFRS 9) — the detailed deep dive",
+    titleAr: "الأدوات المالية IFRS 9 | شرح مفصل طبقا لمعايير المحاسبة الدولية",
     channel: "CPA Talks",
     length: "1:47:04",
     views: "16K",
@@ -72,7 +77,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "TxWRD7oKE5Y",
-    title: "IFRS 16 ورشة عمل",
+    titleEn: "IFRS 16 leases — the full workshop",
+    titleAr: "IFRS 16 ورشة عمل",
     channel: "CPA Talks",
     length: "2:54:00",
     views: "4.6K",
@@ -82,7 +88,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "ZS5kKewKYM0",
-    title: "الأصول الثابتة والأصول غير الملموسة والاضمحلال في الأصول | شرح مفصل",
+    titleEn: "PPE, intangibles & impairment — the detailed session (IAS 16/38/36)",
+    titleAr: "الأصول الثابتة والأصول غير الملموسة والاضمحلال في الأصول | شرح مفصل",
     channel: "CPA Talks",
     length: "2:11:11",
     views: "4K",
@@ -92,7 +99,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "OJ1DZKbqH_I",
-    title: "طريقي من التخرج حتى الآن في مجال المحاسبة والتدقيق (مصر، الإمارات وانجلترا)",
+    titleEn: "My path from graduation to practice — Egypt, the UAE and England",
+    titleAr: "طريقي من التخرج حتى الآن في مجال المحاسبة والتدقيق (مصر، الإمارات وانجلترا)",
     channel: "CPA Talks",
     length: "37:59",
     views: "4K",
@@ -102,7 +110,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "nz0cjh6Xh8c",
-    title: "تدقيق 101 — (11) — فحص التكاليف وأرصدة الموردين",
+    titleEn: "Audit 101 (11) — testing costs and supplier balances",
+    titleAr: "تدقيق 101 — (11) — فحص التكاليف وأرصدة الموردين",
     channel: "CPA Talks",
     length: "34:27",
     views: "5.7K",
@@ -112,7 +121,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "Uspt0KvLmqI",
-    title: "IAS 37 شرح معيار المخصصات والالتزامات المحتملة والأصول المحتملة",
+    titleEn: "IAS 37 — provisions, contingent liabilities & contingent assets",
+    titleAr: "IAS 37 شرح معيار المخصصات والالتزامات المحتملة والأصول المحتملة",
     channel: "CPA Talks",
     length: "32:56",
     views: "3.8K",
@@ -123,7 +133,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- v23: more CPA Talks (most-viewed explainers + workshops) ----
   {
     id: "8HJK4AUrcWg",
-    title: "Materiality الأهمية النسبية",
+    titleEn: "Materiality — the classic explainer",
+    titleAr: "Materiality الأهمية النسبية",
     channel: "CPA Talks",
     length: "29:17",
     views: "14K",
@@ -133,7 +144,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "ucPoJ4Donp8",
-    title: "Assertions — تأكيدات الإدارة — التعريف والأنواع",
+    titleEn: "Assertions — management's assertions, defined and classified",
+    titleAr: "Assertions — تأكيدات الإدارة — التعريف والأنواع",
     channel: "CPA Talks",
     length: "10:35",
     views: "10K",
@@ -143,7 +155,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "Xi36nCBkEhw",
-    title: "كيف تقوم بتقييم المخاطر في التدقيق الخارجي",
+    titleEn: "How you actually assess risks in an external audit",
+    titleAr: "كيف تقوم بتقييم المخاطر في التدقيق الخارجي",
     channel: "CPA Talks",
     length: "27:06",
     views: "13K",
@@ -153,7 +166,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "7wwLJ3BtMkY",
-    title: "تدقيق 101 — (1) — مفهوم التدقيق وقبول العميل",
+    titleEn: "Audit 101 (1) — what auditing is, and accepting the client",
+    titleAr: "تدقيق 101 — (1) — مفهوم التدقيق وقبول العميل",
     channel: "CPA Talks",
     length: "17:06",
     views: "22K",
@@ -163,7 +177,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "95M3NEvILs4",
-    title: "تدقيق 101 — (10) — فحص الإيرادات وأرصدة العملاء",
+    titleEn: "Audit 101 (10) — testing revenue and receivables",
+    titleAr: "تدقيق 101 — (10) — فحص الإيرادات وأرصدة العملاء",
     channel: "CPA Talks",
     length: "33:54",
     views: "10K",
@@ -173,7 +188,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "wVt-6H3rgKg",
-    title: "IFRS 15 — Revenue part one — نموذج الخطوات الخمس",
+    titleEn: "IFRS 15 revenue part one — the five-step model",
+    titleAr: "IFRS 15 — Revenue part one — نموذج الخطوات الخمس",
     channel: "CPA Talks",
     length: "46:07",
     views: "12K",
@@ -183,7 +199,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "38FaKUZqAFk",
-    title: "IFRS 15 — Revenue part two — معاملات معينة",
+    titleEn: "IFRS 15 revenue part two — specific transactions",
+    titleAr: "IFRS 15 — Revenue part two — معاملات معينة",
     channel: "CPA Talks",
     length: "29:55",
     views: "4K",
@@ -193,7 +210,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "QaWORLvO12U",
-    title: "IFRS 16 — Leases part one — محاسبة المستأجر",
+    titleEn: "IFRS 16 leases part one — lessee accounting",
+    titleAr: "IFRS 16 — Leases part one — محاسبة المستأجر",
     channel: "CPA Talks",
     length: "1:03:33",
     views: "7.6K",
@@ -203,7 +221,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "Q5dKvZUSj2E",
-    title: "IFRS 16 — تجنّب هذه الأخطاء الشائعة عند تطبيق الاستثناءات",
+    titleEn: "IFRS 16 — avoid these common exemption mistakes",
+    titleAr: "IFRS 16 — تجنّب هذه الأخطاء الشائعة عند تطبيق الاستثناءات",
     channel: "CPA Talks",
     length: "9:45",
     views: "2.3K",
@@ -213,7 +232,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "XBTYjqVh34Q",
-    title: "Expected Credit Losses model (ECL) IFRS 9 — نموذج خسائر الائتمان المتوقعة",
+    titleEn: "Expected Credit Loss model (ECL) under IFRS 9",
+    titleAr: "Expected Credit Losses model (ECL) IFRS 9 — نموذج خسائر الائتمان المتوقعة",
     channel: "CPA Talks",
     length: "13:42",
     views: "31K",
@@ -223,7 +243,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "Pt5a8nL9zxk",
-    title: "ECL ورشة عمل نموذج الخسائر الائتمانية المتوقعة بمثال عملي",
+    titleEn: "ECL workshop — building the model on a practical example",
+    titleAr: "ECL ورشة عمل نموذج الخسائر الائتمانية المتوقعة بمثال عملي",
     channel: "CPA Talks",
     length: "1:26:40",
     views: "18K",
@@ -233,7 +254,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "4-bibVUG7Lk",
-    title: "سلسلة الشهادات المهنية — رأيه الشخصي في دبلومة معايير المحاسبة DipIFR",
+    titleEn: "Professional certificates — an honest take on the DipIFR",
+    titleAr: "سلسلة الشهادات المهنية — رأيه الشخصي في دبلومة معايير المحاسبة DipIFR",
     channel: "CPA Talks",
     length: "5:35",
     views: "9K",
@@ -243,7 +265,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "DnyRBQciaHc",
-    title: "ازاي تشتغل في دول الخليج في مجال تدقيق الحسابات",
+    titleEn: "How to work in audit across the Gulf states",
+    titleAr: "ازاي تشتغل في دول الخليج في مجال تدقيق الحسابات",
     channel: "CPA Talks",
     length: "27:26",
     views: "3.4K",
@@ -253,7 +276,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "u1FfkVCz4A8",
-    title: "ازاي تبحث عن وظيفة مناسبة في المحاسبة والتدقيق",
+    titleEn: "How to search for the RIGHT accounting or audit job",
+    titleAr: "ازاي تبحث عن وظيفة مناسبة في المحاسبة والتدقيق",
     channel: "CPA Talks",
     length: "13:05",
     views: "1.6K",
@@ -263,7 +287,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "xfjUkTrUt-w",
-    title: "عن التشتت وطرق استغلال أهم وقت في حياتك المهنية",
+    titleEn: "Distraction, and using the most important hours of your career",
+    titleAr: "عن التشتت وطرق استغلال أهم وقت في حياتك المهنية",
     channel: "CPA Talks",
     length: "12:53",
     views: "1.7K",
@@ -274,7 +299,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- Mahmoud Hamouda (Egyptian audit standards specialist) ----
   {
     id: "ub6839N_vi4",
-    title: "دورة شرح معايير المراجعة المصرية",
+    titleEn: "The Egyptian Standards on Auditing — the full explainer course",
+    titleAr: "دورة شرح معايير المراجعة المصرية",
     channel: "Mahmoud Hamouda",
     length: "1:32:54",
     views: "836",
@@ -284,7 +310,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "Qt7Hq5sZ6YE",
-    title: "شرح معايير المراجعة | أسئلة اختيار من المتعدد محلولة | ازاي تذاكر",
+    titleEn: "Audit standards via solved MCQs — and how to study them",
+    titleAr: "شرح معايير المراجعة | أسئلة اختيار من المتعدد محلولة | ازاي تذاكر",
     channel: "Mahmoud Hamouda",
     length: "33:50",
     views: "25K",
@@ -294,7 +321,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "6rnyhPzHoOg",
-    title: "تسلسل معايير المراجعة | دورة شرح معايير المراجعة المصرية",
+    titleEn: "The logical sequence of the audit standards",
+    titleAr: "تسلسل معايير المراجعة | دورة شرح معايير المراجعة المصرية",
     channel: "Mahmoud Hamouda",
     length: "4:56",
     views: "2.6K",
@@ -305,7 +333,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- ESAA EGYPT (the official society) ----
   {
     id: "Y0MS9mB-MGo",
-    title: "ندوة أهم المستجدات في معايير المراجعة المصرية والفحص المحدود ومهام التأكد الأخرى",
+    titleEn: "ESAA seminar — the latest Egyptian audit standards & assurance",
+    titleAr: "ندوة أهم المستجدات في معايير المراجعة المصرية والفحص المحدود ومهام التأكد الأخرى",
     channel: "ESAA EGYPT — جمعية المحاسبين والمراجعين المصرية",
     length: "2:03:16",
     views: "1.1K",
@@ -315,7 +344,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "nuy_1rmd1Ao",
-    title: "أهم التغيرات في معايير المراجعة المصرية الجديدة — ملخص ندوة الجمعية",
+    titleEn: "The new Egyptian auditing standards — key changes, summarized",
+    titleAr: "أهم التغيرات في معايير المراجعة المصرية الجديدة — ملخص ندوة الجمعية",
     channel: "Accounting forever",
     length: "6:01",
     views: "906",
@@ -326,7 +356,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- Hany Sayed (IFRS educator) ----
   {
     id: "BXEW8QWOUt0",
-    title: "IFRS 16 Leases — Part one — شرح معيار المحاسبة الدولي الإيجارات",
+    titleEn: "IFRS 16 leases part one — lessee accounting (Hany Sayed)",
+    titleAr: "IFRS 16 Leases — Part one — شرح معيار المحاسبة الدولي الإيجارات",
     channel: "Hany Sayed",
     length: "29:49",
     views: "55K",
@@ -336,7 +367,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "DOb0JqA3Xcc",
-    title: "IFRS 15 Revenue — Part one — شرح معيار المحاسبة الدولي الإيراد",
+    titleEn: "IFRS 15 revenue part one — the five-step model (Hany Sayed)",
+    titleAr: "IFRS 15 Revenue — Part one — شرح معيار المحاسبة الدولي الإيراد",
     channel: "Hany Sayed",
     length: "21:43",
     views: "41K",
@@ -347,7 +379,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- Hossam Saad ----
   {
     id: "hq_t4dI6nQ4",
-    title: "معايير المحاسبة IAS/IFRS | عرض القوائم المالية IAS 1",
+    titleEn: "IAS 1 — presentation of financial statements, full lecture",
+    titleAr: "معايير المحاسبة IAS/IFRS | عرض القوائم المالية IAS 1",
     channel: "دليلك لفهم المحاسبة — حسام سعد",
     length: "1:09:14",
     views: "63K",
@@ -358,7 +391,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- Yazan Makdah (internal audit) ----
   {
     id: "Le1nxliKV_g",
-    title: "التدقيق الداخلي | ما هو التدقيق الداخلي؟",
+    titleEn: "Internal audit — what is internal audit?",
+    titleAr: "التدقيق الداخلي | ما هو التدقيق الداخلي؟",
     channel: "Yazan Makdah | يزن مقدح",
     length: "13:55",
     views: "123K",
@@ -368,7 +402,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "ryiKL82V3N8",
-    title: "الحوكمة وإدارة المخاطر والتدقيق الداخلي — نموذج خطوط الدفاع الثلاثة",
+    titleEn: "Governance, risk & internal audit — the Three Lines of Defense",
+    titleAr: "الحوكمة وإدارة المخاطر والتدقيق الداخلي — نموذج خطوط الدفاع الثلاثة",
     channel: "Yazan Makdah | يزن مقدح",
     length: "18:11",
     views: "38K",
@@ -378,7 +413,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "9HNTbsn4-v4",
-    title: "التدقيق الداخلي | مبدأ بسيط ينقل جودة تقاريرك لمستوى احترافي",
+    titleEn: "Internal audit — one principle that professionalizes your reports",
+    titleAr: "التدقيق الداخلي | مبدأ بسيط ينقل جودة تقاريرك لمستوى احترافي",
     channel: "Yazan Makdah | يزن مقدح",
     length: "4:58",
     views: "31K",
@@ -389,7 +425,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- محاسبة أونلاين ----
   {
     id: "VwzNNozTP7A",
-    title: "البساطة والسهولة في تلقي المعايير المحاسبية الدولية IFRS",
+    titleEn: "A gentle orientation to the whole IFRS framework",
+    titleAr: "البساطة والسهولة في تلقي المعايير المحاسبية الدولية IFRS",
     channel: "محاسبة أونلاين",
     length: "25:35",
     views: "152K",
@@ -399,7 +436,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "jBkuxDM-Akw",
-    title: "المراجعة الداخلية: ما هي الرقابة الداخلية؟ وما مهام المراجع الداخلي؟",
+    titleEn: "Internal control and the internal auditor's mandate",
+    titleAr: "المراجعة الداخلية: ما هي الرقابة الداخلية؟ وما مهام المراجع الداخلي؟",
     channel: "محاسبة أونلاين",
     length: "31:42",
     views: "53K",
@@ -410,7 +448,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- Dr Ahmed Abdellakher ----
   {
     id: "RW8Tqd6SZ8A",
-    title: "IFRS — المحاضرة الأولى في المعايير الدولية",
+    titleEn: "IFRS — lecture one: the international standards",
+    titleAr: "IFRS — المحاضرة الأولى في المعايير الدولية",
     channel: "Dr Ahmed Abdellakher",
     length: "2:17:34",
     views: "2.8K",
@@ -421,7 +460,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- IFRS Diploma — Abdalla Abdelnaim ----
   {
     id: "_FD3QFfiZGQ",
-    title: "IFRS 15 — 2.1 — Revenue Recognition",
+    titleEn: "IFRS 15 revenue recognition — the DipIFR clip 2.1",
+    titleAr: "IFRS 15 — 2.1 — Revenue Recognition",
     channel: "IFRS Diploma — عبدالله عبدالنعيم",
     length: "9:15",
     views: "27K",
@@ -442,7 +482,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- نادي المحاسبة (Accounting Club) — the ضيف_المحاسبة guest interviews ----
   {
     id: "O3yCuohfTvw",
-    title: "لقاء مع أ. عبدالله الفوزان الرئيس التنفيذي لشركة KPMG",
+    titleEn: "Interview — Abdullah Al-Fawzan, CEO of KPMG (Accounting Club)",
+    titleAr: "لقاء مع أ. عبدالله الفوزان الرئيس التنفيذي لشركة KPMG",
     channel: "نادي المحاسبة",
     length: "12:57",
     views: "8.2K",
@@ -452,7 +493,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "uC8dJ92bR-c",
-    title: "لقاء أ. طارق بن عبدالرحمن السدحان",
+    titleEn: "Interview — Tariq bin Abdulrahman Al-Sadhan (Accounting Club)",
+    titleAr: "لقاء أ. طارق بن عبدالرحمن السدحان",
     channel: "نادي المحاسبة",
     length: "19:14",
     views: "7K",
@@ -462,7 +504,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "WcRVDuc_j3g",
-    title: "لقاء أ. محمد بن عبدالله القويز",
+    titleEn: "Interview — Mohammed bin Abdullah Al-Quwaiz (Accounting Club)",
+    titleAr: "لقاء أ. محمد بن عبدالله القويز",
     channel: "نادي المحاسبة",
     length: "20:29",
     views: "1.7K",
@@ -472,7 +515,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "969x9wzkwuA",
-    title: "لقاء الدكتور عبدالله الفوزان",
+    titleEn: "Interview — Dr. Abdullah Al-Fawzan (Accounting Club)",
+    titleAr: "لقاء الدكتور عبدالله الفوزان",
     channel: "نادي المحاسبة",
     length: "17:19",
     views: "1.8K",
@@ -482,7 +526,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "qksSUQ2Mi8E",
-    title: "لقاء م. طارق بن عثمان القصبي",
+    titleEn: "Interview — Eng. Tariq bin Othman Al-Qusabi (Accounting Club)",
+    titleAr: "لقاء م. طارق بن عثمان القصبي",
     channel: "نادي المحاسبة",
     length: "12:37",
     views: "1.8K",
@@ -492,7 +537,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "KseNc-kR8bk",
-    title: "لقاء أ. سعد بن محمد الهويمل",
+    titleEn: "Interview — Saad bin Mohammed Al-Huwaymel (Accounting Club)",
+    titleAr: "لقاء أ. سعد بن محمد الهويمل",
     channel: "نادي المحاسبة",
     length: "8:30",
     views: "1K",
@@ -503,7 +549,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- بودكاست قوائم (The Stage) — deep accounting conversations ----
   {
     id: "JEwSK7CVHBg",
-    title: "بودكاست قوائم | رحلة محاسب",
+    titleEn: "Qawaim (Qawain) accounting podcast — an accountant's journey",
+    titleAr: "بودكاست قوائم | رحلة محاسب",
     channel: "The Stage l ذا ستيج",
     length: "1:04:01",
     views: "48K",
@@ -513,7 +560,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "v50Zzhsxtjk",
-    title: "بودكاست قوائم | المسارات المحاسبية؛ كما تُعاش لا كما تُدرس",
+    titleEn: "Qawaim (Qawain) accounting podcast — career paths as lived, not taught",
+    titleAr: "بودكاست قوائم | المسارات المحاسبية؛ كما تُعاش لا كما تُدرس",
     channel: "The Stage l ذا ستيج",
     length: "1:10:33",
     views: "16K",
@@ -523,7 +571,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "o4jVZw-y88E",
-    title: "بودكاست مجتمع قوائم | كيف تفتح مكتبك المحاسبي؟",
+    titleEn: "Qawaim (Qawain) accounting podcast — how to open your own accounting firm",
+    titleAr: "بودكاست مجتمع قوائم | كيف تفتح مكتبك المحاسبي؟",
     channel: "The Stage l ذا ستيج",
     length: "52:22",
     views: "11K",
@@ -533,7 +582,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "fnYqTLvtc7w",
-    title: "بودكاست قوائم | الاحتيال المحاسبي",
+    titleEn: "Qawaim (Qawain) accounting podcast — accounting fraud",
+    titleAr: "بودكاست قوائم | الاحتيال المحاسبي",
     channel: "The Stage l ذا ستيج",
     length: "45:53",
     views: "6.1K",
@@ -543,7 +593,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "uFoo6WVLWfU",
-    title: "بودكاست قوائم | من المحاسبة الأكاديمية إلى المهنية",
+    titleEn: "Qawaim (Qawain) accounting podcast — from academic to professional accounting",
+    titleAr: "بودكاست قوائم | من المحاسبة الأكاديمية إلى المهنية",
     channel: "The Stage l ذا ستيج",
     length: "59:32",
     views: "10K",
@@ -554,7 +605,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   // ---- كناز (Kenaz) · إذاعة مختلف (بترولي) · Fatih Mohamed ----
   {
     id: "NGMwBWptBtw",
-    title: "تجربة حازم ومُخلص في شهادة ACCA | بودكاست كِنـــاز",
+    titleEn: "Kenaz podcast — Hazem & Mokhles on passing the ACCA",
+    titleAr: "تجربة حازم ومُخلص في شهادة ACCA | بودكاست كِنـــاز",
     channel: "Kenaz - كِنـــاز",
     length: "1:22:37",
     views: "7.4K",
@@ -564,7 +616,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "zch1iq8LOR0",
-    title: "قصة شراكة ناجحة بين أب وابنه في عالم المحاسبة | أصدقاء بترولي",
+    titleEn: "A father-and-son accounting partnership — the real story",
+    titleAr: "قصة شراكة ناجحة بين أب وابنه في عالم المحاسبة | أصدقاء بترولي",
     channel: "إذاعة مختلف",
     length: "1:34:16",
     views: "10K",
@@ -574,7 +627,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "nPFm_CEg4go",
-    title: "العمل في مجال المخاطرة المالية مع فيصل الجاسر | بودكاست بترولي",
+    titleEn: "Working in financial risk — with Faisal Al-Jasser",
+    titleAr: "العمل في مجال المخاطرة المالية مع فيصل الجاسر | بودكاست بترولي",
     channel: "إذاعة مختلف",
     length: "1:38:39",
     views: "37K",
@@ -584,7 +638,8 @@ export const YT_EPISODES: PodcastEpisode[] = [
   },
   {
     id: "IViBzDwpCcc",
-    title: "كيف تتطور مهنيًا — بودكاست محاسبي مع أ. أحمد يوسف",
+    titleEn: "Professional growth — an accounting podcast with Ahmed Youssef",
+    titleAr: "كيف تتطور مهنيًا — بودكاست محاسبي مع أ. أحمد يوسف",
     channel: "Fatih Mohamed",
     length: "1:54:14",
     views: "6.1K",

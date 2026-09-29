@@ -93,6 +93,9 @@ interface AppState {
   selectedLessonId: string | null
   catalogQuery: string
   catalogCategory: string | null
+  /** v26 — the exam-center papers search, lifted to the store so the Courses
+   *  page can pre-fill it ("past papers for this track" deep-links). */
+  examSearch: string
   authChecked: boolean
   data: BootstrapData | null
   loading: boolean
@@ -168,6 +171,7 @@ interface AppState {
   navigate: (view: ViewName, opts?: NavigateOpts) => void
   setCatalogQuery: (q: string) => void
   setCatalogCategory: (c: string | null) => void
+  setExamSearch: (q: string) => void
   checkAuth: () => Promise<void>
   bootstrap: () => Promise<void>
 
@@ -229,6 +233,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedLessonId: null,
   catalogQuery: "",
   catalogCategory: null,
+  examSearch: "",
   authChecked: false,
   data: null,
   loading: true,
@@ -309,6 +314,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setCatalogQuery: (q) => set({ catalogQuery: q }),
   setCatalogCategory: (c) => set({ catalogCategory: c }),
+  setExamSearch: (q) => set({ examSearch: q }),
 
   setLang: (l) => {
     set({ lang: l })

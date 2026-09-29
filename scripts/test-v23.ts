@@ -100,7 +100,7 @@ async function main() {
   check("podcasts: unique video ids", new Set(YT_EPISODES.map((e) => e.id)).size === YT_EPISODES.length)
   const cpaTalks = YT_EPISODES.filter((e) => e.channel === "CPA Talks").length
   check("podcasts: CPA Talks expanded to 23 episodes", cpaTalks === 23, `${cpaTalks}`)
-  check("podcasts: every episode bilingual", YT_EPISODES.every((e) => e.blurbEn && e.blurbAr && e.title && e.length))
+  check("podcasts: every episode bilingual", YT_EPISODES.every((e) => e.blurbEn && e.blurbAr && (e as any).titleEn && (e as any).titleAr && e.length))
 
   /* ---- free course catalog growth (offline) ---- */
   const { FREE_COURSES } = await import("../src/lib/free-courses")

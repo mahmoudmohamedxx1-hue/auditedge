@@ -14,7 +14,7 @@
 
 ## About
 
-AuditEdge Academy is a personal learning workspace built for a Senior Associate in external audit (Egypt) — designed to feel like a professional tool, not a course catalog. It carries **41 courses and 990 lessons** across the full ISA framework, IFRS core standards and the Egyptian regulatory environment (FRA decrees, Egyptian Standards on Auditing, Companies Law 159/1981), plus **146 library materials** including official standard texts, **26 full video courses** with real YouTube thumbnails, and **16 full-length past papers covering the entire ACCA syllabus** (873-question bilingual bank).
+AuditEdge Academy is a personal learning workspace built for a Senior Associate in external audit (Egypt) — designed to feel like a professional tool, not a course catalog. It carries **41 courses and 990 lessons** across the full ISA framework, IFRS core standards and the Egyptian regulatory environment (FRA decrees, Egyptian Standards on Auditing, Companies Law 159/1981), plus **146 library materials** including official standard texts, **36 full video courses** with real YouTube thumbnails, and **115 past papers across every track** — the entire ACCA syllabus, the IFRS diploma, Egyptian practice, CPA AUD/FAR/REG, CFA Level I and CMA Parts 1 & 2 (2,685-question bilingual bank).
 
 Around the curriculum sits an AI suite: a tutor that grounds its answers in your own library (RAG with cited excerpts), an industry risk analyst that streams sector-specific risk profiles, a Key Audit Matters drafter, and a trial-balance / journal-entry analyzer. Read-aloud is powered by 23 voices across two engines — including Egyptian and Gulf Arabic neural voices — with an Auto mode that matches the language of whatever is being read.
 
@@ -36,10 +36,11 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 
 ### Curriculum and library
 - **41 courses / 990 lessons + the IFRS 18 course** — ISA 315, 330, 240, 570, EVD 500, IFRS core, the Egyptian FRA framework, audit analytics, plus curated Arabic IFRS & auditing playlists — every course carries a designed pro thumbnail
-- **26 full video courses playable in-app** — audit (CPA Talks Audit 101, FinanceSkul F8/AA, Ruchi Goyal, Bisk CPA AUD), IFRS (CPA Talks standards, BotCast, CPDbox, Tashwita), **CFA Level I** (the complete FinTree 8-session crash course + QuintEdge Ethics + edZeb marathons), Excel and the Course Illustrator design track
+- **36 full video courses playable in-app** — audit (CPA Talks Audit 101, FinanceSkul F8/AA, Ruchi Goyal, Bisk CPA AUD), IFRS (CPA Talks standards, BotCast, CPDbox, Tashwita, the full DipIFR diploma and CertIFR session courses), **CFA Level I** (the complete FinTree 8-session crash course + QuintEdge Ethics + edZeb marathons), **the complete Arabic CMA Part 1 & 2 and CPA AUD & FAR playlist courses** (30 + 19 + 21 + 27 lectures), Excel and the Course Illustrator design track — every course is a full playlist, and one-video courses are badged "Full course · 1 video"
 - **146 library materials** with official standard texts — searchable, excerpt-served
-- **The entire ACCA syllabus as past papers** — 16 full-length timed papers (BT, MA, FA, LW, PM, TX, FR, AA, FM, SBL, SBR, AFM, APM, ATX, AAA + the Egyptian SOE paper) over an 873-question bilingual bank, plus AI-generated custom exams in micro / mini / standard / full sizes
-- **Podcasts that play in the website** — a global sticky player streams lesson episodes while you browse (queue, speed, Media-Session controls), plus 38 curated Arabic YouTube episodes
+- **Past papers for EVERY course track** — 23 exam families × five sittings each (115 papers): the entire ACCA syllabus (BT…AAA), the IFRS diploma, the Egyptian SOE paper, **CPA AUD/FAR/REG, CFA Level I and CMA Parts 1 & 2**, over a 2,685-question bilingual bank, plus AI-generated custom exams in micro / mini / standard / full sizes. The Courses page carries a "Past papers & exams for every track" strip that deep-links into the papers grid
+- **Podcasts that play in the website** — a global sticky player streams lesson episodes while you browse (queue, speed, Media-Session controls), plus 53 curated YouTube episodes **each titled in English AND Arabic** with bilingual search ("qawain" and "قوائم" both land the Qawaim accounting podcast)
+- **Make your own podcast, by the AI** — pick the topic, language (EN/AR), length (10/15/20 min), style (interview / guided lesson / friendly debate / exam coaching) and host names; the AI writes a real two-person script and two different neural voices play it in the sticky player (or download the MP3)
 - **Discover & Import** — search Coursera, MIT OCW, edX, OpenStax and YouTube, import as courses
 - Quizzes with certificates, XP, streaks and achievements with live earn-progress
 - Video lessons, lesson builder and full admin tooling
@@ -192,7 +193,8 @@ The repo ships with the verification suites used during development:
 
 | Suite | Checks | Covers |
 |---|---|---|
-| `bun scripts/test-v25.ts` | 50 | Five sittings per exam family, the IFRS diploma family, generator determinism/uniqueness, Arabic track courses, real conversation podcasts |
+| `bun scripts/test-v26.ts` | 66 | Bilingual findable podcasts, the AI podcast studio (routes/player/guard), full playlist courses, CPA/CFA/CMA track papers + seeded bank |
+| `bun scripts/test-v25.ts` | 51 | Five sittings per exam family, the IFRS diploma family, generator determinism/uniqueness, Arabic track courses, real conversation podcasts |
 | `bun scripts/test-sectors-v15.ts` | 515 | 20 sector risk profiles — risk matrices, assertions, deep-dive presets |
 | `bun scripts/test-sectors-v13.ts` | 351 | Sector library structural integrity |
 | `bun scripts/test-engagement-v12.ts` | 28 | Audit-program engagement objects |

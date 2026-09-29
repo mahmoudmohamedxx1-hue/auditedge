@@ -42,7 +42,7 @@ check("courses served", courses === 41, `${courses} courses`) // v21: +IFRS 18
 check("lessons served", lessons === 990, `${lessons} lessons`) // v21: +5 IFRS 18
 check("materials served", materials === 146, `${materials} materials`)
 const bankQ = await db.bankQuestion.count()
-check("bank questions served", bankQ === 2109, `${bankQ} questions`) // v25: +1,236 five-years sittings
+check("bank questions served", bankQ === 2685, `${bankQ} questions`) // v26: +576 track-family sittings
 check("single workspace user", users === 1, `${users} user`)
 
 // writes must work — the provisioned copy lives in writable TMPDIR

@@ -18,6 +18,11 @@ export type PlayerTrack = {
   courseCode: string
   /** "en" | "ar" rendition */
   lang: "en" | "ar"
+  /** v26 — custom AI podcast: when set, the episode is voiced from these
+   *  turns via /api/ai/podcast/speak instead of a lesson synthesis. */
+  speak?: {
+    turns: { speaker: "host" | "guest"; text: string }[]
+  }
 }
 
 export type PlayerStatus = "idle" | "loading" | "playing" | "paused" | "error"
