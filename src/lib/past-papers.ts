@@ -546,3 +546,21 @@ export const PAPER_FAMILIES: PaperFamily[] = FAMILIES.map((f) => {
 export function getPastPaper(id: string): PastPaper | null {
   return PAST_PAPERS.find((p) => p.id === id) ?? null
 }
+
+/** v27 — the family base id of any paper (flagship or dated sitting):
+ *  "cpa-aud-2024j" → "cpa-aud". */
+export function paperBase(id: string): string {
+  for (const s of PAPER_SITTINGS) {
+    if (id.endsWith(`-${s.slug}`)) return id.slice(0, id.length - s.slug.length - 1)
+  }
+  return id
+}
+
+/** v27 — rotation index of a paper inside its family (flagship 0, then the
+ *  dated sittings 1..4) — drives the deterministic CR-task rotation so each
+ *  sitting meets fresh scenario tasks. */
+export function sittingIndex(id: string): number {
+  const slug = id.split("-").pop() ?? ""
+  const idx = PAPER_SITTINGS.findIndex((s) => s.slug === slug)
+  return idx < 0 ? 0 : idx + 1
+}

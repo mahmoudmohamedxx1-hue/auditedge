@@ -4,6 +4,62 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 27.0.0 — The real-exam-structure + AI-examiner + paper-picker + Excel/Word release
+
+**Exams structured like the REAL thing — testlets, sections and simulations,
+not flat MCQ lists.** Eleven exam families now carry their real exam's
+blueprint. The **CPA papers** (AUD / FAR / REG) sit as two multiple-choice
+testlets plus a **task-based simulation testlet, scored 50/50 exactly like
+the real CPA exam**; the **IFRS diploma** and **ACCA FR** run Section A
+(objective tests, 30%) into **Section B scenario questions (70%)**;
+**ACCA AA** keeps its three sections (OT / case / constructed response);
+**SBL and SBR** become the pure scenario papers they really are; **CMA
+Parts 1 & 2** split into the 75% multiple-choice screen and the 25% essay
+scenarios; and **CFA Level I** gains its two-session morning/afternoon
+shape. The sitting itself is now section-by-section — a section landing
+screen ("Testlet 2 — 12 questions, 25% of your score"), per-section
+navigators, and real exam notes explaining how each part is marked.
+Task-based simulations and scenario questions are **written answers**:
+an exhibit panel with the case, numeric-entry and free-text requirements,
+each with its marks and an autosave.
+
+**The AI examiner marks your written answers against the CERTIFIED
+SOLUTIONS.** Every one of the 35 authored tasks (81 requirements — CPA
+TBS, DipIFR/FR Section B, AA Section C, SBL/SBR case tasks, CMA essays)
+carries the examiner's guide: the certified solution, the marking points
+and per-requirement marks. On submit, the new `/api/ai/exam-mark` route
+feeds each answer with its certified solution to the AI, which awards
+marks and writes feedback exactly like a professional marker; a
+deterministic keyword-and-numeric-tolerance fallback marks the same
+requirements if the AI is unreachable, so a submitted paper never hangs.
+The final score is the real-exam blend — section percentages weighted by
+the official weightings (CPA 50% MCQ / 50% TBS, DipIFR 30/70, CMA 75/25).
+The results screen shows your answers beside the marks awarded, the
+examiner feedback, and the certified solutions revealed for review.
+
+**A separate popup per exam to choose between the previous papers.** Every
+exam family card now opens a picker dialog listing its whole shelf — the
+flagship paper plus the four dated sittings (June 2024, Sept 2023, June
+2022, Dec 2021) — each with its question count, duration and real-format
+note, under a panel that spells out the real exam's blueprint. Dated
+sittings also **rotate their written tasks**, so each year meets fresh
+scenario questions.
+
+**Advanced Excel and Word join the catalog — in Arabic AND English.** The
+new Office shelf: Mohamed Al Assaal's complete 67-episode Arabic Excel
+course (~11.7h), TrumpExcel's famous FREE Excel course Basic→Advanced
+(26 sessions, ~12.6h), Mohamed Qonswa's 33-episode Arabic Word course,
+and Learn Skills Daily's long-form Word masterclass — a new Word category
+chip joins the course filters.
+
+**More Arabic courses.** Dr. Zuhair's **81-lecture IAS/IFRS standards
+library (~39 hours)** — the most complete Arabic standards series on the
+shelf, AMS's financial-accounting-from-zero series, Essam El-Sayyad's
+cost-accounting course and Hossam Saad's integrated financial-analysis
+series; the superseded single-video AMS fragment retired. Every lesson of
+every new course was captured live from YouTube and **verified via
+oEmbed** — 240 new verified lessons, catalog 36 → **43** courses.
+
 ## 26.0.0 — The bilingual-podcasts + AI-podcast-studio + full-courses + track-exams release
 
 **Every podcast findable in English AND Arabic.** All 53 curated YouTube

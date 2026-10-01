@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth"
 import { questionForClient } from "@/lib/bank"
 import { sampleExam, EXAM_MODES, type ExamMode } from "@/lib/exam-blueprint"
 import { getPastPaper } from "@/lib/past-papers"
+import { buildSections, formatForPaper } from "@/lib/paper-formats"
 
 /** GET /api/bank/exam — past sittings (most recent first). */
 export async function GET() {
@@ -48,7 +49,11 @@ export async function POST(req: Request) {
     data: { completedAt: new Date() },
   })
 
-  /* ---- v22: previous-exam paper sitting ---- */
+  /* ---- v22: previous-exam paper sitting ----
+   *  v27 — families carrying a real-exam FORMAT (CPA testlets + TBS,
+   *  DipIFR Section A/B, AA A/B/C, SBL/SBR case papers, CMA MCQ + essay,
+   *  CFA sessions) are built section-by-section, with constructed-response
+   *  tasks rotated per sitting. */
   if (body.paper !== undefined) {
     const paper = getPastPaper(String(body.paper))
     if (!paper) {
@@ -58,20 +63,28 @@ export async function POST(req: Request) {
       where: { source: paper.source },
       select: { id: true, difficulty: true },
     })
-    if (pool.length < paper.count) {
+    if (pool.length < Math.min(paper.count, 15)) {
       return NextResponse.json({ error: "paper bank incomplete" }, { status: 503 })
     }
     // deterministic draw in code order (stable past-paper sitting)
     const ordered = pool.sort((a, b) => a.id.localeCompare(b.id))
-    const questionIds = ordered.slice(0, paper.count).map((q) => q.id)
+    const format = formatForPaper(paper.id)
+    const built = format
+      ? buildSections(paper.id, ordered.map((q) => q.id))
+      : { sections: [], questionIds: ordered.slice(0, paper.count).map((q) => q.id), crTaskIds: [] }
+    const questionIds = built.questionIds
+    // CR tasks extend the clock (~10 min per scenario task, real-exam pace)
+    const durationMin = paper.durationMin + built.crTaskIds.length * 10
     const session = await db.examSession.create({
       data: {
         userId: me.id,
         mode: `paper:${paper.id}`,
-        blueprint: JSON.stringify([{ paper: paper.id, count: paper.count, picked: paper.count }]),
+        blueprint: JSON.stringify([{ paper: paper.id, count: questionIds.length, picked: questionIds.length }]),
         questionIds: JSON.stringify(questionIds),
-        durationMin: paper.durationMin,
+        sections: JSON.stringify(built.sections),
+        durationMin,
         total: questionIds.length,
+        ...(built.crTaskIds.length ? { crStatus: "pending" } : {}),
       },
     })
     const questions = await db.bankQuestion.findMany({ where: { id: { in: questionIds } } })
@@ -88,10 +101,13 @@ export async function POST(req: Request) {
         score: null,
         correct: null,
         sectionScores: {},
+        sections: built.sections,
         questions: questions.map(questionForClient),
         answered: {},
         flagged: [],
-        blueprint: [{ paper: paper.id, count: paper.count, picked: paper.count }],
+        written: {},
+        crMarks: {},
+        blueprint: [{ paper: paper.id, count: questionIds.length, picked: questionIds.length }],
       },
     })
   }

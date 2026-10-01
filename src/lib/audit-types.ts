@@ -289,11 +289,52 @@ export type ExamSessionClient = {
   sectionScores: Record<string, { correct: number; total: number }>
   /** v21: submitted after the server-side deadline */
   timedOut?: boolean
+  /** v27 — real-exam sections (testlets / Section A-B / sessions) */
+  sections?: SessionSectionClient[]
+  /** v27 — CR answers so far: {crTaskId: [reqAnswer,…]} */
+  written?: Record<string, string[]>
+  /** v27 — AI examiner awards (after marking): {crTaskId: [{awarded, feedback}]} */
+  crMarks?: Record<string, { awarded: number; feedback: string }[]>
+  /** v27 — pending | done */
+  crStatus?: "pending" | "done"
+  /** v27 — CR task payloads (certified solutions only after completion) */
+  crTasks?: CrTaskClient[]
   questions: BankQuestionClient[]
   /** answered picks so far: {questionId: picked} */
   answered: Record<string, number>
   flagged: string[]
   blueprint: { area: string; count: number; picked: number }[]
+}
+
+export type SessionSectionClient = {
+  id: string
+  kind: "mcq" | "cr"
+  titleEn: string
+  titleAr: string
+  noteEn: string
+  noteAr: string
+  weight: number
+  mcqIds?: string[]
+  crTaskIds?: string[]
+}
+
+export type CrTaskClient = {
+  id: string
+  family: string
+  labelEn: string
+  labelAr: string
+  exhibitEn: string
+  exhibitAr: string
+  totalMarks: number
+  requirements: {
+    promptEn: string
+    promptAr: string
+    kind: "numeric" | "text"
+    marks: number
+    certifiedEn?: string
+    certifiedAr?: string
+    numeric?: { value: number; tolerance: number; unit?: string }
+  }[]
 }
 
 export type ExamSummaryRow = {

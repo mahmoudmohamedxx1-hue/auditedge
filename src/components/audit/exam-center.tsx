@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { tt, dateLocaleOf } from "@/lib/i18n"
-import { PAPER_FAMILIES, PAPER_GROUPS, PAPER_SITTINGS, getPastPaper } from "@/lib/past-papers"
+import { PAPER_FAMILIES, PAPER_GROUPS, PAPER_SITTINGS, getPastPaper, type PaperFamily } from "@/lib/past-papers"
+import { formatForPaper, type PaperFormat } from "@/lib/paper-formats"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -28,11 +30,14 @@ import { toast } from "sonner"
 import type {
   BankQuestionClient,
   BankStats,
+  CrTaskClient,
   ExamSessionClient,
   ExamSummaryRow,
 } from "@/lib/audit-types"
 import {
   AlarmClock,
+  BadgeCheck,
+  BookOpenCheck,
   CheckCircle2,
   ChevronLeft,
   ClipboardCheck,
@@ -43,6 +48,7 @@ import {
   Layers,
   ListChecks,
   Loader2,
+  PenLine,
   RotateCcw,
   Search,
   Sparkles,
@@ -257,11 +263,30 @@ export function ExamCenter() {
     setEIdx(0)
     setEResult(null)
     setSecondsLeft(session.durationMin * 60)
+    setSecIdx(0)
+    setSecStarted(false)
+    setCrIdx(0)
+    setWrittenDraft({})
+    setMarking(false)
+    setMarkInfo(null)
     setPhase("sitting")
   }
 
   /* ---------- v22: previous-exam paper sitting ---------- */
   const [paperLoading, setPaperLoading] = useState<string | null>(null)
+  // v27 — the per-exam paper picker: every family opens a dialog listing its
+  // flagship + four dated sittings so the learner CHOOSES between the
+  // previous exams
+  const [pickerFamily, setPickerFamily] = useState<PaperFamily | null>(null)
+  // v27 — sectioned sitting state (testlets / Section A-B / sessions)
+  const [secIdx, setSecIdx] = useState(0)
+  const [secStarted, setSecStarted] = useState(false)
+  const [crIdx, setCrIdx] = useState(0)
+  const [writtenDraft, setWrittenDraft] = useState<Record<string, string[]>>({})
+  const [savedTask, setSavedTask] = useState<string | null>(null)
+  // v27 — AI examiner marking (results phase)
+  const [marking, setMarking] = useState(false)
+  const [markInfo, setMarkInfo] = useState<{ ai: number; fallback: number } | null>(null)
   // v26 — papers search lifted to the store ("ifrs", "cpa", "aa"…): the
   // Courses page deep-links here with the track pre-filled, and the query
   // survives navigation like the catalog filters do
@@ -285,6 +310,15 @@ export function ExamCenter() {
     setEIdx(0)
     setEResult(null)
     setSecondsLeft(session.durationMin * 60)
+    // v27 — sectioned sitting bootstrap
+    setSecIdx(0)
+    setSecStarted(false)
+    setCrIdx(0)
+    setWrittenDraft({ ...(session.written ?? {}) })
+    setSavedTask(null)
+    setMarking(false)
+    setMarkInfo(null)
+    setPickerFamily(null)
     setPhase("sitting")
   }
 
@@ -436,11 +470,63 @@ export function ExamCenter() {
     if (phase === "sitting") setQShownAt(Date.now())
   }, [eIdx, phase])
 
+  /* ---------- v27: constructed-response answer saving ---------- */
+  const saveWritten = async (taskId: string) => {
+    if (!exam) return
+    const values = writtenDraft[taskId]
+    if (!values) return
+    setSavedTask(taskId)
+    await fetch(`/api/bank/exam/${exam.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "answerWritten", taskId, values }),
+    }).catch(() => null)
+  }
+
+  /** v27 — the AI examiner pass: after submit, the written answers are
+   *  marked against the certified solutions and the blended final score
+   *  replaces the provisional MCQ score. */
+  const runAiMarking = useCallback(
+    async (sessionId: string) => {
+      setMarking(true)
+      setMarkInfo(null)
+      const res = await fetch("/api/ai/exam-mark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, lang }),
+      }).catch(() => null)
+      if (res && res.ok) {
+        const data = (await res.json()) as {
+          crMarks?: Record<string, { awarded: number; feedback: string }[]>
+          score?: number
+          markedByAi?: number
+          markedByFallback?: number
+        }
+        setMarkInfo({ ai: data.markedByAi ?? 0, fallback: data.markedByFallback ?? 0 })
+        // reload the session: final score + certified solutions revealed
+        const full = await fetch(`/api/bank/exam/${sessionId}`)
+        if (full.ok) {
+          const d = (await full.json()) as { session: ExamSessionClient }
+          setExam(d.session)
+          if (data.score !== undefined) {
+            setEResult((r) => (r ? { ...r, score: data.score! } : r))
+          }
+        }
+      }
+      setMarking(false)
+      void useAppStore.getState().bootstrap()
+    },
+    [lang]
+  )
+
   const submitExam = useCallback(
     async (auto = false) => {
       if (!exam || submitLock.current) return
       if (!auto && !window.confirm(tt("exam.confirmSubmit", lang))) return
       submitLock.current = true
+      // flush any unsaved CR drafts before grading
+      const crIds = (exam.sections ?? []).flatMap((s) => s.crTaskIds ?? [])
+      for (const tid of crIds) await saveWritten(tid)
       const res = await fetch(`/api/bank/exam/${exam.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -448,7 +534,14 @@ export function ExamCenter() {
       })
       submitLock.current = false
       if (!res.ok) return
-      const result = (await res.json()) as { score: number; correct: number; total: number; xpEarned: number; timedOut: boolean }
+      const result = (await res.json()) as {
+        score: number
+        correct: number
+        total: number
+        xpEarned: number
+        timedOut: boolean
+        crPending?: boolean
+      }
       // v21 pacing: average seconds per answered question
       const timings = Object.values(timingsRef.current)
       const avgSecs = timings.length ? Math.round(timings.reduce((a, b) => a + b, 0) / timings.length) : null
@@ -477,8 +570,10 @@ export function ExamCenter() {
       }
       setPhase("results")
       void useAppStore.getState().bootstrap()
+      // v27 — written sections: hand the answers to the AI examiner
+      if (result.crPending) void runAiMarking(exam.id)
     },
-    [exam, lang]
+    [exam, lang, writtenDraft]
   )
   // keep the countdown's ref pointing at the latest closure
   useEffect(() => {
@@ -685,6 +780,19 @@ export function ExamCenter() {
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {fams.map((f) => {
                     const flagship = f.flagship
+                    // v27 — real-exam format preview on the family card
+                    const fmt = formatForPaper(f.id)
+                    const structLine = fmt
+                      ? fmt.sections
+                          .map((s) =>
+                            s.kind === "mcq"
+                              ? `${s.titleEn.split(" — ")[0]} · ${s.count} Q`
+                              : `${s.titleEn.split(" — ")[0]} · ${s.tasks} ${
+                                  lang === "ar" ? "مهام" : s.id.startsWith("t") ? "TBS" : "tasks"
+                                }`
+                          )
+                          .join(" → ")
+                      : `${flagship.count} Q · ${flagship.durationMin}${tt("exam.minutesShort", lang)}`
                     return (
                       <div
                         key={f.id}
@@ -704,41 +812,38 @@ export function ExamCenter() {
                                 {tt("exam.paperFull", lang)}
                               </span>
                             )}
+                            {/* v27 — real-format badge */}
+                            {fmt && (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/[0.07] px-2 py-0.5 text-[10px] font-semibold text-primary">
+                                <BadgeCheck className="h-3 w-3" /> {tt("exam.paperRealFormat", lang)}
+                              </span>
+                            )}
                           </span>
                         </div>
                         <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
                           {lang === "ar" ? flagship.blurbAr : flagship.blurbEn}
                         </p>
-                        {/* v25 — five sittings per family: flagship + four dated years */}
-                        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                        {/* v27 — structure line (testlets / sections / sessions) */}
+                        <p dir="auto" className="mt-2 text-[11px] font-medium text-primary/90">
+                          {structLine}
+                        </p>
+                        {/* v27 — one button opens the paper picker: choose
+                            between the flagship + the four dated sittings */}
+                        <div className="mt-3">
                           <button
-                            onClick={() => void startPaper(flagship.id)}
+                            onClick={() => setPickerFamily(f)}
                             disabled={paperLoading !== null || eLoading !== null}
                             className={cn(
-                              "inline-flex items-center gap-1 rounded-full border border-primary/35 bg-primary/[0.07] px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/[0.14] focus-ring disabled:opacity-50"
+                              "inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-primary/35 bg-primary/[0.07] px-2.5 py-1.5 text-[11.5px] font-semibold text-primary transition-colors hover:bg-primary/[0.14] focus-ring disabled:opacity-50"
                             )}
                           >
-                            {paperLoading === flagship.id ? (
+                            {paperLoading ? (
                               <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
-                              <ClipboardCheck className="h-3 w-3" />
+                              <ClipboardCheck className="h-3.5 w-3.5" />
                             )}
-                            {tt("exam.sitFull", lang)} · {flagship.count} Q · {flagship.durationMin}{tt("exam.minutesShort", lang)}
+                            {tt("exam.paperPicker", lang)} · {1 + f.sittings.length}
                           </button>
-                          {f.sittings.map((s) => (
-                            <button
-                              key={s.id}
-                              onClick={() => void startPaper(s.id)}
-                              disabled={paperLoading !== null || eLoading !== null}
-                              className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 text-[11px] font-medium text-foreground/75 transition-colors hover:border-primary/35 hover:text-foreground focus-ring disabled:opacity-50"
-                            >
-                              {paperLoading === s.id && <Loader2 className="h-3 w-3 animate-spin" />}
-                              {lang === "ar"
-                                ? PAPER_SITTINGS.find((x) => x.slug === s.id.split("-").pop())?.labelAr
-                                : s.titleEn.split(" — ").pop()}
-                              <span className="text-muted-foreground">· {s.count} Q</span>
-                            </button>
-                          ))}
                         </div>
                       </div>
                     )
@@ -930,6 +1035,112 @@ export function ExamCenter() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* v27 — the per-exam PAPER PICKER: a separate popup per exam showing
+            every previous paper to choose between (flagship + 4 sittings),
+            each with its structure, duration and the real-exam blueprint. */}
+        <Dialog open={!!pickerFamily} onOpenChange={(v) => !v && setPickerFamily(null)}>
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[560px]">
+            {pickerFamily && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 font-serif" dir="auto">
+                    <FileText className="h-4 w-4 text-primary" />
+                    {lang === "ar" ? pickerFamily.titleAr : pickerFamily.titleEn} —{" "}
+                    {tt("exam.paperPicker", lang)}
+                  </DialogTitle>
+                  <DialogDescription>{tt("exam.paperPickerDesc", lang)}</DialogDescription>
+                </DialogHeader>
+
+                {/* the real exam's blueprint */}
+                {(() => {
+                  const fmt = formatForPaper(pickerFamily.id)
+                  if (!fmt) return null
+                  return (
+                    <div className="rounded-xl border border-primary/25 bg-primary/[0.05] p-3.5">
+                      <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary">
+                        <BadgeCheck className="h-3.5 w-3.5" /> {tt("exam.paperPickerReal", lang)}
+                      </div>
+                      <p dir="auto" className="mt-1.5 text-[12.5px] leading-relaxed text-foreground/80">
+                        {lang === "ar" ? fmt.realAr : fmt.realEn}
+                      </p>
+                      <div className="mt-2.5 space-y-1.5">
+                        {fmt.sections.map((s) => (
+                          <div
+                            key={s.id}
+                            className="flex items-center justify-between gap-2 rounded-lg bg-card/70 px-3 py-1.5 text-[12px]"
+                          >
+                            <span dir="auto" className="flex items-center gap-1.5 font-medium">
+                              {s.kind === "mcq" ? (
+                                <ListChecks className="h-3.5 w-3.5 text-muted-foreground" />
+                              ) : (
+                                <PenLine className="h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                              {lang === "ar" ? s.titleAr : s.titleEn}
+                            </span>
+                            <span className="shrink-0 tabular-nums text-muted-foreground">
+                              {s.kind === "mcq"
+                                ? `${s.count} Q`
+                                : `${s.tasks} ${lang === "ar" ? "مهام" : "tasks"}`}{" "}
+                              · {Math.round(s.weight * 100)}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* the papers: flagship first, then dated sittings */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                    {tt("exam.paperPickerStructure", lang)} · {1 + pickerFamily.sittings.length}
+                  </div>
+                  {[
+                    { p: pickerFamily.flagship, label: tt("exam.paperPickerFlagship", lang), primary: true },
+                    ...pickerFamily.sittings.map((s) => ({
+                      p: s,
+                      label:
+                        lang === "ar"
+                          ? PAPER_SITTINGS.find((x) => x.slug === s.id.split("-").pop())?.labelAr
+                          : (s.titleEn.split(" — ").pop() as string),
+                      primary: false,
+                    })),
+                  ].map(({ p, label, primary }) => (
+                    <button
+                      key={p.id}
+                      onClick={() => void startPaper(p.id)}
+                      disabled={paperLoading !== null || eLoading !== null}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-start transition-colors focus-ring disabled:opacity-50",
+                        primary
+                          ? "border-primary/35 bg-primary/[0.06] hover:bg-primary/[0.1]"
+                          : "bg-card/60 hover:border-primary/30"
+                      )}
+                    >
+                      <span className="min-w-0">
+                        <span dir="auto" className="flex items-center gap-2 text-[13.5px] font-semibold">
+                          {paperLoading === p.id && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
+                          {label}
+                          {primary && (
+                            <span className="rounded-full border border-olive/30 bg-olive/10 px-1.5 py-px text-[10px] font-semibold text-olive-deep">
+                              {p.count} Q
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-0.5 block text-[12px] text-muted-foreground">
+                          {p.count} Q · {p.durationMin} {tt("exam.minutesShort", lang)}
+                          {formatForPaper(p.id) ? ` · ${tt("exam.paperRealFormat", lang)}` : ""}
+                        </span>
+                      </span>
+                      <ClipboardCheck className="h-4 w-4 shrink-0 text-primary" />
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     )
   }
@@ -1073,6 +1284,472 @@ export function ExamCenter() {
   /* SITTING (timed exam)                                              */
   /* ================================================================ */
   if (phase === "sitting" && exam) {
+    const sections = exam.sections ?? []
+    const sectioned = sections.length > 0
+
+    /* ---------- v27: sectioned sitting (testlets / A-B / sessions) ---------- */
+    if (sectioned) {
+      const sec = sections[Math.min(secIdx, sections.length - 1)]
+      // plain map — recomputed per render (no conditional hooks)
+      const qIdxGlobal = new Map(exam.questions.map((q, i) => [q.id, i] as const))
+
+      /* ----- section landing view ----- */
+      if (!secStarted) {
+        const secQCount = sec.kind === "mcq" ? (sec.mcqIds ?? []).length : 0
+        const secTCount = sec.kind === "cr" ? (sec.crTaskIds ?? []).length : 0
+        return (
+          <div className="mx-auto max-w-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-[13px] text-muted-foreground">
+                {tt("exam.sectionNav", lang)} {secIdx + 1}/{sections.length}
+              </span>
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[14px] font-semibold tabular-nums",
+                  secondsLeft < 300 ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-card"
+                )}
+              >
+                <AlarmClock className="h-4 w-4" />
+                {mmss(secondsLeft)}
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-2xl border bg-card p-8 shadow-soft">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                  sec.kind === "mcq" ? "bg-secondary text-foreground" : "border border-primary/30 bg-primary/[0.07] text-primary"
+                )}
+              >
+                {sec.kind === "mcq" ? (
+                  <ListChecks className="h-3.5 w-3.5" />
+                ) : (
+                  <PenLine className="h-3.5 w-3.5" />
+                )}
+                {sec.kind === "mcq" ? tt("exam.sectionMcq", lang) : tt("exam.sectionCr", lang)}
+              </span>
+              <h1 dir="auto" className="mt-4 font-serif text-[24px] font-semibold leading-tight">
+                {lang === "ar" ? sec.titleAr : sec.titleEn}
+              </h1>
+              <p dir="auto" className="mt-2.5 text-[13.5px] leading-relaxed text-muted-foreground">
+                {lang === "ar" ? sec.noteAr : sec.noteEn}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-2 text-[12.5px]">
+                <span className="rounded-full bg-secondary px-2.5 py-1 font-medium tabular-nums">
+                  {sec.kind === "mcq" ? `${secQCount} Q` : `${secTCount} ${lang === "ar" ? "مهام" : "tasks"}`}
+                </span>
+                <span className="rounded-full border px-2.5 py-1 tabular-nums text-muted-foreground">
+                  {tt("exam.sectionWeight", lang)}: {Math.round(sec.weight * 100)}%
+                </span>
+              </div>
+              <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
+                <Button
+                  className="h-10"
+                  onClick={() => {
+                    if (sec.kind === "mcq") {
+                      const firstId = (sec.mcqIds ?? [])[0]
+                      const gi = firstId ? qIdxGlobal.get(firstId) : undefined
+                      setEIdx(gi ?? 0)
+                    } else {
+                      setCrIdx(0)
+                    }
+                    setSecStarted(true)
+                  }}
+                >
+                  <BookOpenCheck className="me-1.5 h-4 w-4" /> {tt("exam.sectionBegin", lang)}
+                </Button>
+                {secIdx > 0 && (
+                  <Button
+                    variant="ghost"
+                    className="h-10"
+                    onClick={() => {
+                      setSecIdx(secIdx - 1)
+                      setSecStarted(true)
+                    }}
+                  >
+                    <ChevronLeft className="me-1 h-4 w-4 rtl:rotate-180" /> {sections[secIdx - 1].titleEn.split(" — ")[0]}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* section pills overview */}
+            <div className="mt-5 flex flex-wrap gap-1.5">
+              {sections.map((s, i) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setSecIdx(i)
+                    setSecStarted(false)
+                  }}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-[11.5px] font-medium transition-colors focus-ring",
+                    i === secIdx
+                      ? "border-primary bg-primary text-white"
+                      : "bg-card/70 text-foreground/75 hover:border-primary/30"
+                  )}
+                >
+                  {i + 1}. {lang === "ar" ? s.titleAr : s.titleEn}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      /* ----- running section ----- */
+      if (sec.kind === "mcq") {
+        const secQIds = sec.mcqIds ?? []
+        const localIdx = Math.max(0, secQIds.indexOf(exam.questions[eIdx]?.id ?? ""))
+        const q = exam.questions[eIdx]
+        if (!q) return null
+        const picked = exam.answered[q.id]
+        const isFlagged = exam.flagged.includes(q.id)
+        const secAnswered = secQIds.filter((qid) => exam.answered[qid] !== undefined).length
+        const showAr = lang === "ar" && q.stemAr && q.optionsAr
+        const stem = showAr ? q.stemAr! : q.stem
+        const options = showAr ? q.optionsAr! : q.options
+        return (
+          <div className="mx-auto max-w-3xl">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                <span className="rounded-full bg-secondary px-2.5 py-1 font-medium" dir="auto">
+                  {lang === "ar" ? sec.titleAr : sec.titleEn}
+                </span>
+                <span>
+                  {localIdx + 1}/{secQIds.length} · {secAnswered} {tt("exam.answered", lang)}
+                </span>
+              </div>
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[14px] font-semibold tabular-nums",
+                  secondsLeft < 300 ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-card"
+                )}
+              >
+                <AlarmClock className="h-4 w-4" />
+                {mmss(secondsLeft)}
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-1.5" aria-label={tt("exam.sectionNav", lang)}>
+              {secQIds.map((qid, i) => {
+                const gi = qIdxGlobal.get(qid) ?? 0
+                const isCurrent = exam.questions[eIdx]?.id === qid
+                return (
+                  <button
+                    key={qid}
+                    onClick={() => setEIdx(gi)}
+                    className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[12px] font-medium transition-colors focus-ring",
+                      isCurrent && "border-primary bg-primary text-white",
+                      !isCurrent && exam.flagged.includes(qid) && "border-gold/60 bg-gold/10 text-gold-deep",
+                      !isCurrent &&
+                        exam.answered[qid] !== undefined &&
+                        !exam.flagged.includes(qid) &&
+                        "border-sage/50 bg-sage/10 text-sage-deep",
+                      !isCurrent &&
+                        exam.answered[qid] === undefined &&
+                        !exam.flagged.includes(qid) &&
+                        "border-border bg-secondary/40 text-muted-foreground"
+                    )}
+                    aria-label={`Q${i + 1}`}
+                  >
+                    {exam.flagged.includes(qid) && !isCurrent ? <Flag className="h-3 w-3" /> : i + 1}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="mt-5 rounded-2xl border bg-card p-6 shadow-soft sm:p-8">
+              <div className="flex items-center justify-between text-[12.5px] text-muted-foreground">
+                <span dir="auto">{q.standardTag}</span>
+                <button
+                  onClick={() => void toggleFlag()}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors focus-ring",
+                    isFlagged ? "border-gold/60 bg-gold/10 text-gold-deep" : "border-border hover:bg-secondary/50"
+                  )}
+                >
+                  <Flag className="h-3.5 w-3.5" />
+                  {isFlagged ? tt("exam.flagged", lang) : tt("exam.flag", lang)}
+                </button>
+              </div>
+              <h1 dir="auto" className="mt-3 font-serif text-[19px] font-semibold leading-snug tracking-tight">
+                {stem}
+              </h1>
+              <div className="mt-6 space-y-2.5">
+                {options.map((opt, i) => {
+                  const isPicked = picked === i
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => void examAnswer(i)}
+                      className={cn(
+                        "flex w-full items-center gap-3.5 rounded-xl border px-4 py-3.5 text-start transition-all focus-ring",
+                        isPicked && "border-primary bg-primary/[0.04] ring-1 ring-primary/25",
+                        !isPicked && "border-border hover:border-input hover:bg-secondary/40"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-semibold",
+                          isPicked ? "border-primary bg-primary text-white" : "border-border bg-secondary text-muted-foreground"
+                        )}
+                      >
+                        {LETTERS[i]}
+                      </span>
+                      <span dir="auto" className="text-[14px] leading-relaxed">{opt}</span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="mt-7 flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (localIdx === 0) {
+                      if (secIdx > 0) {
+                        const prev = sections[secIdx - 1]
+                        setSecIdx(secIdx - 1)
+                        if (prev.kind === "mcq") {
+                          const lastId = (prev.mcqIds ?? []).slice(-1)[0]
+                          const gi = lastId ? qIdxGlobal.get(lastId) : undefined
+                          if (gi !== undefined) setEIdx(gi)
+                        }
+                        setSecStarted(true)
+                      }
+                    } else {
+                      setEIdx(qIdxGlobal.get(secQIds[localIdx - 1]) ?? 0)
+                    }
+                  }}
+                  disabled={secIdx === 0 && localIdx === 0}
+                  className="h-10"
+                >
+                  <ChevronLeft className="me-1 h-4 w-4 rtl:rotate-180" /> {tt("exam.backLabel", lang)}
+                </Button>
+                {localIdx === secQIds.length - 1 ? (
+                  secIdx === sections.length - 1 ? (
+                    <Button onClick={() => void submitExam(false)} className="h-10">
+                      <FileWarning className="me-1.5 h-4 w-4" /> {tt("exam.submitExam", lang)}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="h-10"
+                      onClick={() => {
+                        setSecIdx(secIdx + 1)
+                        setSecStarted(false)
+                      }}
+                    >
+                      {sections[secIdx + 1].titleEn.split(" — ")[0]}{" "}
+                      <ChevronLeft className="ms-1 h-4 w-4 rotate-180 rtl:rotate-0" />
+                    </Button>
+                  )
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="h-10"
+                    onClick={() => setEIdx(qIdxGlobal.get(secQIds[localIdx + 1]) ?? 0)}
+                  >
+                    {localIdx + 2} <ChevronLeft className="ms-1 h-4 w-4 rotate-180 rtl:rotate-0" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      /* ----- CR (written tasks) section ----- */
+      const taskIds = sec.crTaskIds ?? []
+      const taskId = taskIds[Math.min(crIdx, taskIds.length - 1)]
+      const task = (exam.crTasks ?? []).find((t) => t.id === taskId)
+      if (!task) return null
+      const draft = writtenDraft[task.id] ?? task.requirements.map(() => "")
+      const setDraft = (i: number, v: string) => {
+        const next = [...draft]
+        next[i] = v
+        setWrittenDraft({ ...writtenDraft, [task.id]: next })
+      }
+      return (
+        <div className="mx-auto max-w-3xl">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+              <span className="rounded-full bg-secondary px-2.5 py-1 font-medium" dir="auto">
+                {lang === "ar" ? sec.titleAr : sec.titleEn}
+              </span>
+              <span>
+                {crIdx + 1}/{taskIds.length} · {task.totalMarks} {tt("exam.marksShort", lang)}
+              </span>
+            </div>
+            <div
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[14px] font-semibold tabular-nums",
+                secondsLeft < 300 ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-card"
+              )}
+            >
+              <AlarmClock className="h-4 w-4" />
+              {mmss(secondsLeft)}
+            </div>
+          </div>
+
+          {/* task navigator */}
+          <div className="mt-4 flex flex-wrap gap-1.5" aria-label={tt("exam.taskNav", lang)}>
+            {taskIds.map((tid, i) => {
+              const t = (exam.crTasks ?? []).find((x) => x.id === tid)
+              const answeredAll = (writtenDraft[tid] ?? []).some((v) => v.trim())
+              return (
+                <button
+                  key={tid}
+                  onClick={() => {
+                    void saveWritten(task.id)
+                    setCrIdx(i)
+                  }}
+                  className={cn(
+                    "flex h-8 min-w-8 items-center justify-center rounded-lg border px-2 text-[12px] font-medium transition-colors focus-ring",
+                    i === crIdx && "border-primary bg-primary text-white",
+                    i !== crIdx && answeredAll && "border-sage/50 bg-sage/10 text-sage-deep",
+                    i !== crIdx && !answeredAll && "border-border bg-secondary/40 text-muted-foreground"
+                  )}
+                >
+                  {t ? (lang === "ar" ? t.labelAr.split(" — ")[0] : t.labelEn.split(" — ")[0]) : i + 1}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* the task: exhibit + requirements */}
+          <div className="mt-5 rounded-2xl border bg-card p-6 shadow-soft sm:p-8">
+            <div className="flex items-center justify-between">
+              <h2 dir="auto" className="font-serif text-[16px] font-semibold">
+                {lang === "ar" ? task.labelAr : task.labelEn}
+              </h2>
+              {savedTask === task.id && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sage-deep">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {tt("exam.savedAnswer", lang)}
+                </span>
+              )}
+            </div>
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.04] p-4">
+              <div className="flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-[0.1em] text-primary">
+                <FileText className="h-3.5 w-3.5" /> {tt("exam.exhibit", lang)}
+              </div>
+              <p dir="auto" className="mt-2 text-[13.5px] leading-[1.8] text-foreground/85">
+                {lang === "ar" ? task.exhibitAr : task.exhibitEn}
+              </p>
+            </div>
+
+            <div className="mt-5 space-y-5">
+              {task.requirements.map((r, i) => (
+                <div key={i} className="rounded-xl border bg-secondary/25 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p dir="auto" className="text-[13.5px] font-medium leading-relaxed">
+                      <span className="me-1.5 font-bold text-primary">
+                        {tt("exam.requirement", lang)} {i + 1} ({r.marks} {tt("exam.marksShort", lang)})
+                      </span>
+                      {lang === "ar" ? r.promptAr : r.promptEn}
+                    </p>
+                  </div>
+                  {r.kind === "numeric" ? (
+                    <div className="mt-3">
+                      <Label className="text-[12px] text-muted-foreground" htmlFor={`cr-${task.id}-${i}`}>
+                        {tt("exam.numericAnswer", lang)}
+                        {r.numeric?.unit ? ` (${r.numeric.unit})` : ""}
+                      </Label>
+                      <Input
+                        id={`cr-${task.id}-${i}`}
+                        inputMode="decimal"
+                        dir="ltr"
+                        value={draft[i] ?? ""}
+                        onChange={(e) => setDraft(i, e.target.value)}
+                        onBlur={() => void saveWritten(task.id)}
+                        placeholder="0.00"
+                        className="mt-1.5 max-w-[240px] bg-background font-mono"
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-3">
+                      <Label className="text-[12px] text-muted-foreground" htmlFor={`cr-${task.id}-${i}`}>
+                        {tt("exam.textAnswer", lang)}
+                      </Label>
+                      <Textarea
+                        id={`cr-${task.id}-${i}`}
+                        dir="auto"
+                        value={draft[i] ?? ""}
+                        onChange={(e) => setDraft(i, e.target.value)}
+                        onBlur={() => void saveWritten(task.id)}
+                        rows={r.marks >= 5 ? 7 : 5}
+                        className="mt-1.5 bg-background text-[13.5px] leading-relaxed"
+                        placeholder={lang === "ar" ? "اكتب إجابتك هنا…" : "Write your answer here…"}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-7 flex items-center justify-between">
+              <Button
+                variant="ghost"
+                className="h-10"
+                disabled={crIdx === 0 && secIdx === 0}
+                onClick={() => {
+                  void saveWritten(task.id)
+                  if (crIdx > 0) setCrIdx(crIdx - 1)
+                  else if (secIdx > 0) {
+                    setSecIdx(secIdx - 1)
+                    setSecStarted(true)
+                  }
+                }}
+              >
+                <ChevronLeft className="me-1 h-4 w-4 rtl:rotate-180" />
+              </Button>
+              {crIdx === taskIds.length - 1 ? (
+                secIdx === sections.length - 1 ? (
+                  <Button onClick={() => void submitExam(false)} className="h-10">
+                    <FileWarning className="me-1.5 h-4 w-4" /> {tt("exam.submitExam", lang)}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="h-10"
+                    onClick={() => {
+                      void saveWritten(task.id)
+                      setSecIdx(secIdx + 1)
+                      setSecStarted(false)
+                    }}
+                  >
+                    {sections[secIdx + 1].titleEn.split(" — ")[0]}{" "}
+                    <ChevronLeft className="ms-1 h-4 w-4 rotate-180 rtl:rotate-0" />
+                  </Button>
+                )
+              ) : (
+                <Button
+                  variant="outline"
+                  className="h-10"
+                  onClick={() => {
+                    void saveWritten(task.id)
+                    setCrIdx(crIdx + 1)
+                  }}
+                >
+                  {tt("exam.nextTask", lang)}
+                  <ChevronLeft className="ms-1 h-4 w-4 rotate-180 rtl:rotate-0" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={() => void submitExam(false)} className="text-muted-foreground">
+              {tt("exam.submitExam", lang)}
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    /* ---------- classic linear sitting (unchanged) ---------- */
     const q = exam.questions[eIdx]
     const picked = exam.answered[q.id]
     const isFlagged = exam.flagged.includes(q.id)
@@ -1200,6 +1877,13 @@ export function ExamCenter() {
   /* ================================================================ */
   if (phase === "results" && exam && eResult) {
     const sectionRows = Object.entries(exam.sectionScores) as [string, { correct: number; total: number }][]
+    // v27 — CR parts of this paper (if any)
+    const crSections = (exam.sections ?? []).filter((s) => s.kind === "cr" && (s.crTaskIds ?? []).length)
+    const hasCr = crSections.length > 0
+    const crTaskById = new Map((exam.crTasks ?? []).map((t) => [t.id, t]))
+    const writtenById = exam.written ?? {}
+    const marksById = exam.crMarks ?? {}
+
     return (
       <div className="mx-auto max-w-3xl">
         <div className="rounded-2xl border bg-card p-8 text-center shadow-soft">
@@ -1217,6 +1901,7 @@ export function ExamCenter() {
               {eResult.correct}/{eResult.total}
             </b>{" "}
             {tt("exam.correctAns", lang)} — <b className="text-foreground">{eResult.score}%</b> · +{eResult.xpEarned} XP
+            {hasCr && <span className="ms-1.5 text-[12px] text-primary">· {tt("exam.blendedScore", lang)}</span>}
           </p>
           <div className="mx-auto mt-5 max-w-xs">
             <Progress value={eResult.score} className="h-1.5" />
@@ -1241,10 +1926,108 @@ export function ExamCenter() {
               )}
             </div>
           )}
+
+          {/* v27 — the AI examiner pass over the written answers */}
+          {hasCr && (
+            <div className="mt-5">
+              {marking ? (
+                <div className="rounded-xl border border-primary/25 bg-primary/[0.05] px-4 py-3 text-[13px] font-medium text-primary">
+                  <Loader2 className="me-1.5 inline h-4 w-4 animate-spin" />
+                  {tt("exam.aiMarking", lang)}
+                </div>
+              ) : markInfo ? (
+                <div className="rounded-xl border border-sage/30 bg-sage/[0.07] px-4 py-3 text-[12.5px] text-sage-deep">
+                  <BadgeCheck className="me-1.5 inline h-4 w-4" />
+                  {tt("exam.aiMarkingDone", lang)}
+                  {markInfo.ai === 0 && markInfo.fallback > 0 ? (
+                    <span className="ms-1.5 text-foreground/60">({tt("exam.aiMarkingFallback", lang)})</span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          )}
+
           <Button onClick={backToHub} className="mt-6 h-10">
             {tt("exam.backToExam", lang)}
           </Button>
         </div>
+
+        {/* v27 — the examiner's marks on every written task */}
+        {hasCr && !marking && (
+          <section className="mt-6 space-y-4">
+            <h2 className="flex items-center gap-2 font-serif text-[16px] font-semibold">
+              <PenLine className="h-4 w-4 text-primary" /> {tt("exam.crPart", lang)}
+            </h2>
+            {crSections.flatMap((s) =>
+              (s.crTaskIds ?? []).map((tid) => {
+                const task = crTaskById.get(tid)
+                if (!task) return null
+                const awards = marksById[tid] ?? []
+                const myAnswers = writtenById[tid] ?? []
+                const earned = awards.reduce((a, r) => a + r.awarded, 0)
+                return (
+                  <div key={tid} className="rounded-2xl border bg-card p-5 shadow-soft">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 dir="auto" className="text-[14px] font-semibold">
+                        {lang === "ar" ? task.labelAr : task.labelEn}
+                      </h3>
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-0.5 text-[12px] font-semibold tabular-nums",
+                          earned >= task.totalMarks * 0.5 ? "bg-sage/15 text-sage-deep" : "bg-primary/10 text-primary"
+                        )}
+                      >
+                        {earned}/{task.totalMarks} {tt("exam.marksAwarded", lang)}
+                      </span>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {task.requirements.map((r, i) => {
+                        const award = awards[i]
+                        const certified = lang === "ar" ? r.certifiedAr : r.certifiedEn
+                        return (
+                          <div key={i} className="rounded-xl border bg-secondary/25 p-3.5">
+                            <div className="flex items-start justify-between gap-3">
+                              <p dir="auto" className="text-[13px] font-medium leading-relaxed">
+                                <span className="me-1.5 font-bold text-primary">
+                                  {tt("exam.requirement", lang)} {i + 1}
+                                </span>
+                                {lang === "ar" ? r.promptAr : r.promptEn}
+                              </p>
+                              {award && (
+                                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11.5px] font-semibold tabular-nums">
+                                  {award.awarded}/{r.marks}
+                                </span>
+                              )}
+                            </div>
+                            <p dir="auto" className="mt-2 text-[12.5px] leading-relaxed text-foreground/75">
+                              <b className="text-foreground">{tt("exam.yourAnswer", lang)}:</b>{" "}
+                              {myAnswers[i]?.trim() || "—"}
+                            </p>
+                            {award?.feedback && (
+                              <p dir="auto" className="mt-1.5 rounded-lg bg-primary/[0.06] px-2.5 py-1.5 text-[12.5px] leading-relaxed">
+                                <b className="text-primary">{tt("exam.examinerFeedback", lang)}:</b> {award.feedback}
+                              </p>
+                            )}
+                            {certified && (
+                              <details className="mt-2">
+                                <summary className="cursor-pointer text-[12px] font-semibold text-muted-foreground hover:text-foreground">
+                                  {tt("exam.certifiedSolution", lang)}
+                                </summary>
+                                <p dir="auto" className="mt-1.5 rounded-lg border bg-card px-3 py-2 text-[12.5px] leading-[1.75] text-foreground/80">
+                                  {certified}
+                                </p>
+                              </details>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </section>
+        )}
 
         <section className="mt-6 rounded-2xl border bg-card p-6 shadow-soft">
           <h2 className="font-serif text-[16px] font-semibold">{tt("exam.sectionBreakdown", lang)}</h2>

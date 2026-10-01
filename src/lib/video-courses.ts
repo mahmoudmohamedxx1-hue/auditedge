@@ -15,6 +15,8 @@
  *  Video ids, lengths and view counts captured from live YouTube search
  *  on 2026-09-28; thumbnails load from i.ytimg.com. */
 
+import { VIDEO_COURSES_V27 } from "./video-courses-v27"
+
 export type VideoLesson = {
   /** YouTube video id */
   id: string
@@ -28,7 +30,7 @@ export type VideoCourse = {
   titleEn: string
   titleAr: string
   channel: string
-  category: "audit" | "accounting" | "ifrs" | "acca" | "cpa" | "cma" | "cfa" | "design" | "excel"
+  category: "audit" | "accounting" | "ifrs" | "acca" | "cpa" | "cma" | "cfa" | "design" | "excel" | "word"
   level: "Beginner" | "Intermediate" | "Advanced"
   language: "AR" | "EN"
   hours: string
@@ -48,7 +50,9 @@ export const VIDEO_CATEGORIES: { id: VideoCourse["category"] | "all"; labelEn: s
   { id: "cma", labelEn: "CMA", labelAr: "CMA" },
   { id: "cfa", labelEn: "CFA", labelAr: "CFA" },
   { id: "accounting", labelEn: "Foundations", labelAr: "التأسيس" },
+  // v27 — the office pair: advanced Excel + Word
   { id: "excel", labelEn: "Excel", labelAr: "إكسل" },
+  { id: "word", labelEn: "Word", labelAr: "وورد" },
   { id: "design", labelEn: "Design · Illustrator", labelAr: "التصميم · إليستريتور" },
 ]
 
@@ -183,25 +187,7 @@ export const VIDEO_COURSES: VideoCourse[] = [
       "دورة كاملة في فيديو واحد — أعمق من الجلسات السريعة، مع قيود يومية محلولة في كل خطوة.",
     lessons: [{ id: "PvHVZ3SKFG4", title: "كورس المحاسبة المالية (كامل) في 6 ساعات", length: "5:54:59" }],
   },
-  {
-    id: "ams-4h",
-    titleEn: "Financial accounting — full course with tax notes",
-    titleAr: "المحاسبة المالية — دورة كاملة مع لمسات ضريبية",
-    channel: "AMS للمحاسبة والضرائب",
-    category: "accounting",
-    level: "Beginner",
-    language: "AR",
-    hours: "~4.4h",
-    views: "540K+ combined",
-    descEn:
-      "AMS's complete financial-accounting course, taught with an Egyptian practice and tax angle — from the popular الأزهر-ستايل channel.",
-    descAr:
-      "دورة AMS الكاملة في المحاسبة المالية بمنظور مصري عملي وضريبي — من القناة الشهيرة ذات الأسلوب الأزهري.",
-    lessons: [
-      { id: "A7M2AwuPdOI", title: "كورس محاسبة مالية — (1) المدخل", length: "17:08" },
-      { id: "mdmNx1wDdSE", title: "كورس محاسبة مالية كامل في فيديو واحد", length: "4:25:27" },
-    ],
-  },
+  
   {
     id: "accounting-planet-pro",
     titleEn: "The professional accountant — 6-hour advanced course",
@@ -987,7 +973,11 @@ export const VIDEO_COURSES: VideoCourse[] = [
       { id: "YS2Rkl8qN_E", title: "Chapter 17 Preparing basic financial statements part 1 F3 financial accounting ACCA", length: "34:00" },
     ],
   },
+
+  /* ==================== v27 — the office pair + the Arabic library ==================== */
+  ...VIDEO_COURSES_V27,
 ]
+
 
 export function getVideoCourse(id: string): VideoCourse | null {
   return VIDEO_COURSES.find((c) => c.id === id) ?? null

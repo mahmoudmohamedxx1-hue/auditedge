@@ -98,7 +98,7 @@ async function main() {
 
   console.log("── 4. Course track reorganisation (offline) ──")
   const { VIDEO_COURSES, VIDEO_CATEGORIES } = await import("../src/lib/video-courses")
-  check("courses: 36 video courses catalogued", VIDEO_COURSES.length === 36, `${VIDEO_COURSES.length}`)
+  check("courses: 43 video courses catalogued (v27 adds 8, retires 1)", VIDEO_COURSES.length === 43, `${VIDEO_COURSES.length}`)
   for (const track of ["acca", "cpa", "cma", "ifrs", "cfa", "audit"]) {
     check(`courses: the ${track.toUpperCase()} track exists with a bilingual label`, VIDEO_CATEGORIES.some((c) => c.id === track && c.labelEn && c.labelAr))
   }
@@ -108,7 +108,7 @@ async function main() {
   check("courses: ACCA track carries 3 courses (Tony Bell ×2 + full F3 chapters)", byCat("acca") === 3, `${byCat("acca")}`)
   check("courses: CMA track carries 3 FULL Arabic courses (P1, P2, 2026 P1)", byCat("cma") === 3, `${byCat("cma")}`)
   check("courses: CPA track carries the full AUD + FAR courses (Amro Taison)", byCat("cpa") === 3, `${byCat("cpa")}`)
-  check("courses: IFRS track grew to 7 (full DipIFR + full CertIFR sessions)", byCat("ifrs") === 7, `${byCat("ifrs")}`)
+  check("courses: IFRS track at 8 (v27 adds the Zuhair IAS/IFRS library)", byCat("ifrs") === 8, `${byCat("ifrs")}`)
   check("courses: the full 51-session Arabic CertIFR course catalogued", VIDEO_COURSES.some((c) => c.id === "certifr-planet-full" && c.language === "AR" && c.lessons.length === 51))
   check("courses: the fragment era is over — every v26 pro course is multi-lecture", ["cma-p1-amro", "cma-p2-amro", "cpa-aud-amro", "cpa-far-amro", "dipifr-abdelnaim", "certifr-planet-full", "cma-p1-efham", "acca-f3-sowmya"].every((id) => (VIDEO_COURSES.find((c) => c.id === id)?.lessons.length ?? 0) >= 19))
   check("courses: no CMA/CPA/DipIFR fragment courses remain", !["doms-cma-p1", "dr-ismail-cma-p1", "abdellakher-cma-p1", "sara-cma-p1", "dr-ismail-dipifr", "mirchawala-fa-control", "yula-fa-specimen", "accounting-planet-certifr"].some((id) => VIDEO_COURSES.some((c) => c.id === id)))

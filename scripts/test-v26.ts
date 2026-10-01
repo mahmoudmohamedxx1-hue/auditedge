@@ -56,7 +56,7 @@ async function main() {
   const { VIDEO_COURSES } = await import("../src/lib/video-courses")
   const full = ["cma-p1-amro", "cma-p2-amro", "cma-p1-efham", "cpa-aud-amro", "cpa-far-amro", "dipifr-abdelnaim", "certifr-planet-full", "acca-f3-sowmya"]
   const lessonsOf = (id: string) => VIDEO_COURSES.find((c) => c.id === id)?.lessons.length ?? 0
-  check("courses: still 36 courses (8 fragments out, 8 full in)", VIDEO_COURSES.length === 36, `${VIDEO_COURSES.length}`)
+  check("courses: 43 courses (36 + 8 v27 office/Arabic additions − the superseded ams-4h)", VIDEO_COURSES.length === 43, `${VIDEO_COURSES.length}`)
   check("courses: CMA Part 1 complete (30 lectures)", lessonsOf("cma-p1-amro") === 30, `${lessonsOf("cma-p1-amro")}`)
   check("courses: CMA Part 2 complete (19 lectures)", lessonsOf("cma-p2-amro") === 19, `${lessonsOf("cma-p2-amro")}`)
   check("courses: CPA AUD complete (21 lectures)", lessonsOf("cpa-aud-amro") === 21, `${lessonsOf("cpa-aud-amro")}`)

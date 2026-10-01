@@ -287,6 +287,17 @@ model ExamSession {
   total         Int
   timedOut      Boolean   @default(false) // v21: submitted after the clock expired (server-enforced)
   sectionScores String    @default("{}") // JSON {area: {correct, total}}
+  /** v27 — real-exam format sections (JSON [{id, kind, title…, mcqIds, crTaskIds}])
+   *  e.g. CPA testlets 1–2 (MCQ) + testlet 3 (task-based simulations), or the
+   *  DipIFR Section A (OT) + Section B (scenario MTQs). "[]" = linear paper. */
+  sections      String    @default("[]")
+  /** v27 — constructed-response answers: JSON {crTaskId: [reqAnswer, …]}. */
+  written       String    @default("{}")
+  /** v27 — AI examiner awards: JSON {crTaskId: [{awarded, max, feedback}]}
+   *  marked against the certified solutions of the real exam. */
+  crMarks       String    @default("{}")
+  /** v27 — "pending" until the AI marking pass finalises the blended score. */
+  crStatus      String    @default("")
 
   @@index([userId, startedAt])
 }
