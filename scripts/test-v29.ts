@@ -186,7 +186,9 @@ async function main() {
 
   /* ---------------- 6. version ---------------- */
   const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
-  check("package.json bumped to 29.0.0", pkg.version === "29.0.0", pkg.version)
+  // floor check (not a hard pin) — later releases (v30+) must keep passing
+  const [major29, minor29] = String(pkg.version).split(".").map(Number)
+  check("package.json at v29 or later", major29 > 29 || (major29 === 29 && minor29 >= 0), pkg.version)
 
   console.log(`\n${pass} passed · ${fail} failed`)
   if (fail > 0) process.exit(1)

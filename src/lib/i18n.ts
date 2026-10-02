@@ -1338,6 +1338,26 @@ export const T = {
     applied: { en: "Sector linked to your engagement — the Audit Program now carries its risks.", ar: "تم ربط القطاع بمهمتك — يحمل برنامج المراجعة الآن مخاطره." },
     appliedNoEng: { en: "Open the Audit Program first to create an engagement.", ar: "افتح برنامج المراجعة أولًا لإنشاء مهمة." },
   },
+  nav30: {
+    ifrs: { en: "IFRS Summaries", ar: "ملخصات المعايير" },
+  },
+  ifrs30: {
+    title: { en: "IFRS Summaries", ar: "ملخصات معايير IFRS" },
+    subtitle: {
+      en: "Every effective IFRS & IAS as handwritten study notes — the five-step models, decision trees, journal entries, formulas and exam tips, in English and Arabic.",
+      ar: "كل معايير IFRS وIAS النافذة في مذكرات دراسية بخط اليد — النماذج الخطية وأشجار القرار والقيود المحاسبية والمعادلات ونصائح الامتحان، بالإنجليزية والعربية.",
+    },
+    search: { en: "Search a standard — IFRS 15, leases, المخزون…", ar: "ابحث عن معيار — IFRS 15، الإيجارات, inventory…" },
+    all: { en: "All standards", ar: "كل المعايير" },
+    sections: { en: "sections", ar: "قسمًا" },
+    flagship: { en: "Featured", ar: "الرئيسي" },
+    back: { en: "All summaries", ar: "كل الملخصات" },
+    prev: { en: "Previous", ar: "السابق" },
+    next: { en: "Next", ar: "التالي" },
+    print: { en: "Print / PDF", ar: "طباعة / PDF" },
+    notesToggle: { en: "Margin notes", ar: "ملاحظات الهامش" },
+    empty: { en: "No standard matches that search.", ar: "لا يطابق هذا البحث أي معيار." },
+  },
 } as const
 
 /** Dot-lookup helper: tt("nav.home", lang) — typed for key safety. */

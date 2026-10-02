@@ -333,3 +333,126 @@ html.dark .focus-ring:focus-visible {
     background: #fff !important;
   }
 }
+
+/* ---------- v30 — IFRS Summaries: the handwritten study-notes paper ----------
+   Recreates the user's IFRS 15 notes PDF: ruled notebook paper (light-blue
+   rules + a red margin line), two inks (dark graphite for the body, red
+   pen for headings/accents), hand-drawn boxes with wobbly borders, and
+   bilingual handwriting (Caveat for English, Aref Ruqaa for Arabic).
+   Light mode = cream paper; dark mode = a "late-night desk" toned sheet. */
+.ifrs-paper {
+  --note-paper: #fdfcf7;
+  --note-rule: rgba(56, 106, 177, 0.16);
+  --note-margin: rgba(211, 71, 54, 0.4);
+  --note-ink: #2d2a26;
+  --note-ink-soft: rgba(45, 42, 38, 0.72);
+  --note-red: #c6372a;
+  --note-red-soft: rgba(198, 55, 42, 0.75);
+  --note-box: rgba(45, 42, 38, 0.55);
+  --note-line-gap: 34px;
+  position: relative;
+  background-color: var(--note-paper);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--note-line-gap) - 1px),
+    var(--note-rule) calc(var(--note-line-gap) - 1px),
+    var(--note-rule) var(--note-line-gap)
+  );
+  color: var(--note-ink);
+}
+html.dark .ifrs-paper {
+  --note-paper: #2a2721;
+  --note-rule: rgba(120, 158, 214, 0.14);
+  --note-margin: rgba(226, 106, 90, 0.4);
+  --note-ink: #e8e2d6;
+  --note-ink-soft: rgba(232, 226, 214, 0.75);
+  --note-red: #e27a68;
+  --note-red-soft: rgba(226, 122, 104, 0.8);
+  --note-box: rgba(232, 226, 214, 0.55);
+}
+/* the red vertical margin line — start offset keeps clear of the padding */
+.ifrs-paper::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 44px;
+  width: 1.5px;
+  background: var(--note-margin);
+  pointer-events: none;
+}
+/* faint paper grain so the sheet doesn't look flat on wide screens */
+.ifrs-paper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 18% 8%, rgba(120, 100, 60, 0.05), transparent 55%);
+}
+
+/* the two handwriting inks */
+.ifrs-hand-en {
+  font-family: var(--font-hand), "Segoe Print", "Comic Sans MS", cursive;
+  line-height: var(--note-line-gap);
+  letter-spacing: 0.01em;
+}
+.ifrs-hand-ar {
+  font-family: var(--font-hand-ar), "Noto Naskh Arabic", "Segoe UI", serif;
+  line-height: 1.9;
+}
+
+/* red pen ink + the asterisk-flanked headings from the notes */
+.ifrs-ink-red {
+  color: var(--note-red);
+}
+.ifrs-ink-soft {
+  color: var(--note-ink-soft);
+}
+/* hand-drawn wobbly box — the classic uneven-border trick */
+.ifrs-wobble {
+  border: 1.6px solid var(--note-box);
+  border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px;
+}
+.ifrs-wobble-red {
+  border: 1.6px solid var(--note-red-soft);
+  border-radius: 14px 255px 14px 225px / 225px 14px 255px 14px;
+}
+/* red pen underline / the squiggly emphasis line */
+.ifrs-wavy {
+  text-decoration: underline wavy var(--note-red-soft);
+  text-decoration-thickness: 1.2px;
+  text-underline-offset: 5px;
+}
+.ifrs-underline {
+  text-decoration: underline;
+  text-decoration-color: var(--note-red-soft);
+  text-decoration-thickness: 1.4px;
+  text-underline-offset: 4px;
+}
+
+/* the T-account (journal) columns */
+.ifrs-taccount {
+  border-collapse: collapse;
+}
+.ifrs-taccount th,
+.ifrs-taccount td {
+  padding: 2px 14px;
+  vertical-align: baseline;
+  background: transparent;
+}
+.ifrs-taccount .ifrs-tbar {
+  border-inline-start: 1.6px solid var(--note-box);
+}
+
+/* keep the ruling visible when the sheet is printed (browser → PDF) */
+@media print {
+  .ifrs-paper {
+    background-color: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .ifrs-paper::before {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

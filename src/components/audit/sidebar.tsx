@@ -19,6 +19,7 @@ import {
   Layers,
   Medal,
   Moon,
+  NotebookPen,
   PanelLeftClose,
   PanelLeftOpen,
   PenSquare,
@@ -218,6 +219,14 @@ function SidebarContent({
           label={tt("nav20.exam", lang)}
           active={view === "exam"}
           onClick={() => go("exam")}
+        />
+        <NavItem
+          collapsed={collapsed}
+          icon={NotebookPen}
+          label={tt("nav30.ifrs", lang)}
+          active={view === "ifrs"}
+          badge="41"
+          onClick={() => go("ifrs")}
         />
         <NavItem
           collapsed={collapsed}

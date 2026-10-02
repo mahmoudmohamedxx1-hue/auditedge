@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import { Inter, Source_Serif_4, Caveat, Aref_Ruqaa } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { PwaProvider } from "@/components/audit/pwa";
@@ -12,6 +12,20 @@ const inter = Inter({
 const sourceSerif = Source_Serif_4({
   variable: "--font-ss4",
   subsets: ["latin"],
+});
+
+/* v30 — the handwriting pair behind the IFRS Summaries "study notes" look:
+ * Caveat carries the English cursive ink, Aref Ruqaa the Arabic annotations
+ * (ruqaa is the everyday Arabic handwriting style). */
+const caveat = Caveat({
+  variable: "--font-hand",
+  subsets: ["latin", "latin-ext"],
+});
+
+const arefRuqaa = Aref_Ruqaa({
+  variable: "--font-hand-ar",
+  weight: ["400", "700"],
+  subsets: ["arabic", "latin"],
 });
 
 export const metadata: Metadata = {
@@ -64,7 +78,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body
-        className={`${inter.variable} ${sourceSerif.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${sourceSerif.variable} ${caveat.variable} ${arefRuqaa.variable} antialiased bg-background text-foreground`}
       >
         {children}
         <PwaProvider />

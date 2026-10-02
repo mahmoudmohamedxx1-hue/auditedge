@@ -4,6 +4,59 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 30.0.0 — The IFRS Summaries release
+
+**A new section: IFRS Summaries.** The user shared their handwritten IFRS 15
+notes PDF and asked for a section that builds every standard's summary "like
+that pdf style and structure … so make for all standards". The result is a
+dedicated sidebar section rendering **all 41 effective IFRS & IAS standards**
+as bilingual handwritten study-notes sheets — a faithful web rendition of the
+notes aesthetic: cream ruled notebook paper with light-blue rules and a red
+margin line, **Caveat** cursive for the English ink and **Aref Ruqaa** (the
+everyday Arabic handwriting style) for the Arabic, two inks (graphite body +
+red pen for the `* asterisk *` headings, outcomes and numbers), hand-drawn
+wobble boxes with arrows, DR/CR T-accounts, formula lines and red
+wavy-underlined exam tips. In dark mode the paper tones down to a
+late-night-desk sheet. Every sheet prints cleanly to PDF with the ruling
+intact.
+
+**The flagship mirrors the sample PDF section for section.** IFRS 15 —
+Revenue from Contracts with Customers is the deepest summary (64 blocks):
+core principle → objective → the five-step model → each step's detail
+(the contract criteria, distinct performance obligations, transaction
+price & the constraint, allocation & standalone selling prices, over-time
+vs point-in-time) → contract-cost decision trees → warranty → principal
+vs agent with gross/net T-accounts → bill-and-hold → the repurchase
+decision tree (financing vs lease) → consignment → sale with a right of
+return (both journal sets) → customer options → the percentage-of-
+completion formulas with a worked example → contract asset vs contract
+liability. The other 40 standards each carry 5–13 blocks of the same
+devices — 33 decision trees, 11 T-account journals, 14 formula panels and
+39 exam tips across the catalog, grouped into six topics (Presentation &
+Policies · Assets · Revenue & Liabilities · Financial Instruments ·
+Groups & Investments · Specialized & Other).
+
+**Bilingual by construction, like the notes.** Every string is an EN/AR
+pair following the site-wide toggle: in English mode the body is cursive
+English with **Arabic margin annotations** beside it (faded, red-lined —
+exactly like the PDF's handwritten Arabic notes), and in Arabic mode the
+ink flips: ruqaa-Arabic body with English margin annotations. The hub
+carries a search box (codes + both titles + topic, "15", "lease" and
+"المخزون" all work), topic filter chips with counts, and each card shows
+a ruled-paper strip preview with the standard code in handwriting. Sheets
+open with prev/next navigation through the catalog, a margin-notes toggle
+and a print action.
+
+**Verified end-to-end in the browser**: the sidebar item ("IFRS Summaries
+41") between Exam Center and Review, the hub chips (8/8/6/5/6/8 per
+topic), the flagship sheet rendering 25 tree boxes + 6 T-accounts on the
+ruled paper, the Arabic flip (RTL sheet with English margin notes, 144
+ruqaa elements), and prev/next to IFRS 16 — no console errors, and a
+vision-model review confirmed the paper/ink aesthetic with no visual
+defects in both languages. 67 new checks in `scripts/test-v30.ts` guard
+the catalog integrity, the PDF-mirroring of the flagship, bilingual
+coverage of every block string, the search, the wiring and the styling.
+
 ## 29.0.0 — The YouTube-first catalog + exams-hub-upgrade release
 
 **YouTube courses now open the Courses page.** The user asked for the
