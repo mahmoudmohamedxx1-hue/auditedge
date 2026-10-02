@@ -10,8 +10,10 @@ import {
   type SectorProfile,
 } from "@/lib/program/sectors"
 import { ASSERTIONS, PROGRAM_SECTIONS } from "@/lib/program"
+import { loadEngagements, saveEngagements } from "@/lib/engagement"
 import { tt, type Lang } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { IndustryAsker } from "@/components/audit/industry-asker"
 import {
@@ -404,6 +406,24 @@ function SectorPanel({
 
   const related = PROGRAM_SECTIONS.filter((s) => sector.relatedSections.includes(s.id))
 
+  /* v28 — link this sector to the ACTIVE engagement of the Audit Program
+   *  (the store is localStorage-backed; the program view reloads it on
+   *  mount). The program's KAM seeds, risk view and the AI customizer all
+   *  read the linked sector afterwards. */
+  const applyToEngagement = () => {
+    try {
+      const store = loadEngagements()
+      store.engagements = store.engagements.map((e) =>
+        e.id === store.activeId ? { ...e, sectorId: sector.id, updatedAt: Date.now() } : e
+      )
+      saveEngagements(store)
+      toast.success(tt("sectors28.applied", lang))
+      navigate("program")
+    } catch {
+      toast.error(tt("sectors28.appliedNoEng", lang))
+    }
+  }
+
   const askQuestion =
     lang === "ar"
       ? `اشرح لي مخاطر مراجعة قطاع «${sector.name.ar}» في مصر: البنود الجوهرية، وأين يحدث التزييف عادة، وما أهم ثلاثة إجراءات مراجعة يجب أن أنفذها، مع الإشارة إلى المعايير ذات الصلة.`
@@ -445,6 +465,16 @@ function SectorPanel({
           >
             <Radar className="h-3.5 w-3.5" /> {t("aiDeepDive", lang)}
           </Button>
+          {/* v28 — carry this sector into the engagement: the Audit Program
+              (risk view, KAM seeds, AI customizer prefill) reads it */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5"
+            onClick={applyToEngagement}
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" /> {tt("sectors28.applyToEngagement", lang)}
+          </Button>
           {related.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-[11.5px] text-muted-foreground">{t("relatedSections", lang)}:</span>
@@ -460,6 +490,36 @@ function SectorPanel({
               ))}
             </div>
           )}
+        </div>
+
+        {/* v28 — the sector's risk heat at a glance: what the profile carries
+            before the reader scrolls into it */}
+        <div className="mt-4 flex flex-wrap gap-1.5 border-t border-border/60 pt-3.5">
+          {(
+            [
+              { n: sector.significantAccounts.length, key: "significantAccounts" },
+              { n: sector.inherentRisks.length, key: "inherentRisks" },
+              { n: sector.fraudRedFlags.length, key: "fraudRedFlags" },
+              { n: sector.minefields.length, key: "minefields" },
+              { n: sector.procedures.length, key: "procedures" },
+              { n: sector.kams.length, key: "kams" },
+              { n: sector.ratios.length, key: "ratios" },
+            ] as const
+          ).map(({ n, key }) => (
+            <span
+              key={key}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                key === "fraudRedFlags" || key === "minefields"
+                  ? "border-gold/35 bg-gold/[0.08] text-gold-deep"
+                  : key === "procedures"
+                    ? "border-primary/25 bg-primary/[0.05] text-primary"
+                    : "border-border bg-secondary/50 text-muted-foreground"
+              )}
+            >
+              <b className="tabular-nums">{n}</b> {t(key, lang)}
+            </span>
+          ))}
         </div>
       </header>
 

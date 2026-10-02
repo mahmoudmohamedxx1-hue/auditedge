@@ -4,6 +4,69 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 28.0.0 — The exam-opening fix + AI program customizer release
+
+**The paper exams open again — and never break on a stale database again.**
+Two independent defects made v27's real-format sittings fail to open: (1)
+the deployed demo snapshot predated v27's schema, so writing
+`ExamSession.sections / written / crMarks / crStatus` threw a Prisma "column
+does not exist" error and every paper sitting POST returned a silent 500;
+(2) the sitting response omitted its `crTasks` payload, so beginning a
+written (CR) section rendered a blank screen. Both are fixed at the root:
+the **database layer now self-heals** — on boot it inspects the live SQLite
+file (`PRAGMA table_info`) and adds any missing columns with idempotent
+`ALTER TABLE` migrations, awaited ahead of the first DB query so nothing
+races; the paper POST now ships its constructed-response tasks inline
+(certified solutions still hidden until submit), same shape as the resume
+route; and the **shipped Vercel snapshot was regenerated** on the current
+schema so fresh deploys are correct from the first request. Verified
+end-to-end: pick a paper → sit Section A → answer the scenario tasks →
+submit → the AI examiner marks against the certified solutions with
+per-requirement feedback.
+
+**The Courses page leads with the curriculum and the Arabic Academy finally
+sits where you can find it.** The workspace's own programs (ISA / IFRS /
+Egyptian framework) now headline the page as the **Core curriculum**, and
+the supplementary Arabic playlist courses — Mahmoud Hamouda's Auditing
+Standards in Practice, the ISA series, the IFRS diplomas, and their 30+
+siblings that used to sink to the very bottom of the page — moved UP into
+their own headed **"Arabic Academy — full playlist courses"** section
+directly underneath. Every course backed by a playable YouTube lesson now
+shows the **real video thumbnail** on its card (layered over the designed
+cover so a failed image load degrades gracefully), with a video badge; the
+search and category filter drive both sections.
+
+**AI in the Audit Program: describe the client, get a tailored program.**
+The new **AI program customizer** (`Customize with AI` in the Audit Program
+header) asks for the client profile — industry (any of the 20 built-in
+sectors or free text), entity size, FRA-listed status, ERP systems, and the
+specific concerns on your mind — and the `/api/ai/program-tailor` route has
+the AI draft a tailored supplement grounded in the ISAs, the Egyptian
+standards and IFRS/EAS: an **engagement memo**, 3-6 **focus areas**, 10-16
+**extra tickable procedures** validated against the real program sections
+(capped 4 per section, bilingual, standard-referenced), and 2-5 extra **PBC
+requests**. Applying it drops the procedures straight into the right
+sections — tickable, N/A-able and individually removable exactly like
+built-ins, counted in every progress bar — the PBC requests ride into the
+PBC tracker and its CSV export, and the memo card (with the engine that
+drafted it) tops the program until you re-tailor or remove it. The route
+survives engine hiccups gracefully and the client shows the error with a
+retry.
+
+**Sector Risks now feed the engagement.** Every sector profile carries a
+**risk-heat chip row** (significant accounts · inherent risks · fraud red
+flags · minefields · tailored procedures · KAMs · ratios at a glance), and
+the new **"Use in my audit program"** button links that sector to the
+active engagement — one click from the sector page to a program whose risk
+view, KAM seeds and AI customizer prefill all know the client's industry.
+
+**Also in this release:** `db.ts` gained a `dbReady` promise consumed by
+`getSessionUser()` so the additive self-heal always completes before any
+write; dev Prisma logging quieted to errors-only; the v28 test battery
+(31 checks — snapshot schema, live-DB heal, paper POST completeness,
+thumbnail parsing, the customizer data model, the tailor API contract, and
+v28 i18n coverage) is wired into the main suite (1,461+ checks total).
+
 ## 27.0.0 — The real-exam-structure + AI-examiner + paper-picker + Excel/Word release
 
 **Exams structured like the REAL thing — testlets, sections and simulations,

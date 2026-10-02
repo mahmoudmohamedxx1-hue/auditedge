@@ -103,6 +103,36 @@ export type JeSummary = {
   note: string
 }
 
+/** v28 — one AI-tailored procedure inserted into a program section by the
+ *  AI program customizer. Tickable/removable exactly like a built-in. */
+export type AiProc = {
+  /** stable id inside the tailor result — "ai-1", "ai-2"… */
+  id: string
+  /** must match a PROGRAM_SECTIONS id (validated when applied) */
+  sectionId: string
+  /** standard reference chip, e.g. "ISA 315" */
+  ref?: string
+  text: { en: string; ar: string }
+}
+
+/** v28 — the AI program customization stored on the engagement: the
+ *  engagement memo + focus areas + extra procedures + extra PBC requests
+ *  generated from the client profile the user described. */
+export type AiTailor = {
+  generatedAt: number
+  model: string
+  engine: string
+  sector: string
+  size: "sme" | "mid" | "listed"
+  listed: boolean
+  systems: string
+  concerns: string
+  summary: { en: string; ar: string }
+  focus: { en: string; ar: string }[]
+  procs: AiProc[]
+  pbc: { sectionId: string; text: { en: string; ar: string } }[]
+}
+
 export type Engagement = {
   id: string
   client: string
@@ -131,6 +161,8 @@ export type Engagement = {
   riskMatrix?: RiskRow[]
   /** v21: JE-testing summary written back from the analyzer (AP-01) */
   jeSummary?: JeSummary
+  /** v28 — the AI program customization (memo + AI-added procedures/PBC) */
+  aiTailor?: AiTailor
 }
 
 export type EngagementStore = {
@@ -221,6 +253,12 @@ export function saveEngagements(store: EngagementStore) {
 /* progress helpers                                                    */
 /* ------------------------------------------------------------------ */
 
+/** v28 — the AI-added procedures attached to one section (empty when the
+ *  engagement is not AI-customized). */
+export function aiProcsFor(eng: Engagement, sectionId: string): AiProc[] {
+  return (eng.aiTailor?.procs ?? []).filter((p) => p.sectionId === sectionId)
+}
+
 export type SectionProgress = {
   done: number
   na: number
@@ -231,7 +269,7 @@ export type SectionProgress = {
 
 export function sectionProgress(eng: Engagement, sectionId: string): SectionProgress {
   const section = PROGRAM_SECTIONS.find((s) => s.id === sectionId)
-  const total = section?.procedures.length ?? 0
+  const total = (section?.procedures.length ?? 0) + aiProcsFor(eng, sectionId).length
   let done = 0
   let na = 0
   if (section)
@@ -240,6 +278,12 @@ export function sectionProgress(eng: Engagement, sectionId: string): SectionProg
       if (st?.status === "done") done++
       else if (st?.status === "na") na++
     }
+  // v28 — AI-added procedures tick with the same ProcState store
+  for (const p of aiProcsFor(eng, sectionId)) {
+    const st = eng.procedures[p.id]
+    if (st?.status === "done") done++
+    else if (st?.status === "na") na++
+  }
   return { done, na, total, pct: total === 0 ? 0 : Math.round(((done + na) / total) * 100) }
 }
 
@@ -254,6 +298,13 @@ export function overallProgress(eng: Engagement): SectionProgress {
       if (st?.status === "done") done++
       else if (st?.status === "na") na++
     }
+  }
+  // v28 — AI-added procedures count toward the engagement's progress
+  for (const p of eng.aiTailor?.procs ?? []) {
+    total += 1
+    const st = eng.procedures[p.id]
+    if (st?.status === "done") done++
+    else if (st?.status === "na") na++
   }
   return { done, na, total, pct: total === 0 ? 0 : Math.round(((done + na) / total) * 100) }
 }
@@ -271,14 +322,23 @@ export type PbcItem = {
   state: PbcState | null
 }
 
-/** Flatten every section's "documents to obtain" into one trackable list. */
+/** Flatten every section's "documents to obtain" into one trackable list —
+ *  v28: AI-recommended PBC requests ride along (keys `${sectionId}:ai${i}`)
+ *  so they flow through the same requested/received tracker + CSV export. */
 export function pbcItems(eng: Engagement): PbcItem[] {
   const out: PbcItem[] = []
-  for (const s of PROGRAM_SECTIONS)
+  for (const s of PROGRAM_SECTIONS) {
     s.documents.forEach((d, i) => {
       const key = `${s.id}:${i}`
       out.push({ key, sectionId: s.id, code: s.code, title: d, state: eng.pbc[key] ?? null })
     })
+    ;(eng.aiTailor?.pbc ?? [])
+      .filter((d) => d.sectionId === s.id)
+      .forEach((d, i) => {
+        const key = `${s.id}:ai${i}`
+        out.push({ key, sectionId: s.id, code: s.code, title: d.text, state: eng.pbc[key] ?? null })
+      })
+  }
   return out
 }
 
@@ -286,13 +346,12 @@ export type PbcStats = { total: number; pending: number; requested: number; rece
 
 export function pbcStats(eng: Engagement): PbcStats {
   const stats: PbcStats = { total: 0, pending: 0, requested: 0, received: 0, na: 0 }
-  for (const s of PROGRAM_SECTIONS)
-    s.documents.forEach((_, i) => {
-      const st = eng.pbc[`${s.id}:${i}`]
-      stats.total++
-      if (!st) stats.pending++
-      else stats[st.status]++
-    })
+  // v28 — derived from pbcItems so AI-added requests count too
+  for (const it of pbcItems(eng)) {
+    stats.total++
+    if (!it.state) stats.pending++
+    else stats[it.state.status]++
+  }
   return stats
 }
 

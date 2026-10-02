@@ -3,6 +3,7 @@
 import { Course, Lesson } from "@/lib/audit-types"
 import { cn } from "@/lib/utils"
 import { tt, arOr, COURSE_LEVEL_AR, COURSE_CATEGORY_AR } from "@/lib/i18n"
+import { ytThumb } from "@/lib/video-courses"
 import {
   BookOpenCheck,
   Crown,
@@ -136,6 +137,21 @@ export function courseLessons(course: Course): Lesson[] {
   return course.modules.flatMap((m) => m.lessons)
 }
 
+/** v28 — YouTube video id of a course's first video lesson (null when the
+ *  course has no playable video): powers REAL thumbnails on the course
+ *  cards (the Arabic-Academy playlists and every other YouTube-backed
+ *  course), instead of the designed pattern cover. */
+export function courseVideoId(course: Course): string | null {
+  const withVideo = courseLessons(course).find(
+    (l) => typeof l.videoUrl === "string" && l.videoUrl.trim() !== ""
+  )
+  if (!withVideo) return null
+  const m = withVideo.videoUrl.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/
+  )
+  return m ? m[1] : null
+}
+
 export function courseProgress(completed: string[], course: Course) {
   const lessons = courseLessons(course)
   const done = lessons.filter((l) => completed.includes(l.id)).length
@@ -178,17 +194,42 @@ export function CourseCard({ course, compact = false }: { course: Course; compac
       )}
       aria-label={`${tt("card.openCourse", lang)} ${course.title}`}
     >
-      {/* v24 — every course gets a designed pro thumbnail */}
-      <CourseCover
-        icon={Icon}
-        accent={course.accent}
-        code={course.code}
-        category={arOr(COURSE_CATEGORY_AR, course.category, lang)}
-        level={arOr(COURSE_LEVEL_AR, course.level, lang)}
-        lessons={lessons}
-        seed={course.id}
-        compact={compact}
-      />
+      {/* v24 — every course gets a designed pro thumbnail…
+          v28 — …and courses with a playable YouTube lesson get the REAL
+          thumbnail from that video, layered over the designed cover so a
+          failed/offline image load degrades to the pattern (never a blank) */}
+      <span className="relative block">
+        <CourseCover
+          icon={Icon}
+          accent={course.accent}
+          code={course.code}
+          category={arOr(COURSE_CATEGORY_AR, course.category, lang)}
+          level={arOr(COURSE_LEVEL_AR, course.level, lang)}
+          lessons={lessons}
+          seed={course.id}
+          compact={compact}
+        />
+        {(() => {
+          const vid = courseVideoId(course)
+          if (!vid) return null
+          return (
+            <span className="pointer-events-none absolute inset-0 block overflow-hidden">
+              <img
+                src={ytThumb(vid)}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+              {/* keep a hint of the course accent under the video frame */}
+              <span className={cn("absolute inset-x-0 bottom-0 h-1", accent.bar)} />
+              <span className="absolute end-1.5 top-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[9.5px] font-semibold text-white">
+                <PlayCircle className="me-1 inline h-3 w-3" />
+                {tt("misc28.videoCourse", lang)}
+              </span>
+            </span>
+          )
+        })()}
+      </span>
       <div className={cn("flex flex-1 flex-col", compact ? "p-3.5" : "p-5")}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">

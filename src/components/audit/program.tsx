@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
+import { tt } from "@/lib/i18n"
 import { ASSERTIONS, PROGRAM_SECTIONS, PROGRAM_TOTAL_PROCEDURES, type ProgramSection } from "@/lib/program"
 import { SECTOR_PROFILES } from "@/lib/program/sectors"
 import {
@@ -12,6 +13,7 @@ import {
   sectionProgress,
   overallProgress,
   pbcStats,
+  aiProcsFor,
   type Engagement,
   type EngagementStore,
   type ProcState,
@@ -26,6 +28,7 @@ import { PbcTracker } from "./program-pbc"
 import { FindingsSad } from "./program-findings"
 import { SignoffSummary } from "./program-signoffs"
 import { CloseOutPanel } from "./program-closeout"
+import { AiTailorDialog, AiTailorMemoCard, AiProcRow, aiProcIds } from "./program-tailor"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import {
@@ -356,6 +359,25 @@ export function AuditProgram() {
     navigate("ai")
   }
 
+  /* ---------------- v28: AI program customization ---------------- */
+  const [tailorOpen, setTailorOpen] = useState(false)
+  const applyTailor = (tailor: Engagement["aiTailor"]) => {
+    if (!tailor || !eng) return
+    updateEng((e) => {
+      // clear the ticks of the PREVIOUS customization's procedures so a
+      // re-tailor never carries stale ai-N states into new content
+      const procedures = { ...e.procedures }
+      for (const id of aiProcIds(e)) delete procedures[id]
+      return { ...e, procedures, aiTailor: tailor }
+    })
+  }
+  const removeTailor = () =>
+    updateEng((e) => {
+      const procedures = { ...e.procedures }
+      for (const id of aiProcIds(e)) delete procedures[id]
+      return { ...e, procedures, aiTailor: undefined }
+    })
+
   const openStandard = (standard: string) => {
     const q = libraryQueryFor(standard)
     if (!q) return
@@ -407,6 +429,19 @@ export function AuditProgram() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* v28 — AI program customizer: tailor the whole program to the
+                client from the header, one click from any tab */}
+            <button
+              onClick={() => setTailorOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/35 bg-primary/[0.07] px-3.5 py-1.5 text-[12.5px] font-semibold text-primary transition-colors hover:bg-primary/[0.14] focus-ring print:hidden"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> {tt("program28.open", lang)}
+              {eng?.aiTailor ? (
+                <span className="rounded-full bg-primary/15 px-1.5 py-px text-[10px] tabular-nums">
+                  {eng.aiTailor.procs.length}
+                </span>
+              ) : null}
+            </button>
             {/* language toggle — wired to the site-wide store (v13) */}
             <div className="flex rounded-full border bg-card p-0.5" role="group" aria-label="Language / اللغة">
               <button
@@ -449,6 +484,17 @@ export function AuditProgram() {
           <div className="mt-4 h-[72px] animate-pulse rounded-2xl border bg-card/60" />
         )}
       </div>
+
+      {/* v28 — the AI customizer dialog (memo + procedures + PBC) */}
+      {ready && eng && (
+        <AiTailorDialog
+          open={tailorOpen}
+          onOpenChange={setTailorOpen}
+          eng={eng}
+          lang={lang}
+          onApply={applyTailor}
+        />
+      )}
 
       {/* tabs — sticky while scrolling 167 procedures. Lives at the view root:
           a sticky bar only sticks inside its parent, and the header div above
@@ -512,6 +558,16 @@ export function AuditProgram() {
             </span>
           </div>
         )}
+
+      {/* v28 — the AI customization memo (program tab, above the sections) */}
+      {tab === "program" && eng?.aiTailor && (
+        <AiTailorMemoCard
+          eng={eng}
+          lang={lang}
+          onReopen={() => setTailorOpen(true)}
+          onRemove={removeTailor}
+        />
+      )}
 
       {/* body */}
       {!ready ? (
@@ -658,6 +714,16 @@ export function AuditProgram() {
             onOpenStandard={openStandard}
             onGoPbc={() => goTab("pbc")}
             onPatchEng={(patch) => updateEng((e) => ({ ...e, ...patch }))}
+            onRemoveAiProc={(procId) =>
+              updateEng((e) => {
+                const procedures = { ...e.procedures }
+                delete procedures[procId]
+                const tailor = e.aiTailor
+                  ? { ...e.aiTailor, procs: e.aiTailor.procs.filter((x) => x.id !== procId) }
+                  : undefined
+                return { ...e, procedures, ...(tailor ? { aiTailor: tailor } : {}) }
+              })
+            }
           />
         </div>
       )}
@@ -955,6 +1021,7 @@ function SectionView({
   onOpenStandard,
   onGoPbc,
   onPatchEng,
+  onRemoveAiProc,
 }: {
   section: ProgramSection
   lang: Lang
@@ -967,6 +1034,8 @@ function SectionView({
   onGoPbc: () => void
   /** v21: patch the whole engagement (materiality memo, JE summary) */
   onPatchEng: (patch: Partial<Engagement>) => void
+  /** v28: delete one AI-added procedure (tick + definition) */
+  onRemoveAiProc: (procId: string) => void
 }) {
   const [confirmReset, setConfirmReset] = useState(false)
   const rtl = lang === "ar"
@@ -1230,6 +1299,18 @@ function SectionView({
               lang={lang}
               st={eng.procedures[p.id]}
               onSetProc={onSetProc}
+            />
+          ))}
+          {/* v28 — the AI-added procedures of this section, tickable and
+              individually removable, right under the built-ins */}
+          {aiProcsFor(eng, section.id).map((p) => (
+            <AiProcRow
+              key={p.id}
+              proc={p}
+              eng={eng}
+              lang={lang}
+              onSetProc={onSetProc}
+              onRemove={onRemoveAiProc}
             />
           ))}
         </ol>

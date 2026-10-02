@@ -1,4 +1,4 @@
-import { db } from "@/lib/db"
+import { db, dbReady } from "@/lib/db"
 
 /**
  * Single-user workspace (auth removed at the owner's request).
@@ -31,6 +31,11 @@ export type SessionUser = {
 
 /** Resolve the one workspace user, provisioning the account if the DB is empty. */
 export async function getSessionUser(): Promise<SessionUser | null> {
+  // v28 — wait for the additive SQLite self-heal (stale snapshots missing
+  // v27 ExamSession columns made every paper sitting 500). Every DB-writing
+  // route resolves "me" first, so this single await orders the migration
+  // ahead of any query that could touch a healed column. Never throws.
+  await dbReady.catch(() => {})
   // resolve by the workspace email first — a restored backup with extra users
   // must never silently shift the identity onto another member (which would
   // lock the admin features out); fall back to the earliest user only when

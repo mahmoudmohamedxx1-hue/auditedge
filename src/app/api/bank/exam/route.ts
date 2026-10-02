@@ -5,6 +5,7 @@ import { questionForClient } from "@/lib/bank"
 import { sampleExam, EXAM_MODES, type ExamMode } from "@/lib/exam-blueprint"
 import { getPastPaper } from "@/lib/past-papers"
 import { buildSections, formatForPaper } from "@/lib/paper-formats"
+import { getCrTask, type CrTask } from "@/lib/cr-tasks"
 
 /** GET /api/bank/exam — past sittings (most recent first). */
 export async function GET() {
@@ -90,6 +91,12 @@ export async function POST(req: Request) {
     const questions = await db.bankQuestion.findMany({ where: { id: { in: questionIds } } })
     const order = new Map(questionIds.map((id, i) => [id, i]))
     questions.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+    // v28 — ship the CR tasks with the sitting response: the sectioned
+    // sitting view needs them the moment it opens (a CR section with no
+    // task data rendered a blank screen before this)
+    const crTasks = built.crTaskIds
+      .map((tid) => getCrTask(tid))
+      .filter((t): t is CrTask => !!t)
     return NextResponse.json({
       session: {
         id: session.id,
@@ -107,6 +114,22 @@ export async function POST(req: Request) {
         flagged: [],
         written: {},
         crMarks: {},
+        // certified solutions stay hidden until submit (same shape as GET)
+        crTasks: crTasks.map((t) => ({
+          id: t.id,
+          family: t.family,
+          labelEn: t.labelEn,
+          labelAr: t.labelAr,
+          exhibitEn: t.exhibitEn,
+          exhibitAr: t.exhibitAr,
+          totalMarks: t.requirements.reduce((a, r) => a + r.marks, 0),
+          requirements: t.requirements.map((r) => ({
+            promptEn: r.promptEn,
+            promptAr: r.promptAr,
+            kind: r.kind,
+            marks: r.marks,
+          })),
+        })),
         blueprint: [{ paper: paper.id, count: questionIds.length, picked: questionIds.length }],
       },
     })

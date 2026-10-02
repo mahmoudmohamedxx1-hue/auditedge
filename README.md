@@ -35,7 +35,7 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 ## Features
 
 ### Curriculum and library
-- **41 courses / 990 lessons + the IFRS 18 course** — ISA 315, 330, 240, 570, EVD 500, IFRS core, the Egyptian FRA framework, audit analytics, plus curated Arabic IFRS & auditing playlists — every course carries a designed pro thumbnail
+- **41 courses / 990 lessons + the IFRS 18 course** — ISA 315, 330, 240, 570, EVD 500, IFRS core, the Egyptian FRA framework, audit analytics, plus curated Arabic IFRS & auditing playlists — the Courses page leads with the Core curriculum and the **Arabic Academy** (the full Arabic playlist courses) in its own headed section near the top, and every YouTube-backed course shows its **real video thumbnail**
 - **43 full video courses playable in-app** — audit (CPA Talks Audit 101, FinanceSkul F8/AA, Ruchi Goyal, Bisk CPA AUD), IFRS (CPA Talks standards, BotCast, CPDbox, Tashwita, the full DipIFR diploma and CertIFR session courses), **CFA Level I** (the complete FinTree 8-session crash course + QuintEdge Ethics + edZeb marathons), **the complete Arabic CMA Part 1 & 2 and CPA AUD & FAR playlist courses** (30 + 19 + 21 + 27 lectures), Excel and Word (Al Assaal and Qonswa in Arabic, TrumpExcel and Learn Skills Daily in English), Dr. Zuhair's 81-lecture Arabic IAS/IFRS standards library, and the Course Illustrator design track — every course is a full playlist, and one-video courses are badged "Full course · 1 video"
 - **146 library materials** with official standard texts — searchable, excerpt-served
 - **Past papers for EVERY course track** — 23 exam families × five sittings each (115 papers): the entire ACCA syllabus (BT…AAA), the IFRS diploma, the Egyptian SOE paper, **CPA AUD/FAR/REG, CFA Level I and CMA Parts 1 & 2**, over a 2,685-question bilingual bank, plus AI-generated custom exams in micro / mini / standard / full sizes. Eleven families sit in their REAL exam format — CPA two-MCQ-testlets-plus-TBS at 50/50, DipIFR/ACCA FR Section A 30% + Section B 70%, ACCA AA three sections, SBL/SBR pure scenario papers, CMA 75% MCQ + 25% essays, CFA two timed sessions — with 35 written tasks (81 requirements) marked by the **AI examiner against certified solutions**, and a per-exam picker dialog to choose between the previous papers. The Courses page carries a "Past papers & exams for every track" strip that deep-links into the papers grid
@@ -47,9 +47,11 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 
 ### AI suite
 - **AI Tutor** — full page and floating popup, streaming answers, RAG over your library with cited excerpts, persistent conversations, and a tutor persona that encodes the full IFAC / IAASB / IESBA architecture plus the Egyptian regulatory map
+- **AI program customizer** — describe the client (industry, size, listed status, systems, concerns) and the AI tailors the Audit Program: an engagement memo, focus areas, 10-16 extra tickable procedures dropped into the right sections, and extra PBC requests — bilingual, grounded in the ISAs / Egyptian standards / IFRS-EAS, re-tailorable and individually removable
 - **AI Industry Risk Analyst** — streaming risk profiles for 20 sectors, with deep-dive presets
 - **KAM drafter** — drafts Key Audit Matters from your program findings
 - **TB & JE analyzer** — trial balance and journal-entry analysis (Benford's law, JE testing)
+- **AI examiner** — marks written exam answers against the certified solutions of the real exams, with a deterministic fallback marker
 - **Vision** — attach an image (a reconciliation screenshot, a ledger extract) to your question
 - **Model switcher** — GLM-4.7-Flash (default, reasoning, free tier), GLM-4.6V-Flash (vision, free tier), GLM-4-Plus, with graceful fallback
 
@@ -63,7 +65,8 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 - **Hands-free voice conversation** — after each spoken answer the mic opens, transcribes your next question and sends it: a zero-click speak/listen loop
 
 ### Engagement workspace
-- **Audit Program** — the full external audit cycle as a working tool: risk core, materiality calculator, PBC lists, findings, signoffs
+- **Audit Program** — the full external audit cycle as a working tool: risk core, materiality calculator, PBC lists, findings, signoffs — now AI-customizable per client (memo + tailored procedures + PBC additions that count in every progress bar)
+- **Sector Risks** — the 20-industry risk library feeds the engagement: one click links a sector to the active engagement (risk view, KAM seeds and the AI customizer prefill all read it), and every profile carries a risk-heat chip row
 - Fully bilingual program — every section in English and Arabic
 
 ### Platform

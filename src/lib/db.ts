@@ -5,6 +5,53 @@ import { join } from 'path'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
+  /** v28 — resolves when the additive self-heal migrations have settled */
+  dbHealed?: Promise<void>
+}
+
+/**
+ * v28 — self-healing SQLite column migrations.
+ *
+ * A stale database (a restored backup, an older demo snapshot, a fresh
+ * clone of db/custom.db from before a release) can miss columns that the
+ * current Prisma schema declares. Prisma then throws on the first write
+ * that touches one of them — v27 shipped `ExamSession.sections/written/
+ * crMarks/crStatus` but the deployed snapshot predated it, so every
+ * real-format paper sitting POST 500'd and the exam never opened.
+ *
+ * This guard inspects the live SQLite file (PRAGMA table_info) and adds
+ * any missing columns with ALTER TABLE — idempotent, dependency-free and
+ * safe to run on every boot. Additive columns land with their schema
+ * defaults, exactly what `prisma db push` would do, so user data is never
+ * touched. Postgres is skipped (the build-time db-deploy push handles it).
+ *
+ * The returned promise is awaited by getSessionUser(), which every
+ * DB-writing route calls before touching Prisma — so no request can race
+ * the ALTER TABLE.
+ */
+const ADDITIVE_MIGRATIONS: { table: string; column: string; ddl: string }[] = [
+  // v27 — real-exam format sitting state
+  { table: 'ExamSession', column: 'sections', ddl: `ALTER TABLE "ExamSession" ADD COLUMN "sections" TEXT NOT NULL DEFAULT '[]'` },
+  { table: 'ExamSession', column: 'written', ddl: `ALTER TABLE "ExamSession" ADD COLUMN "written" TEXT NOT NULL DEFAULT '{}'` },
+  { table: 'ExamSession', column: 'crMarks', ddl: `ALTER TABLE "ExamSession" ADD COLUMN "crMarks" TEXT NOT NULL DEFAULT '{}'` },
+  { table: 'ExamSession', column: 'crStatus', ddl: `ALTER TABLE "ExamSession" ADD COLUMN "crStatus" TEXT NOT NULL DEFAULT ''` },
+]
+
+async function healSqliteSchema(client: PrismaClient): Promise<void> {
+  for (const m of ADDITIVE_MIGRATIONS) {
+    try {
+      const cols = (await client.$queryRawUnsafe(
+        `PRAGMA table_info("${m.table}")`
+      )) as unknown as { name?: string }[]
+      // table missing entirely (fresh DB before prisma db push) — nothing to heal
+      if (!Array.isArray(cols) || cols.length === 0) continue
+      if (cols.some((c) => c && c.name === m.column)) continue
+      await client.$executeRawUnsafe(m.ddl)
+      console.log(`[db] self-heal: added ${m.table}.${m.column}`)
+    } catch (err) {
+      console.error(`[db] self-heal failed for ${m.table}.${m.column}`, err)
+    }
+  }
 }
 
 /**
@@ -66,6 +113,9 @@ function provisionVercelDatabase(): string | undefined {
 
 const provisionedUrl = provisionVercelDatabase()
 
+/** The datasource this process actually talks to (explicit override or env). */
+const effectiveUrl = provisionedUrl ?? process.env.DATABASE_URL
+
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
@@ -73,7 +123,16 @@ export const db =
     // actually provisioned — everywhere else Prisma reads DATABASE_URL
     // from the environment exactly as before
     ...(provisionedUrl ? { datasourceUrl: provisionedUrl } : {}),
-    log: process.env.NODE_ENV === 'production' ? ['error'] : ['query'],
+    log: process.env.NODE_ENV === 'production' ? ['error'] : ['error'],
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+
+/** v28 — kick off (or reuse) the additive SQLite self-heal. No-op promise
+ * for Postgres datasources. Awaited inside getSessionUser() so no request
+ * can race the ALTER TABLE. */
+export const dbReady: Promise<void> =
+  globalForPrisma.dbHealed ??
+  (globalForPrisma.dbHealed = typeof effectiveUrl === 'string' && effectiveUrl.startsWith('file:')
+    ? healSqliteSchema(db)
+    : Promise.resolve())

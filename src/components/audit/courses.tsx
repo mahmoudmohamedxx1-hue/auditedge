@@ -111,6 +111,15 @@ export function Courses() {
     })
   }, [data, query, category])
 
+  /* v28 — the workspace's own catalog splits in two: the CORE curriculum
+   *  (ISA / IFRS / Egyptian-framework programs) and the ARABIC ACADEMY
+   *  (supplementary playlist courses — Hamouda, اعرف المحاسبة…). The
+   *  academy used to sink to the very bottom of the page as a faceless
+   *  sub-grid; it now sits right under the core, with its own headed
+   *  section and REAL video thumbnails on every card. */
+  const coreCourses = useMemo(() => courses.filter((c) => !c.supplementary), [courses])
+  const academyCourses = useMemo(() => courses.filter((c) => c.supplementary), [courses])
+
   if (!data) return null
 
   return (
@@ -186,6 +195,78 @@ export function Courses() {
           </div>
         )}
       </div>
+
+      {/* v28 — CORE CURRICULUM first: the workspace's own programs lead the
+          page; the search + category filter above drives both sections. */}
+      {coreCourses.length > 0 && (
+        <section aria-label={tt("courses28.coreTitle", lang)}>
+          <div className="mb-3.5 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="font-serif text-[19px] font-semibold">{tt("courses28.coreTitle", lang)}</h2>
+              <p className="mt-0.5 text-[12.5px] text-muted-foreground">{tt("courses28.coreDesc", lang)}</p>
+            </div>
+            <span className="rounded-full border bg-card px-2.5 py-1 text-[11px] tabular-nums text-muted-foreground">
+              {coreCourses.length}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {coreCourses.map((c) => (
+              <CourseCard key={c.id} course={c} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* v28 — ARABIC ACADEMY moved UP (was a bare tail grid at the page
+          bottom): the full Arabic playlist courses — with real YouTube
+          thumbnails — now sit directly under the core curriculum. */}
+      {academyCourses.length > 0 && (
+        <section
+          className="rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/[0.06] via-card to-card p-5 shadow-soft"
+          aria-label={tt("courses28.academyTitle", lang)}
+        >
+          <div className="mb-3.5 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="flex items-center gap-2 font-serif text-[19px] font-semibold">
+                <Languages className="h-4.5 w-4.5 text-gold-deep" />
+                {tt("courses28.academyTitle", lang)}
+              </h2>
+              <p className="mt-0.5 max-w-3xl text-[12.5px] leading-relaxed text-muted-foreground">
+                {tt("courses28.academyDesc", lang)}
+              </p>
+            </div>
+            <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium tabular-nums text-gold-deep">
+              {academyCourses.length} {tt("courses28.academyCount", lang)}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {academyCourses.map((c) => (
+              <CourseCard key={c.id} course={c} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {courses.length === 0 && (
+        <div className="rounded-xl border border-dashed py-16 text-center">
+          <p className="font-serif text-[16px] font-semibold">{tt("courses.noneFound", lang)}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {query ? tt("courses.nothingMatches", lang) : tt("courses.noneInCategory", lang)}
+          </p>
+          {(query || category) && (
+            <Button
+              variant="outline"
+              className="mt-5 h-9"
+              onClick={() => {
+                setQuery("")
+                setCategory(null)
+              }}
+            >
+              {tt("courses.clearFilters", lang)}
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* v23 — full video courses with pro thumbnails, playable in-app */}
       <section className="rounded-2xl border border-plum/25 bg-plum/[0.04] p-5 shadow-soft">
@@ -377,37 +458,9 @@ export function Courses() {
         </div>
       </section>
 
-      {courses.length ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {courses.map((c) => (
-            <CourseCard key={c.id} course={c} />
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-xl border border-dashed py-16 text-center">
-          <p className="font-serif text-[16px] font-semibold">{tt("courses.noneFound", lang)}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {query ? tt("courses.nothingMatches", lang) : tt("courses.noneInCategory", lang)}
-          </p>
-          {(query || category) && (
-            <Button
-              variant="outline"
-              className="mt-5 h-9"
-              onClick={() => {
-                setQuery("")
-                setCategory(null)
-              }}
-            >
-              {tt("courses.clearFilters", lang)}
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* v26 — past papers & exams for EVERY course track: the learner's
-          ask was "all the past exams for all courses — CPA and CFA for
-          example — in the courses section". Each chip jumps to the Exam
-          Center with that track's families pre-filtered (five sittings each). */}
+      {/* v26 — past papers & exams for EVERY course track (ACCA / CPA / CFA /
+          CMA / IFRS / Egyptian practice): each chip jumps to the Exam Center
+          with that track's families pre-filtered (five sittings each). */}
       <section className="rounded-2xl border border-olive/25 bg-gradient-to-br from-olive/[0.06] via-card to-card p-6 shadow-soft">
         <div className="flex items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-olive/15 text-olive-deep">
