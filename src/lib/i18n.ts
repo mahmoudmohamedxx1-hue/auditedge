@@ -1261,6 +1261,27 @@ export const T = {
   misc28: {
     videoCourse: { en: "Video", ar: "فيديو" },
   },
+  courses29: {
+    ytFirst: { en: "YouTube first", ar: "يوتيوب أولًا" },
+  },
+  exam29: {
+    overviewTitle: { en: "Your exam performance", ar: "أداؤك في الامتحانات" },
+    attempts: { en: "completed sittings", ar: "جلسة مكتملة" },
+    avgScore: { en: "average score", ar: "متوسط الدرجة" },
+    bestScore: { en: "best score", ar: "أعلى درجة" },
+    passRate: { en: "pass rate · 50%+", ar: "نسبة النجاح · 50%+" },
+    noAttempts: {
+      en: "No completed sittings yet — every qualification below opens with five real papers.",
+      ar: "لا توجد جلسات مكتملة بعد — كل مؤهل بالأسفل يفتح بخمس أوراق حقيقية.",
+    },
+    filterAll: { en: "All qualifications", ar: "كل المؤهلات" },
+    filterBy: { en: "Filter papers", ar: "تصفية الأوراق" },
+    flagshipChip: { en: "Flagship", ar: "الورقة الرئيسية" },
+    attempted: { en: "attempted", ar: "مُجرّبة" },
+    best: { en: "best", ar: "الأفضل" },
+    papersLead: { en: "start here", ar: "ابدأ من هنا" },
+    quickTools: { en: "Quick practice & mock exams", ar: "تدريب سريع وامتحانات تجريبية" },
+  },
   courses28: {
     coreTitle: { en: "Core curriculum", ar: "المنهج الأساسي" },
     coreDesc: {

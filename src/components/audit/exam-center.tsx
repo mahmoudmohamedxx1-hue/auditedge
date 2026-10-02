@@ -68,6 +68,19 @@ const AREA_KEYS: Record<string, string> = {
   ethics: "exam.areaEthics",
 }
 
+/** v29 — one-tap qualification filters over the paper families: the real
+ *  exams now lead the hub, so the long catalog stays scannable by
+ *  qualification (ACCA folds its three syllabus levels into one chip). */
+const QUAL_CHIPS: { id: string; labelEn: string; labelAr: string; groups: string[] }[] = [
+  { id: "all", labelEn: "All", labelAr: "الكل", groups: [] },
+  { id: "ifrs", labelEn: "IFRS", labelAr: "IFRS", groups: ["ifrs"] },
+  { id: "acca", labelEn: "ACCA", labelAr: "ACCA", groups: ["knowledge", "skills", "strategic"] },
+  { id: "cpa", labelEn: "CPA", labelAr: "CPA", groups: ["cpa"] },
+  { id: "cfa", labelEn: "CFA", labelAr: "CFA", groups: ["cfa"] },
+  { id: "cma", labelEn: "CMA", labelAr: "CMA", groups: ["cma"] },
+  { id: "egypt", labelEn: "Egyptian practice", labelAr: "التطبيق المصري", groups: ["egypt"] },
+]
+
 type Phase = "hub" | "practice" | "sitting" | "results"
 
 export function ExamCenter() {
@@ -293,6 +306,40 @@ export function ExamCenter() {
   const familyQuery = useAppStore((s) => s.examSearch)
   const setFamilyQuery = useAppStore((s) => s.setExamSearch)
   const familyQ = familyQuery.trim().toLowerCase()
+  // v29 — qualification filter chips over the paper families (the real
+  // qualifications lead the hub now, so one-tap filtering keeps the long
+  // catalog scannable: All · IFRS · ACCA · CPA · CFA · CMA · Egypt)
+  const [qualFilter, setQualFilter] = useState<string>("all")
+  /* v29 — performance overview: the hub opens with the learner's own
+   *  numbers (attempts / average / best / pass rate) computed from the
+   *  completed sittings, before any paper is picked. */
+  const graded = useMemo(
+    () => history.filter((h) => h.completedAt && h.score !== null),
+    [history]
+  )
+  const perf = useMemo(() => {
+    const scores = graded.map((h) => h.score ?? 0)
+    const n = scores.length
+    return {
+      attempts: n,
+      avg: n ? Math.round(scores.reduce((a, b) => a + b, 0) / n) : null,
+      best: n ? Math.max(...scores) : null,
+      pass: n ? Math.round((scores.filter((s) => s >= 50).length / n) * 100) : null,
+    }
+  }, [graded])
+  /** v29 — per-family attempt stats (badge on every family card): how many
+   *  of this exam's five papers the learner sat, and their best score. */
+  const familyStats = useCallback(
+    (f: PaperFamily) => {
+      const ids = new Set([f.flagship.id, ...f.sittings.map((s) => s.id)])
+      const rows = history.filter(
+        (h) => h.completedAt && h.mode.startsWith("paper:") && ids.has(h.mode.slice(6))
+      )
+      const scores = rows.map((r) => r.score ?? 0)
+      return { attempts: rows.length, best: scores.length ? Math.max(...scores) : null }
+    },
+    [history]
+  )
   const startPaper = async (paperId: string) => {
     setPaperLoading(paperId)
     const res = await fetch("/api/bank/exam", {
@@ -596,7 +643,7 @@ export function ExamCenter() {
   /* ================================================================ */
   if (phase === "hub") {
     return (
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-5xl">
         <header className="mb-8">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -628,6 +675,273 @@ export function ExamCenter() {
           )}
         </header>
 
+        {/* v29 — PERFORMANCE OVERVIEW: the learner's own numbers open the
+            hub (completed sittings / average / best / pass rate) so progress
+            reads at a glance before any paper is picked. */}
+        <section
+          className="mb-6 grid grid-cols-2 gap-3 rounded-2xl border bg-card p-4 shadow-soft sm:grid-cols-4"
+          aria-label={tt("exam29.overviewTitle", lang)}
+        >
+          {(
+            [
+              { icon: ClipboardCheck, label: tt("exam29.attempts", lang), value: perf.attempts, suffix: "" },
+              { icon: TrendingUp, label: tt("exam29.avgScore", lang), value: perf.avg, suffix: "%" },
+              { icon: Trophy, label: tt("exam29.bestScore", lang), value: perf.best, suffix: "%" },
+              { icon: BadgeCheck, label: tt("exam29.passRate", lang), value: perf.pass, suffix: "%" },
+            ] as const
+          ).map((s) => (
+            <div key={s.label} className="rounded-xl border bg-secondary/25 px-3.5 py-3">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                <s.icon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="truncate">{s.label}</span>
+              </div>
+              <div className="mt-1.5 font-serif text-[22px] font-semibold tabular-nums leading-none">
+                {s.value === null ? "—" : `${s.value}${s.suffix}`}
+              </div>
+            </div>
+          ))}
+        </section>
+        {perf.attempts === 0 && (
+          <p className="mb-6 rounded-xl border border-dashed px-4 py-3 text-center text-[12.5px] text-muted-foreground">
+            {tt("exam29.noAttempts", lang)}
+          </p>
+        )}
+
+        {/* v22–v25 — previous exam papers: every family grouped by syllabus
+            *  level, each carrying FIVE sittings (flagship + four dated
+            *  years) + a search box so the IFRS diploma is impossible to miss.
+            *  v29 — the papers now LEAD the hub (they are the heart of the
+            *  section), with one-tap qualification filter chips. */}
+        <section className="rounded-2xl border bg-card p-6 shadow-soft" aria-label={tt("exam.papersTitle", lang)}>
+          <h2 className="flex flex-wrap items-center gap-2 font-serif text-[18px] font-semibold">
+            <FileText className="h-4 w-4 text-primary" /> {tt("exam.papersTitle", lang)}
+            <span className="rounded-full border border-olive/30 bg-olive/10 px-2 py-px text-[10px] font-semibold text-olive-deep">
+              {tt("exam29.papersLead", lang)}
+            </span>
+          </h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{tt("exam.papersDesc", lang)}</p>
+
+          {/* v29 — one-tap qualification filter (All · IFRS · ACCA · CPA · CFA · CMA · Egypt) */}
+          <div className="mt-4 flex flex-wrap items-center gap-1.5" aria-label={tt("exam29.filterBy", lang)}>
+            <span className="me-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {tt("exam29.filterBy", lang)}
+            </span>
+            {QUAL_CHIPS.map((c) => {
+              const n =
+                c.id === "all"
+                  ? PAPER_FAMILIES.length
+                  : PAPER_FAMILIES.filter((f) => c.groups.includes(f.group)).length
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setQualFilter(c.id)}
+                  aria-pressed={qualFilter === c.id}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] transition-colors focus-ring",
+                    qualFilter === c.id
+                      ? "border-primary/35 bg-primary/10 font-semibold text-primary"
+                      : "bg-card/60 text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {c.id === "all" ? tt("exam29.filterAll", lang) : lang === "ar" ? c.labelAr : c.labelEn}
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 text-[10px] tabular-nums",
+                      qualFilter === c.id ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"
+                    )}
+                  >
+                    {n}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* v25 — find-any-paper search ("ifrs", "tax", "aa"…) */}
+          <div className="relative mt-3 max-w-sm">
+            <Search className="pointer-events-none absolute start-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={familyQuery}
+              onChange={(e) => setFamilyQuery(e.target.value)}
+              placeholder={tt("exam.paperSearchPh", lang)}
+              className="h-9 bg-background ps-8 text-[13px]"
+            />
+          </div>
+
+          {PAPER_GROUPS.filter((g) => {
+            const chip = QUAL_CHIPS.find((q) => q.id === qualFilter)
+            return !chip || chip.id === "all" || chip.groups.includes(g.id)
+          }).map((g) => {
+            const fams = PAPER_FAMILIES.filter(
+              (f) =>
+                f.group === g.id &&
+                (!familyQ ||
+                  `${f.titleEn} ${f.titleAr} ${f.flagship.body} ${f.flagship.blurbEn} ${f.flagship.blurbAr}`
+                    .toLowerCase()
+                    .includes(familyQ))
+            )
+            if (!fams.length) return null
+            return (
+              <div key={g.id} className="mt-5">
+                {/* syllabus-level header */}
+                <div className="mb-3 flex items-center gap-2.5">
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full",
+                      g.id === "ifrs" && "bg-olive",
+                      g.id === "knowledge" && "bg-olive",
+                      g.id === "skills" && "bg-primary",
+                      g.id === "strategic" && "bg-plum",
+                      g.id === "egypt" && "bg-gold",
+                      // v26 — the CPA / CFA / CMA course tracks
+                      g.id === "cpa" && "bg-clay-deep",
+                      g.id === "cfa" && "bg-teal-600",
+                      g.id === "cma" && "bg-sage-deep"
+                    )}
+                  />
+                  <h3 className="text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                    {lang === "ar" ? g.labelAr : g.labelEn}
+                  </h3>
+                  <span className="rounded-full bg-secondary px-1.5 py-px text-[10px] tabular-nums text-muted-foreground">
+                    {fams.length}
+                  </span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {fams.map((f) => {
+                    const flagship = f.flagship
+                    // v27 — real-exam format preview on the family card
+                    const fmt = formatForPaper(f.id)
+                    const structLine = fmt
+                      ? fmt.sections
+                          .map((s) =>
+                            s.kind === "mcq"
+                              ? `${s.titleEn.split(" — ")[0]} · ${s.count} Q`
+                              : `${s.titleEn.split(" — ")[0]} · ${s.tasks} ${
+                                  lang === "ar" ? "مهام" : s.id.startsWith("t") ? "TBS" : "tasks"
+                                }`
+                          )
+                          .join(" → ")
+                      : `${flagship.count} Q · ${flagship.durationMin}${tt("exam.minutesShort", lang)}`
+                    return (
+                      <div
+                        key={f.id}
+                        className="flex flex-col rounded-xl border bg-secondary/25 p-4 transition-colors hover:border-primary/30"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
+                            {lang === "ar" ? f.titleAr : f.titleEn}
+                          </h3>
+                          <span className="flex shrink-0 flex-col items-end gap-1">
+                            <span className="rounded-full border border-plum/30 bg-plum/10 px-2 py-0.5 text-[10px] font-semibold text-plum-deep">
+                              {flagship.body}
+                            </span>
+                            {/* full-length flagship badge */}
+                            {flagship.count >= 24 && (
+                              <span className="rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
+                                {tt("exam.paperFull", lang)}
+                              </span>
+                            )}
+                            {/* v27 — real-format badge */}
+                            {fmt && (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/[0.07] px-2 py-0.5 text-[10px] font-semibold text-primary">
+                                <BadgeCheck className="h-3 w-3" /> {tt("exam.paperRealFormat", lang)}
+                              </span>
+                            )}
+                            {/* v29 — this learner's attempts on this exam */}
+                            {(() => {
+                              const fs = familyStats(f)
+                              if (!fs.attempts) return null
+                              return (
+                                <span className="rounded-full border border-sage/40 bg-sage/10 px-2 py-0.5 text-[10px] font-semibold text-sage-deep">
+                                  {fs.attempts}× {tt("exam29.attempted", lang)} · {tt("exam29.best", lang)} {fs.best}%
+                                </span>
+                              )
+                            })()}
+                          </span>
+                        </div>
+                        <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
+                          {lang === "ar" ? flagship.blurbAr : flagship.blurbEn}
+                        </p>
+                        {/* v27 — structure line (testlets / sections / sessions) */}
+                        <p dir="auto" className="mt-2 text-[11px] font-medium text-primary/90">
+                          {structLine}
+                        </p>
+                        {/* v29 — the five papers at a glance: flagship + the
+                            four dated years, so the five-sitting promise is
+                            visible without opening the picker */}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-primary">
+                            {tt("exam29.flagshipChip", lang)}
+                          </span>
+                          {f.sittings.map((s, i) => {
+                            const label = PAPER_SITTINGS[i]?.label ?? s.titleEn.split(" — ").pop() ?? ""
+                            const labelAr = PAPER_SITTINGS[i]?.labelAr ?? s.titleAr.split(" — ").pop() ?? ""
+                            return (
+                              <span
+                                key={s.id}
+                                className="rounded bg-secondary/70 px-1.5 py-0.5 text-[9.5px] font-medium text-muted-foreground"
+                              >
+                                {lang === "ar" ? labelAr : label}
+                              </span>
+                            )
+                          })}
+                        </div>
+                        {/* v27 — one button opens the paper picker: choose
+                            between the flagship + the four dated sittings */}
+                        <div className="mt-3">
+                          <button
+                            onClick={() => setPickerFamily(f)}
+                            disabled={paperLoading !== null || eLoading !== null}
+                            className={cn(
+                              "inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-primary/35 bg-primary/[0.07] px-2.5 py-1.5 text-[11.5px] font-semibold text-primary transition-colors hover:bg-primary/[0.14] focus-ring disabled:opacity-50"
+                            )}
+                          >
+                            {paperLoading ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <ClipboardCheck className="h-3.5 w-3.5" />
+                            )}
+                            {tt("exam.paperPicker", lang)} · {1 + f.sittings.length}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  {/* AI custom exam builder card rides along the last group */}
+                  {g.id === "egypt" && (
+                    <div className="flex flex-col rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
+                          {tt("exam.customTitle", lang)}
+                        </h3>
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
+                          <Wand2 className="h-3 w-3" /> AI
+                        </span>
+                      </div>
+                      <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
+                        {tt("exam.customDesc", lang)}
+                      </p>
+                      <div className="mt-3 flex justify-end">
+                        <Button size="sm" className="h-8" variant="secondary" onClick={() => setCustomOpen(true)}>
+                          <Sparkles className="me-1 h-3.5 w-3.5" /> {tt("exam.customOpen", lang)}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </section>
+
+        {/* v29 — QUICK TOOLS below the real papers: the practice builder and
+            the 60/90-minute mocks stay one tap away, but the qualification
+            papers — the heart of the section — now lead. */}
+        <h2 className="mb-3 mt-6 flex items-center gap-2 font-serif text-[18px] font-semibold">
+          <Target className="h-4 w-4 text-primary" /> {tt("exam29.quickTools", lang)}
+        </h2>
         <div className="grid gap-5 md:grid-cols-2">
           {/* practice card */}
           <section className="rounded-2xl border bg-card p-6 shadow-soft">
@@ -720,161 +1034,6 @@ export function ExamCenter() {
             </div>
           </section>
         </div>
-
-        {/* v22–v25 — previous exam papers: every family grouped by syllabus
-            *  level, each carrying FIVE sittings (flagship + four dated
-            *  years) + a search box so the IFRS diploma is impossible to miss. */}
-        <section className="mt-6 rounded-2xl border bg-card p-6 shadow-soft" aria-label={tt("exam.papersTitle", lang)}>
-          <h2 className="flex items-center gap-2 font-serif text-[18px] font-semibold">
-            <FileText className="h-4 w-4 text-primary" /> {tt("exam.papersTitle", lang)}
-          </h2>
-          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{tt("exam.papersDesc", lang)}</p>
-
-          {/* v25 — find-any-paper search ("ifrs", "tax", "aa"…) */}
-          <div className="relative mt-4 max-w-sm">
-            <Search className="pointer-events-none absolute start-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={familyQuery}
-              onChange={(e) => setFamilyQuery(e.target.value)}
-              placeholder={tt("exam.paperSearchPh", lang)}
-              className="h-9 bg-background ps-8 text-[13px]"
-            />
-          </div>
-
-          {PAPER_GROUPS.map((g) => {
-            const fams = PAPER_FAMILIES.filter(
-              (f) =>
-                f.group === g.id &&
-                (!familyQ ||
-                  `${f.titleEn} ${f.titleAr} ${f.flagship.body} ${f.flagship.blurbEn} ${f.flagship.blurbAr}`
-                    .toLowerCase()
-                    .includes(familyQ))
-            )
-            if (!fams.length) return null
-            return (
-              <div key={g.id} className="mt-5">
-                {/* syllabus-level header */}
-                <div className="mb-3 flex items-center gap-2.5">
-                  <span
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full",
-                      g.id === "ifrs" && "bg-olive",
-                      g.id === "knowledge" && "bg-olive",
-                      g.id === "skills" && "bg-primary",
-                      g.id === "strategic" && "bg-plum",
-                      g.id === "egypt" && "bg-gold",
-                      // v26 — the CPA / CFA / CMA course tracks
-                      g.id === "cpa" && "bg-clay-deep",
-                      g.id === "cfa" && "bg-teal-600",
-                      g.id === "cma" && "bg-sage-deep"
-                    )}
-                  />
-                  <h3 className="text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                    {lang === "ar" ? g.labelAr : g.labelEn}
-                  </h3>
-                  <span className="rounded-full bg-secondary px-1.5 py-px text-[10px] tabular-nums text-muted-foreground">
-                    {fams.length}
-                  </span>
-                  <span className="h-px flex-1 bg-border" />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {fams.map((f) => {
-                    const flagship = f.flagship
-                    // v27 — real-exam format preview on the family card
-                    const fmt = formatForPaper(f.id)
-                    const structLine = fmt
-                      ? fmt.sections
-                          .map((s) =>
-                            s.kind === "mcq"
-                              ? `${s.titleEn.split(" — ")[0]} · ${s.count} Q`
-                              : `${s.titleEn.split(" — ")[0]} · ${s.tasks} ${
-                                  lang === "ar" ? "مهام" : s.id.startsWith("t") ? "TBS" : "tasks"
-                                }`
-                          )
-                          .join(" → ")
-                      : `${flagship.count} Q · ${flagship.durationMin}${tt("exam.minutesShort", lang)}`
-                    return (
-                      <div
-                        key={f.id}
-                        className="flex flex-col rounded-xl border bg-secondary/25 p-4 transition-colors hover:border-primary/30"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
-                            {lang === "ar" ? f.titleAr : f.titleEn}
-                          </h3>
-                          <span className="flex shrink-0 flex-col items-end gap-1">
-                            <span className="rounded-full border border-plum/30 bg-plum/10 px-2 py-0.5 text-[10px] font-semibold text-plum-deep">
-                              {flagship.body}
-                            </span>
-                            {/* full-length flagship badge */}
-                            {flagship.count >= 24 && (
-                              <span className="rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
-                                {tt("exam.paperFull", lang)}
-                              </span>
-                            )}
-                            {/* v27 — real-format badge */}
-                            {fmt && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/[0.07] px-2 py-0.5 text-[10px] font-semibold text-primary">
-                                <BadgeCheck className="h-3 w-3" /> {tt("exam.paperRealFormat", lang)}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
-                          {lang === "ar" ? flagship.blurbAr : flagship.blurbEn}
-                        </p>
-                        {/* v27 — structure line (testlets / sections / sessions) */}
-                        <p dir="auto" className="mt-2 text-[11px] font-medium text-primary/90">
-                          {structLine}
-                        </p>
-                        {/* v27 — one button opens the paper picker: choose
-                            between the flagship + the four dated sittings */}
-                        <div className="mt-3">
-                          <button
-                            onClick={() => setPickerFamily(f)}
-                            disabled={paperLoading !== null || eLoading !== null}
-                            className={cn(
-                              "inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-primary/35 bg-primary/[0.07] px-2.5 py-1.5 text-[11.5px] font-semibold text-primary transition-colors hover:bg-primary/[0.14] focus-ring disabled:opacity-50"
-                            )}
-                          >
-                            {paperLoading ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <ClipboardCheck className="h-3.5 w-3.5" />
-                            )}
-                            {tt("exam.paperPicker", lang)} · {1 + f.sittings.length}
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-
-                  {/* AI custom exam builder card rides along the last group */}
-                  {g.id === "egypt" && (
-                    <div className="flex flex-col rounded-xl border border-dashed border-primary/35 bg-primary/[0.04] p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 dir="auto" className="text-[14px] font-semibold leading-snug">
-                          {tt("exam.customTitle", lang)}
-                        </h3>
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-olive/30 bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive-deep">
-                          <Wand2 className="h-3 w-3" /> AI
-                        </span>
-                      </div>
-                      <p dir="auto" className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">
-                        {tt("exam.customDesc", lang)}
-                      </p>
-                      <div className="mt-3 flex justify-end">
-                        <Button size="sm" className="h-8" variant="secondary" onClick={() => setCustomOpen(true)}>
-                          <Sparkles className="me-1 h-3.5 w-3.5" /> {tt("exam.customOpen", lang)}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </section>
 
         {/* past sittings (v20.1 — P0-1 completion) */}
         {history.length > 0 && (

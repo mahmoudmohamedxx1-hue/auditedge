@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
-import { CourseCard, PageHeader } from "./shared"
+import type { Course } from "@/lib/audit-types"
+import { CourseCard, PageHeader, courseVideoId } from "./shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -75,18 +76,29 @@ export function Courses() {
   const category = useAppStore((s) => s.catalogCategory)
   const setCategory = useAppStore((s) => s.setCatalogCategory)
   const isAdmin = data?.user.role === "admin"
-  // v22 — free-courses catalog section filter
+  // v22 — free-courses catalog section filter (v29: also respects the top search)
   const [freeCat, setFreeCat] = useState<string>("all")
-  const freeFiltered = useMemo(
-    () => (freeCat === "all" ? FREE_COURSES : FREE_COURSES.filter((c) => c.category === freeCat)),
-    [freeCat]
-  )
+  const freeFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return FREE_COURSES.filter((c) => {
+      if (freeCat !== "all" && c.category !== freeCat) return false
+      if (!q) return true
+      return `${c.titleEn} ${c.titleAr} ${c.provider} ${c.descEn} ${c.descAr}`.toLowerCase().includes(q)
+    })
+  }, [freeCat, query])
   // v23 — video-course section filter + in-app player
+  // v29 — the section now leads the page, so the TOP search box filters it
+  //  too (title / channel / description, EN + AR): searching "excel" or
+  //  "مراجعة" now surfaces video courses as well as the DB catalog.
   const [videoCat, setVideoCat] = useState<string>("all")
-  const videoFiltered = useMemo(
-    () => (videoCat === "all" ? VIDEO_COURSES : VIDEO_COURSES.filter((c) => c.category === videoCat)),
-    [videoCat]
-  )
+  const videoFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return VIDEO_COURSES.filter((c) => {
+      if (videoCat !== "all" && c.category !== videoCat) return false
+      if (!q) return true
+      return `${c.titleEn} ${c.titleAr} ${c.channel} ${c.descEn} ${c.descAr}`.toLowerCase().includes(q)
+    })
+  }, [videoCat, query])
   const [openCourse, setOpenCourse] = useState<VideoCourse | null>(null)
   const [lessonIdx, setLessonIdx] = useState(0)
 
@@ -111,14 +123,22 @@ export function Courses() {
     })
   }, [data, query, category])
 
-  /* v28 — the workspace's own catalog splits in two: the CORE curriculum
-   *  (ISA / IFRS / Egyptian-framework programs) and the ARABIC ACADEMY
-   *  (supplementary playlist courses — Hamouda, اعرف المحاسبة…). The
-   *  academy used to sink to the very bottom of the page as a faceless
-   *  sub-grid; it now sits right under the core, with its own headed
-   *  section and REAL video thumbnails on every card. */
-  const coreCourses = useMemo(() => courses.filter((c) => !c.supplementary), [courses])
-  const academyCourses = useMemo(() => courses.filter((c) => c.supplementary), [courses])
+  /* v29 — YOUTUBE COURSES FIRST: every section that carries a REAL video
+   *  thumbnail now leads the page (in-app video courses → Arabic Academy),
+   *  and the core curriculum (designed covers, no video thumbnails yet)
+   *  follows after — the user should always meet the richest cards first.
+   *  Within each DB section, courses with a playable video sort above the
+   *  ones without, so a thumbnail never hides below a plain cover. */
+  const byThumbnail = (a: Course, b: Course) =>
+    Number(courseVideoId(b) !== null) - Number(courseVideoId(a) !== null)
+  const coreCourses = useMemo(
+    () => courses.filter((c) => !c.supplementary).slice().sort(byThumbnail),
+    [courses]
+  )
+  const academyCourses = useMemo(
+    () => courses.filter((c) => c.supplementary).slice().sort(byThumbnail),
+    [courses]
+  )
 
   if (!data) return null
 
@@ -196,87 +216,23 @@ export function Courses() {
         )}
       </div>
 
-      {/* v28 — CORE CURRICULUM first: the workspace's own programs lead the
-          page; the search + category filter above drives both sections. */}
-      {coreCourses.length > 0 && (
-        <section aria-label={tt("courses28.coreTitle", lang)}>
-          <div className="mb-3.5 flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <h2 className="font-serif text-[19px] font-semibold">{tt("courses28.coreTitle", lang)}</h2>
-              <p className="mt-0.5 text-[12.5px] text-muted-foreground">{tt("courses28.coreDesc", lang)}</p>
-            </div>
-            <span className="rounded-full border bg-card px-2.5 py-1 text-[11px] tabular-nums text-muted-foreground">
-              {coreCourses.length}
-            </span>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {coreCourses.map((c) => (
-              <CourseCard key={c.id} course={c} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* v28 — ARABIC ACADEMY moved UP (was a bare tail grid at the page
-          bottom): the full Arabic playlist courses — with real YouTube
-          thumbnails — now sit directly under the core curriculum. */}
-      {academyCourses.length > 0 && (
-        <section
-          className="rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/[0.06] via-card to-card p-5 shadow-soft"
-          aria-label={tt("courses28.academyTitle", lang)}
-        >
-          <div className="mb-3.5 flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <h2 className="flex items-center gap-2 font-serif text-[19px] font-semibold">
-                <Languages className="h-4.5 w-4.5 text-gold-deep" />
-                {tt("courses28.academyTitle", lang)}
-              </h2>
-              <p className="mt-0.5 max-w-3xl text-[12.5px] leading-relaxed text-muted-foreground">
-                {tt("courses28.academyDesc", lang)}
-              </p>
-            </div>
-            <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium tabular-nums text-gold-deep">
-              {academyCourses.length} {tt("courses28.academyCount", lang)}
-            </span>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {academyCourses.map((c) => (
-              <CourseCard key={c.id} course={c} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {courses.length === 0 && (
-        <div className="rounded-xl border border-dashed py-16 text-center">
-          <p className="font-serif text-[16px] font-semibold">{tt("courses.noneFound", lang)}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {query ? tt("courses.nothingMatches", lang) : tt("courses.noneInCategory", lang)}
-          </p>
-          {(query || category) && (
-            <Button
-              variant="outline"
-              className="mt-5 h-9"
-              onClick={() => {
-                setQuery("")
-                setCategory(null)
-              }}
-            >
-              {tt("courses.clearFilters", lang)}
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* v23 — full video courses with pro thumbnails, playable in-app */}
-      <section className="rounded-2xl border border-plum/25 bg-plum/[0.04] p-5 shadow-soft">
+      {/* v29 — VIDEO COURSES OPEN THE CATALOG (user request: YouTube courses
+          first, because some catalog courses have no video thumbnails yet):
+          full multi-hour YouTube courses with real thumbnails, playable
+          in-app — every card shows the source video's own artwork. */}
+      <section className="rounded-2xl border border-plum/25 bg-plum/[0.05] p-5 shadow-soft">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-plum/15 text-plum-deep">
               <MonitorPlay className="h-5 w-5" />
             </span>
             <div>
-              <h2 className="font-serif text-[17px] font-semibold">{tt("courses.videoTitle", lang)}</h2>
+              <h2 className="flex items-center gap-2 font-serif text-[17px] font-semibold">
+                {tt("courses.videoTitle", lang)}
+                <span className="rounded-full border border-plum/30 bg-plum/10 px-2 py-px text-[10px] font-semibold text-plum-deep">
+                  {tt("courses29.ytFirst", lang)}
+                </span>
+              </h2>
               <p className="text-[12.5px] text-muted-foreground">{tt("courses.videoDesc", lang)}</p>
             </div>
           </div>
@@ -374,6 +330,80 @@ export function Courses() {
           ))}
         </div>
       </section>
+
+      {/* v28/v29 — ARABIC ACADEMY (second section): the full Arabic playlist
+          courses with real YouTube thumbnails sit right under the in-app
+          video courses — above the thumbnail-less core curriculum. */}
+      {academyCourses.length > 0 && (
+        <section
+          className="rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/[0.06] via-card to-card p-5 shadow-soft"
+          aria-label={tt("courses28.academyTitle", lang)}
+        >
+          <div className="mb-3.5 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="flex items-center gap-2 font-serif text-[19px] font-semibold">
+                <Languages className="h-4.5 w-4.5 text-gold-deep" />
+                {tt("courses28.academyTitle", lang)}
+              </h2>
+              <p className="mt-0.5 max-w-3xl text-[12.5px] leading-relaxed text-muted-foreground">
+                {tt("courses28.academyDesc", lang)}
+              </p>
+            </div>
+            <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium tabular-nums text-gold-deep">
+              {academyCourses.length} {tt("courses28.academyCount", lang)}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {academyCourses.map((c) => (
+              <CourseCard key={c.id} course={c} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* v29 — CORE CURRICULUM (moved below the YouTube sections): the
+          workspace's own programs carry designed covers rather than video
+          thumbnails, so they now follow the richer YouTube-backed sections;
+          the search + category filter above still drives both DB sections. */}
+      {coreCourses.length > 0 && (
+        <section aria-label={tt("courses28.coreTitle", lang)}>
+          <div className="mb-3.5 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="font-serif text-[19px] font-semibold">{tt("courses28.coreTitle", lang)}</h2>
+              <p className="mt-0.5 text-[12.5px] text-muted-foreground">{tt("courses28.coreDesc", lang)}</p>
+            </div>
+            <span className="rounded-full border bg-card px-2.5 py-1 text-[11px] tabular-nums text-muted-foreground">
+              {coreCourses.length}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {coreCourses.map((c) => (
+              <CourseCard key={c.id} course={c} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {courses.length === 0 && (
+        <div className="rounded-xl border border-dashed py-16 text-center">
+          <p className="font-serif text-[16px] font-semibold">{tt("courses.noneFound", lang)}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {query ? tt("courses.nothingMatches", lang) : tt("courses.noneInCategory", lang)}
+          </p>
+          {(query || category) && (
+            <Button
+              variant="outline"
+              className="mt-5 h-9"
+              onClick={() => {
+                setQuery("")
+                setCategory(null)
+              }}
+            >
+              {tt("courses.clearFilters", lang)}
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* v22 — pro free courses anyone can access (ACCA / MIT / OU / Edraak…) */}
       <section className="rounded-2xl border border-olive/25 bg-olive/[0.04] p-5 shadow-soft">

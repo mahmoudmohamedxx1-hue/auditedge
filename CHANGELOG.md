@@ -4,6 +4,42 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 29.0.0 — The YouTube-first catalog + exams-hub-upgrade release
+
+**YouTube courses now open the Courses page.** The user asked for the
+richest cards first — "put youtube courses first as there are courses that
+don't have thumbnails" — so the **full video courses** section (the in-app
+playable YouTube catalog with real thumbnails) now leads the page, the
+**Arabic Academy** (all 20+ complete Arabic playlist courses, every card
+showing its source video's own artwork) sits directly underneath, and the
+**Core curriculum** — whose programs carry designed covers rather than
+video thumbnails for now — follows after. Inside each catalog section,
+courses with a playable video sort above thumbnail-less ones, so a real
+thumbnail can never hide below a plain cover again. The top search box now
+filters the whole page too: it always drove the DB catalog, and it now
+matches the video-course catalog (title / channel / description, English
+and Arabic — "excel" or "مراجعة" both work) and the free-course catalog,
+so nothing on the page is unsearchable.
+
+**The Exam Center got the upgrade its content deserved.** The real
+qualification papers — the heart of the section — now **lead the hub**
+instead of sitting below the generic mock cards: right under the header
+comes a **performance overview strip** with the learner's own numbers
+(completed sittings, average score, best score, pass rate at 50%+),
+then the full papers catalog, then the quick practice & mock tools below.
+The papers catalog gained **one-tap qualification filter chips** (All ·
+IFRS · ACCA · CPA · CFA · CMA · Egyptian practice, each with its family
+count, ACCA folding its three syllabus levels into one chip), and every
+family card now shows **the five sittings at a glance** — a Flagship chip
+plus the four dated years (June 2024 · Sept 2023 · June 2022 · Dec 2021) —
+so the five-papers-per-exam promise is visible before the picker even
+opens, alongside a per-family badge with the learner's attempts and best
+score once they've sat that exam. The hub widened to match the richer
+grid. Verified end-to-end in the browser: courses order (video → academy →
+core), 22 live YouTube thumbnails in the academy section, the CPA filter,
+the flagship + year chips, and the paper picker still opening the
+real-exam blueprint with all five sittings.
+
 ## 28.0.0 — The exam-opening fix + AI program customizer release
 
 **The paper exams open again — and never break on a stale database again.**
