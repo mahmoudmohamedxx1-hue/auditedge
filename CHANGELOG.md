@@ -4,6 +4,74 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 32.0.0 — Shareable deep links + every IFRS summary at the FULL 12-page depth
+
+Two headline deliveries:
+
+### 1. Every page of the app can now be shared by its URL
+
+The app gained hash-based deep links (`src/lib/deeplink.ts`): every view —
+and every *selection inside a view* — lives at its own address, so copying
+the link and sending it to a friend opens **the exact same page**:
+
+- `#/course/<id>` a course · `#/lesson/<id>?c=<courseId>` a lesson ·
+  `#/quiz/<id>?c=<id>` its quiz · `#/studio/course/<id>` the builder
+- `#/ifrs?std=IFRS+9` one IFRS sheet · `#/exam?paper=cpa-far` one exam
+  family's paper picker · `#/sectors?sector=insurance` one sector ·
+  `#/courses?video=<id>` one video course player
+- every other view: `#/ai`, `#/library`, `#/program`, `#/review`,
+  `#/simulation`, `#/podcast`, `#/analytics`, `#/achievements`, …
+
+The shell records every in-app navigation (view changes **push** a history
+entry so the browser back-button walks the app; id-only changes replace),
+and `popstate`/`hashchange` re-navigate — including the component-owned
+params (`?std` / `?paper` / `?sector` / `?video`), which are **preserved
+through the rewrite** when a visitor who is already inside the app opens a
+shared link (the `hashForRoutePreserving` machinery + `PARAM_OWNERS` map).
+
+**Share buttons everywhere:** a global share button in the mobile top bar
+and the desktop sidebar footer, a labeled Share on every course detail, a
+share on the lesson progress line, a Share beside Print on every IFRS sheet,
+a per-family share on every exam card (`#/exam?paper=…`), a share inside the
+video-course player, and a **Ctrl+K palette action** "Copy link to this
+page". Mobile uses the native share sheet (`navigator.share`), desktop
+copies to the clipboard with a confirmation toast. Dead shared links
+(deleted course/lesson) land on a friendly not-found card — never a blank
+page.
+
+### 2. The IFRS Summaries rewritten to the FULL depth of the 12-page PDF
+
+The user's bar: "more and more comprehensive, just the same as the pdf … it
+was about ifrs 15 and it was 12 pages". v31 averaged 20 blocks per standard
+against the flagship's 64. **v32 lifts every one of the 41 standards to
+45–64 blocks** — the catalog grew from **821 to 2,079 revision blocks**
+(2.5×), average **50.7** per standard, shallowest 45 (IFRS 15 = 64, IFRS 9 =
+64):
+
+- **138 decision trees** (was 73) with red-ink accounting answers
+- **144 T-account journal sets** (was 40) covering each standard's full
+  lifecycle — initial recognition → subsequent measurement → derecognition
+- **103 worked numeric examples** (was 36) with arithmetic that ties
+- **54 formula panels**, **156 exam tips**, **129 bilingual margin notes**
+
+Every sheet now carries the PDF's full section rhythm: objective, scope &
+exclusions (naming the standard that covers each exclusion), key
+definitions, recognition machinery with decision trees, measurement with
+formulas, journals at each lifecycle event, worked examples, the classic
+exam traps, disclosure essentials, transition & effective dates, and
+interactions with the other standards. Content quality notes: IAS 1 teaches
+the 2024 covenant amendment; IFRS 9 runs the full 3-stage ECL engine;
+IFRS 16 carries the sale-and-leaseback gain cap; IAS 36 the CGU allocation
+with the goodwill gross-up; IFRS 3 both NCI measurements and the
+measurement-period discipline; IAS 33 basic + diluted EPS with the rights
+issue bonus factor; IAS 26/28 the plan/equity-method machinery.
+
+The per-standard depth checker ships with the repo
+(`bun scripts/check-ifrs-file.ts "IFRS 9"`), and **test-v32** (57 checks)
+locks the bar in permanently: no standard below 45 blocks, ≥ 10 headings,
+≥ 10 paragraphs, ≥ 3 trees, ≥ 2 journals in every sheet, full bilingual
+integrity, plus the deep-link parse/encode round-trips and wiring checks.
+
 ## 31.0.0 — Every summary written to the depth of the sample PDF
 
 **The user's verdict on v30: the summaries must be "more comprehensive, just

@@ -197,19 +197,22 @@ export function IfrsBlockView({ block, lang }: { block: Block; lang: Lang }) {
       )
     case "steps":
       return (
-        <ol className="my-2 space-y-1.5">
-          {block.items.map((item, i) => (
-            <li key={i} dir={lang === "ar" ? "rtl" : "ltr"} className={cn("flex items-start gap-3", ink(lang))}>
-              <span
-                aria-hidden
-                className="ifrs-wobble-red ifrs-ink-red mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[15px] font-bold leading-none"
-              >
-                {i + 1}
-              </span>
-              <span className="min-w-0 pt-0.5">{pick(item, lang)}</span>
-            </li>
-          ))}
-        </ol>
+        <div className="my-2">
+          {block.title && <AsteriskHeading text={block.title} lang={lang} />}
+          <ol className="space-y-1.5">
+            {block.items.map((item, i) => (
+              <li key={i} dir={lang === "ar" ? "rtl" : "ltr"} className={cn("flex items-start gap-3", ink(lang))}>
+                <span
+                  aria-hidden
+                  className="ifrs-wobble-red ifrs-ink-red mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[15px] font-bold leading-none"
+                >
+                  {i + 1}
+                </span>
+                <span className="min-w-0 pt-0.5">{pick(item, lang)}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
       )
     case "tree":
       return (

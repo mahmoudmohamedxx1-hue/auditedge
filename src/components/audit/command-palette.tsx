@@ -16,6 +16,7 @@ import {
   Headphones,
   Home,
   Layers,
+  Link2,
   Medal,
   NotebookPen,
   PenSquare,
@@ -167,6 +168,34 @@ export function CommandPalette() {
       action: () => {
         setLang(lang === "ar" ? "en" : "ar")
         setOpen(false)
+      },
+    })
+    // v32 — copy the current page's shareable deep link
+    list.push({
+      id: "action-share",
+      group: "views",
+      label: tt("share32.copyPage", lang),
+      hint: tt("share32.copyPageHint", lang),
+      icon: Link2,
+      action: async () => {
+        setOpen(false)
+        const url = window.location.href
+        try {
+          await navigator.clipboard.writeText(url)
+        } catch {
+          const ta = document.createElement("textarea")
+          ta.value = url
+          ta.style.position = "fixed"
+          ta.style.opacity = "0"
+          document.body.appendChild(ta)
+          ta.select()
+          try {
+            document.execCommand("copy")
+          } catch {}
+          document.body.removeChild(ta)
+        }
+        const { toast } = await import("sonner")
+        toast.success(tt("share32.copied", lang), { description: url })
       },
     })
     for (const c of data?.courses ?? []) {

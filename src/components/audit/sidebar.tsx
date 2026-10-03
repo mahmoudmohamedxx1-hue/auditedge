@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { Wordmark } from "./shared"
 import { LangToggle } from "./lang-toggle"
 import { ThemeToggle } from "./theme-toggle"
+import { ShareIconButton } from "./share-button"
 import { tt } from "@/lib/i18n"
 import {
   BarChart3,
@@ -304,6 +305,8 @@ function SidebarContent({
           <div className="flex items-center justify-center gap-2 px-2">
             <ThemeToggle />
             <LangToggle />
+            {/* v32 — copy/share the current page's deep link */}
+            <ShareIconButton />
           </div>
         )}
         <div

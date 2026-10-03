@@ -11,6 +11,7 @@ import {
 } from "@/lib/program/sectors"
 import { ASSERTIONS, PROGRAM_SECTIONS } from "@/lib/program"
 import { loadEngagements, saveEngagements } from "@/lib/engagement"
+import { getRouteParam, onRouteParams, setRouteParam } from "@/lib/deeplink"
 import { tt, type Lang } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -164,12 +165,19 @@ export function SectorLibrary() {
   const lang = useAppStore((s) => s.lang)
   const rtl = lang === "ar"
 
-  const [activeId, setActiveId] = useState<string>(SECTOR_PROFILES[0].id)
+  const [activeId, setActiveId] = useState<string>(() => {
+    // v32 — a shared deep link (#/sectors?sector=banks) wins; else default
+    const shared = typeof window !== "undefined" ? getRouteParam("sector") : null
+    return shared && SECTOR_PROFILES.some((s) => s.id === shared) ? shared : SECTOR_PROFILES[0].id
+  })
   const [query, setQuery] = useState("")
   const [askPreset, setAskPreset] = useState<{ industry: string; token: number } | null>(null)
 
-  // restore the last-viewed sector after hydration (SSR renders the default)
+  // restore the last-viewed sector after hydration (SSR renders the default) —
+  // a shared ?sector= link takes precedence and is not overwritten
   useEffect(() => {
+    const shared = getRouteParam("sector")
+    if (shared && SECTOR_PROFILES.some((s) => s.id === shared)) return
     const restore = () => {
       try {
         const saved = localStorage.getItem("auditedge-sectors-active")
@@ -179,8 +187,19 @@ export function SectorLibrary() {
     restore()
   }, [])
 
+  // browser back/forward with a different ?sector= keeps the view in step
+  useEffect(
+    () =>
+      onRouteParams((params) => {
+        const id = params.get("sector")
+        if (id && SECTOR_PROFILES.some((s) => s.id === id)) setActiveId(id)
+      }),
+    []
+  )
+
   const goSector = (id: string) => {
     setActiveId(id)
+    setRouteParam("sector", id)
     try {
       localStorage.setItem("auditedge-sectors-active", id)
     } catch {}

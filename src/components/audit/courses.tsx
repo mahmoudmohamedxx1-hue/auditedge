@@ -1,9 +1,11 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import type { Course } from "@/lib/audit-types"
 import { CourseCard, PageHeader, courseVideoId } from "./shared"
+import { ShareButton } from "./share-button"
+import { getRouteParam, onRouteParams, setRouteParam, shareUrlFor } from "@/lib/deeplink"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -99,8 +101,32 @@ export function Courses() {
       return `${c.titleEn} ${c.titleAr} ${c.channel} ${c.descEn} ${c.descAr}`.toLowerCase().includes(q)
     })
   }, [videoCat, query])
-  const [openCourse, setOpenCourse] = useState<VideoCourse | null>(null)
+  const [openCourse, setOpenCourse] = useState<VideoCourse | null>(() => {
+    // v32 — a shared deep link (#/courses?video=<id>) opens the player dialog
+    // directly; read at first render so no effect is needed for the initial hit
+    const id = typeof window !== "undefined" ? getRouteParam("video") : null
+    return id ? VIDEO_COURSES.find((x) => x.id === id) ?? null : null
+  })
   const [lessonIdx, setLessonIdx] = useState(0)
+
+  // v32 — opening a course writes the ?video= param (shareable); browser
+  // back/forward re-reads it through onRouteParams (an event callback, so
+  // setState is safe)
+  const openVideoCourse = (c: VideoCourse | null) => {
+    setOpenCourse(c)
+    setLessonIdx(0)
+    setRouteParam("video", c?.id ?? null)
+  }
+  useEffect(
+    () =>
+      onRouteParams((params) => {
+        const pid = params.get("video")
+        const c2 = pid ? VIDEO_COURSES.find((x) => x.id === pid) : null
+        setOpenCourse(c2 ?? null)
+        if (!c2) setLessonIdx(0)
+      }),
+    []
+  )
 
   const categories = useMemo(() => {
     if (!data) return []
@@ -270,8 +296,7 @@ export function Courses() {
               key={c.id}
               type="button"
               onClick={() => {
-                setOpenCourse(c)
-                setLessonIdx(0)
+                openVideoCourse(c)
               }}
               className="group flex flex-col overflow-hidden rounded-xl border bg-card/80 text-start transition-all hover:-translate-y-0.5 hover:border-plum/40 hover:shadow-soft focus-ring"
             >
@@ -535,7 +560,7 @@ export function Courses() {
       </section>
 
       {/* v23 — in-app video course player */}
-      <Dialog open={!!openCourse} onOpenChange={(v) => !v && setOpenCourse(null)}>
+      <Dialog open={!!openCourse} onOpenChange={(v) => !v && openVideoCourse(null)}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[720px] scroll-thin">
           {openCourse && (
             <>
@@ -598,14 +623,23 @@ export function Courses() {
                 <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <FileSpreadsheet className="h-3.5 w-3.5" /> {openCourse.views}
                 </span>
-                <a
-                  href={`https://www.youtube.com/watch?v=${openCourse.lessons[lessonIdx]?.id ?? openCourse.lessons[0].id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:border-plum/40 hover:text-foreground focus-ring"
-                >
-                  <Youtube className="h-3.5 w-3.5 text-plum-deep" /> {tt("courses.videoOpenYt", lang)}
-                </a>
+                <span className="flex items-center gap-2">
+                  {/* v32 — share this exact video course (#/courses?video=…) */}
+                  <ShareButton
+                    url={shareUrlFor("courses", { param: ["video", openCourse.id] })}
+                    title={lang === "ar" ? openCourse.titleAr : openCourse.titleEn}
+                    variant="ghost"
+                    className="h-8 w-8 px-0"
+                  />
+                  <a
+                    href={`https://www.youtube.com/watch?v=${openCourse.lessons[lessonIdx]?.id ?? openCourse.lessons[0].id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:border-plum/40 hover:text-foreground focus-ring"
+                  >
+                    <Youtube className="h-3.5 w-3.5 text-plum-deep" /> {tt("courses.videoOpenYt", lang)}
+                  </a>
+                </span>
               </div>
             </>
           )}

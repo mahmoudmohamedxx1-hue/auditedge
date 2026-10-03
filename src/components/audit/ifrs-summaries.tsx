@@ -13,13 +13,15 @@
  * visible before you open a sheet.
  */
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { IFRS_SUMMARIES, searchStandards, topicsOf, depthOf, catalogStats } from "@/lib/ifrs"
 import type { Standard, TopicId } from "@/lib/ifrs/types"
+import { getRouteParam, onRouteParams, setRouteParam } from "@/lib/deeplink"
 import { pick, tt } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { IfrsSheet } from "./ifrs-sheet"
+import { ShareButton } from "./share-button"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, ArrowRight, ListTree, NotebookPen, Printer, Search, Sigma, Star, Table2 } from "lucide-react"
@@ -124,10 +126,30 @@ function StandardCard({
 
 export function IfrsSummaries() {
   const lang = useAppStore((s) => s.lang)
-  const [selected, setSelected] = useState<string | null>(null)
+  // v32 — deep-linkable sheet: #/ifrs?std=IFRS+15 opens the standard directly
+  const [selected, setSelected] = useState<string | null>(() => {
+    const code = getRouteParam("std")
+    return code && IFRS_SUMMARIES.some((s) => s.code === code) ? code : null
+  })
   const [query, setQuery] = useState("")
   const [topic, setTopic] = useState<TopicId | "all">("all")
   const [showNotes, setShowNotes] = useState(true)
+
+  // open/close a sheet while keeping the URL in step (back button walks sheets)
+  const openStd = (code: string | null) => {
+    setSelected(code)
+    setRouteParam("std", code)
+  }
+
+  // browser back / forward / hand-edited URL → re-read the std param
+  useEffect(
+    () =>
+      onRouteParams((params) => {
+        const code = params.get("std")
+        setSelected(code && IFRS_SUMMARIES.some((s) => s.code === code) ? code : null)
+      }),
+    []
+  )
 
   const topics = topicsOf()
   const rtl = lang === "ar"
@@ -147,7 +169,7 @@ export function IfrsSummaries() {
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 print:hidden">
-          <Button variant="outline" size="sm" onClick={() => setSelected(null)} className="h-9">
+          <Button variant="outline" size="sm" onClick={() => openStd(null)} className="h-9">
             <ArrowLeft className={cn("h-4 w-4", rtl && "-scale-x-100")} />
             {tt("ifrs30.back", lang)}
           </Button>
@@ -161,6 +183,8 @@ export function IfrsSummaries() {
               />
               {tt("ifrs30.notesToggle", lang)}
             </label>
+            {/* v32 — share this exact sheet (#/ifrs?std=…) */}
+            <ShareButton label={tt("share32.shareLabel", lang)} title={`${current.code} — ${pick(current.title, lang)}`} />
             <Button variant="outline" size="sm" onClick={() => window.print()} className="h-9">
               <Printer className="h-4 w-4" />
               {tt("ifrs30.print", lang)}
@@ -209,7 +233,7 @@ export function IfrsSummaries() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSelected(prev.code)}
+              onClick={() => openStd(prev.code)}
               className="h-auto max-w-[45%] flex-col items-start gap-0.5 px-3 py-2 text-start"
             >
               <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -226,7 +250,7 @@ export function IfrsSummaries() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSelected(next.code)}
+              onClick={() => openStd(next.code)}
               className="h-auto max-w-[45%] flex-col items-end gap-0.5 px-3 py-2 text-end"
             >
               <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -340,7 +364,7 @@ export function IfrsSummaries() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((std) => (
-            <StandardCard key={std.code} std={std} lang={lang} onOpen={() => setSelected(std.code)} />
+            <StandardCard key={std.code} std={std} lang={lang} onOpen={() => openStd(std.code)} />
           ))}
         </div>
       )}

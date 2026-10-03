@@ -235,6 +235,11 @@ export const T = {
     onCompletion: { en: "On completion", ar: "عند الإكمال" },
     lessonsOf: { en: "of", ar: "من" },
     cpeEarned: { en: "CPE earned", ar: "ساعة مكتسبة" },
+    notFoundTitle: { en: "This course isn't available", ar: "هذه الدورة غير متاحة" },
+    notFoundBody: {
+      en: "The shared link points to a course that was removed or hasn't been published yet. Browse the catalog for the full curriculum.",
+      ar: "يشير الرابط المشترك إلى دورة حُذفت أو لم تُنشر بعد. تصفح الفهرس للاطلاع على كامل الدورات.",
+    },
   },
 
   /* ---------- lesson player ---------- */
@@ -248,6 +253,11 @@ export const T = {
     unsave: { en: "Remove from saved", ar: "إزالة من المحفوظات" },
     savedLessons: { en: "Saved lessons", ar: "الدروس المحفوظة" },
     savedEmpty: { en: "Bookmark lessons worth revisiting — they collect here.", ar: "احفظ الدروس التي تستحق المراجعة — تتجمع هنا." },
+    notFoundTitle: { en: "This lesson isn't available", ar: "هذا الدرس غير متاح" },
+    notFoundBody: {
+      en: "The shared link points to a lesson that was removed. Head to the course catalog to continue studying.",
+      ar: "يشير الرابط المشترك إلى درس حُذف. انتقل إلى فهرس الدورات لمواصلة الدراسة.",
+    },
     continueOn: { en: "Continue this course on", ar: "أكمل هذه الدورة على" },
     thePlatform: { en: "the platform", ar: "المنصة" },
     videoCaption: {
@@ -1357,6 +1367,14 @@ export const T = {
     print: { en: "Print / PDF", ar: "طباعة / PDF" },
     notesToggle: { en: "Margin notes", ar: "ملاحظات الهامش" },
     empty: { en: "No standard matches that search.", ar: "لا يطابق هذا البحث أي معيار." },
+  },
+  share32: {
+    site: { en: "AuditEdge Academy", ar: "أكاديمية AuditEdge" },
+    share: { en: "Share this page", ar: "مشاركة هذه الصفحة" },
+    shareLabel: { en: "Share", ar: "مشاركة" },
+    copied: { en: "Link copied — open it anywhere to land on this exact page", ar: "تم نسخ الرابط — افتحه في أي مكان ليقودك إلى هذه الصفحة نفسها" },
+    copyPage: { en: "Copy link to this page", ar: "نسخ رابط هذه الصفحة" },
+    copyPageHint: { en: "Anyone opening it lands right here", ar: "من يفتحه يصل إلى هنا مباشرة" },
   },
   ifrs31: {
     standards: { en: "standards", ar: "معيارًا" },

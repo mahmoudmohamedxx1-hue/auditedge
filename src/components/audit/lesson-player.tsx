@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { courseLessons, accentOf } from "./shared"
+import { ShareButton } from "./share-button"
 import { formatBytes } from "@/lib/audit-types"
 import { tt } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
@@ -199,6 +200,20 @@ export function LessonPlayer() {
   )
   const videoId = lesson ? youtubeIdOf(lesson.videoUrl) : null
 
+  if (data && (!course || !lesson)) {
+    // a shared deep link whose lesson no longer exists — never a blank page
+    return (
+      <div className="mx-auto max-w-md py-16 text-center">
+        <FileQuestion className="mx-auto h-10 w-10 text-muted-foreground/60" />
+        <h1 className="mt-4 font-serif text-xl font-semibold">{tt("lesson.notFoundTitle", lang)}</h1>
+        <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">{tt("lesson.notFoundBody", lang)}</p>
+        <Button onClick={() => navigate("courses")} className="mt-5 h-10">
+          <ChevronLeft className="h-4 w-4 rtl:rotate-180" /> {tt("detail.allCourses", lang)}
+        </Button>
+      </div>
+    )
+  }
+
   if (!course || !lesson) return null
   const accent = accentOf(course.accent)
 
@@ -255,6 +270,8 @@ export function LessonPlayer() {
         <span className="shrink-0 text-[11.5px] text-muted-foreground">
           {idx + 1} / {flat.length} · {courseProg}%
         </span>
+        {/* v32 — share this exact lesson (#/lesson/<id>?c=…) */}
+        <ShareButton variant="ghost" title={lesson.title} className="h-7 w-7 px-0" />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1fr)_260px]">

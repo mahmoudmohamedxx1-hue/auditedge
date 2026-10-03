@@ -176,7 +176,9 @@ async function main() {
   check("margin-notes toggle prop respected", sheet.includes("showNotes"))
 
   const hub = readFileSync(join(ROOT, "src/components/audit/ifrs-summaries.tsx"), "utf8")
-  check("hub has search + topic chips + prev/next + print", ["searchStandards", "setTopic", "setSelected(prev.code)", "setSelected(next.code)", "window.print()"].every((s) => hub.includes(s)))
+  // v32: prev/next navigate through openStd (the URL-syncing wrapper that
+  // replaced the bare setSelected calls) — accept either spelling
+  check("hub has search + topic chips + prev/next + print", ["searchStandards", "setTopic", "window.print()"].every((s) => hub.includes(s)) && (/setSelected\(prev\.code\)|openStd\(prev\.code\)/.test(hub)) && (/setSelected\(next\.code\)|openStd\(next\.code\)/.test(hub)))
 
   /* ---------------- 7. i18n ---------------- */
   console.log("── 7. i18n ──")

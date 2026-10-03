@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Menu } from "lucide-react"
+import { ShareIconButton } from "@/components/audit/share-button"
+import { hashForRoutePreserving, parseHash, routeParamsChanged } from "@/lib/deeplink"
 import { AnimatePresence, motion, MotionConfig } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { tt } from "@/lib/i18n"
@@ -187,6 +189,63 @@ export default function Home() {
     void checkAuth()
   }, [checkAuth])
 
+  /* v32 — shareable deep links: every page lives at its own URL.
+   *
+   * (a) apply the hash the visitor arrived with (a shared link opens the
+   *     exact course / lesson / IFRS sheet / exam paper the sender was on);
+   * (b) record every in-app navigation into the address bar — view changes
+   *     PUSH a history entry (the browser back-button walks the app),
+   *     id-only changes REPLACE it;
+   * (c) popstate / hashchange (back, forward, or a hand-edited URL)
+   *     re-navigate — and component-level params (?std / ?sector / ?paper)
+   *     are notified through routeParamsChanged(). */
+  useEffect(() => {
+    const initial = parseHash(window.location.hash)
+    if (initial && (initial.view !== "home" || initial.courseId || initial.lessonId)) {
+      navigate(initial.view, {
+        courseId: initial.courseId ?? undefined,
+        lessonId: initial.lessonId ?? undefined,
+      })
+    }
+
+    const unsub = useAppStore.subscribe((s, prev) => {
+      if (
+        s.view === prev.view &&
+        s.selectedCourseId === prev.selectedCourseId &&
+        s.selectedLessonId === prev.selectedLessonId
+      ) {
+        return
+      }
+      const next = hashForRoutePreserving(s.view, s.selectedCourseId, s.selectedLessonId)
+      if (next === window.location.hash) return
+      const url = window.location.pathname + window.location.search + next
+      // a different VIEW pushes (real history); same view, new id replaces
+      if (s.view !== prev.view) window.history.pushState(null, "", url)
+      else window.history.replaceState(null, "", url)
+    })
+
+    const onHistory = () => {
+      const r = parseHash(window.location.hash)
+      if (!r) return
+      const s = useAppStore.getState()
+      if (s.view !== r.view || s.selectedCourseId !== r.courseId || s.selectedLessonId !== r.lessonId) {
+        navigate(r.view, {
+          courseId: r.courseId ?? undefined,
+          lessonId: r.lessonId ?? undefined,
+        })
+      }
+      // params owned by the views themselves (std / sector / paper …)
+      routeParamsChanged()
+    }
+    window.addEventListener("popstate", onHistory)
+    window.addEventListener("hashchange", onHistory)
+    return () => {
+      unsub()
+      window.removeEventListener("popstate", onHistory)
+      window.removeEventListener("hashchange", onHistory)
+    }
+  }, [navigate])
+
   // Ctrl/Cmd+B — open/close the desktop sidebar (the mobile sheet has its
   // own hamburger; this shortcut mirrors every major editor)
   useEffect(() => {
@@ -247,6 +306,7 @@ export default function Home() {
           {viewTitleOf(view, lang)}
         </span>
         <div className="ms-auto flex items-center gap-1.5">
+          <ShareIconButton className="h-8 w-8" />
           <ThemeToggle compact />
           <LangToggle compact />
         </div>

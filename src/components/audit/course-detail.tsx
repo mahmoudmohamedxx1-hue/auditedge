@@ -11,6 +11,7 @@ import {
   COURSE_ICONS,
 } from "./shared"
 import { CourseCover } from "./course-cover"
+import { ShareButton } from "./share-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -20,6 +21,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   CircleHelp,
+  CircleSlash,
   Clock,
   FileQuestion,
   PlayCircle,
@@ -39,6 +41,20 @@ export function CourseDetail() {
     () => (course && data ? data.enrollments.some((e) => e.courseId === course.id) : false),
     [course, data]
   )
+
+  if (data && !course) {
+    // a shared deep link whose course no longer exists — never a blank page
+    return (
+      <div className="mx-auto max-w-md py-16 text-center">
+        <CircleSlash className="mx-auto h-10 w-10 text-muted-foreground/60" />
+        <h1 className="mt-4 font-serif text-xl font-semibold">{tt("detail.notFoundTitle", lang)}</h1>
+        <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">{tt("detail.notFoundBody", lang)}</p>
+        <Button onClick={() => navigate("courses")} className="mt-5 h-10">
+          <ChevronLeft className="h-4 w-4 rtl:rotate-180" /> {tt("detail.allCourses", lang)}
+        </Button>
+      </div>
+    )
+  }
 
   if (!course || !data) return null
 
@@ -132,6 +148,10 @@ export function CourseDetail() {
                 <Star className="h-4 w-4 fill-gold text-gold" /> {course.rating.toFixed(1)}
               </span>
             )}
+            {/* v32 — share this course's deep link (#/course/<id>) */}
+            <span className="ms-auto">
+              <ShareButton label={tt("share32.shareLabel", lang)} title={`${course.code} — ${course.title}`} />
+            </span>
           </div>
 
           {/* description */}

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { tt, dateLocaleOf } from "@/lib/i18n"
 import { PAPER_FAMILIES, PAPER_GROUPS, PAPER_SITTINGS, getPastPaper, type PaperFamily } from "@/lib/past-papers"
+import { getRouteParam, onRouteParams, setRouteParam, shareUrlFor } from "@/lib/deeplink"
+import { ShareButton } from "./share-button"
 import { formatForPaper, type PaperFormat } from "@/lib/paper-formats"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -291,6 +293,22 @@ export function ExamCenter() {
   // flagship + four dated sittings so the learner CHOOSES between the
   // previous exams
   const [pickerFamily, setPickerFamily] = useState<PaperFamily | null>(null)
+  // v32 — deep-linkable paper picker: #/exam?paper=cpa-far opens that exact
+  // exam family (shareable), and back/forward keeps the picker in step
+  const openPicker = (f: PaperFamily | null) => {
+    setPickerFamily(f)
+    setRouteParam("paper", f?.id ?? null)
+  }
+  useEffect(() => {
+    const id = getRouteParam("paper")
+    const fam = id ? PAPER_FAMILIES.find((f) => f.id === id) : null
+    if (fam) setPickerFamily(fam)
+    return onRouteParams((params) => {
+      const pid = params.get("paper")
+      const f = pid ? PAPER_FAMILIES.find((x) => x.id === pid) : null
+      setPickerFamily(f ?? null)
+    })
+  }, [])
   // v27 — sectioned sitting state (testlets / Section A-B / sessions)
   const [secIdx, setSecIdx] = useState(0)
   const [secStarted, setSecStarted] = useState(false)
@@ -366,6 +384,7 @@ export function ExamCenter() {
     setMarking(false)
     setMarkInfo(null)
     setPickerFamily(null)
+    setRouteParam("paper", null)
     setPhase("sitting")
   }
 
@@ -870,7 +889,7 @@ export function ExamCenter() {
                         {/* v29 — the five papers at a glance: flagship + the
                             four dated years, so the five-sitting promise is
                             visible without opening the picker */}
-                        <div className="mt-2 flex flex-wrap gap-1">
+                        <div className="mt-2 flex flex-wrap items-center gap-1">
                           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-primary">
                             {tt("exam29.flagshipChip", lang)}
                           </span>
@@ -886,12 +905,21 @@ export function ExamCenter() {
                               </span>
                             )
                           })}
+                          {/* v32 — share this exact exam family (#/exam?paper=…) */}
+                          <span className="ms-auto">
+                            <ShareButton
+                              url={shareUrlFor("exam", { param: ["paper", f.id] })}
+                              title={lang === "ar" ? f.titleAr : f.titleEn}
+                              variant="ghost"
+                              className="h-6 w-6 px-0"
+                            />
+                          </span>
                         </div>
                         {/* v27 — one button opens the paper picker: choose
                             between the flagship + the four dated sittings */}
                         <div className="mt-3">
                           <button
-                            onClick={() => setPickerFamily(f)}
+                            onClick={() => openPicker(f)}
                             disabled={paperLoading !== null || eLoading !== null}
                             className={cn(
                               "inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-primary/35 bg-primary/[0.07] px-2.5 py-1.5 text-[11.5px] font-semibold text-primary transition-colors hover:bg-primary/[0.14] focus-ring disabled:opacity-50"
@@ -1198,7 +1226,7 @@ export function ExamCenter() {
         {/* v27 — the per-exam PAPER PICKER: a separate popup per exam showing
             every previous paper to choose between (flagship + 4 sittings),
             each with its structure, duration and the real-exam blueprint. */}
-        <Dialog open={!!pickerFamily} onOpenChange={(v) => !v && setPickerFamily(null)}>
+        <Dialog open={!!pickerFamily} onOpenChange={(v) => !v && openPicker(null)}>
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[560px]">
             {pickerFamily && (
               <>

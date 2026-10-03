@@ -40,7 +40,7 @@ export type Block =
   /** bulleted list (• …) */
   | { kind: "list"; items: Bi[] }
   /** numbered list (1. 2. 3. — the five-step model etc.) */
-  | { kind: "steps"; items: Bi[] }
+  | { kind: "steps"; title?: Bi; items: Bi[] }
   /** decision tree: a root statement branching into outcomes */
   | { kind: "tree"; title?: Bi; root: Bi; branches: TreeBranch[] }
   /** T-account journal entries: rows of DR / CR descriptions */
