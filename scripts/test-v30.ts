@@ -99,10 +99,12 @@ async function main() {
   check("flagship carries decision trees (≥ 5)", flagshipTrees >= 5, `${flagshipTrees} trees`)
   const flagshipJournals = flagshipBlocks.filter((b) => b.kind === "journal").length
   check("flagship carries T-account journals (≥ 4)", flagshipJournals >= 4, `${flagshipJournals} journals`)
-  const flagshipFormula = flagshipBlocks.find((b) => b.kind === "formula")
+  // v36: the flagship now carries multiple formulas (TP build-up AND
+  // cost-to-cost) — check them all instead of only the first
+  const flagshipFormulas = flagshipBlocks.filter((b) => b.kind === "formula")
   check(
     "flagship carries the percentage-of-completion formulas",
-    !!flagshipFormula && flagshipFormula.lines.some((l) => l.en.toLowerCase().includes("cost to date"))
+    flagshipFormulas.some((b) => b.kind === "formula" && b.lines.some((l) => l.en.toLowerCase().includes("cost to date")))
   )
   check(
     "repurchase tree distinguishes financing vs lease",

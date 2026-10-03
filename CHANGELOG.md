@@ -4,6 +4,56 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 36.0.0 — IFRS 15 rewritten to the true depth of the notes PDF
+
+### The verdict that drove this release
+
+The user compared the app's IFRS 15 summary against their 12-page
+handwritten notes PDF and found it wanting — and the numbers agreed:
+the shipped summary was 1,746 English words across 17 topics with a
+single worked example. The v31/v32 "depth bar" had counted *blocks*;
+blocks ≠ comprehensiveness. The flagship is now rewritten to the real
+benchmark:
+
+- **4,075 English words** (2.3×) with full Arabic parity — 25
+  red-asterisk topics at ~163 words each.
+- **A running worked case (Nile Co)** threaded through all five steps:
+  a 132,000 bundled contract (machine + installation + 2-year
+  maintenance) whose SSP allocation (91,667 / 18,333 / 22,000),
+  recognition entries and contract balances are all carried with
+  consistent numbers.
+- **14 journal sets / 27 T-account rows** — 24 of them carrying real
+  amounts (deposits, rebates, financing unwinding, construction
+  cost-to-cost, warranty bundles, agency commissions, repurchase
+  financings, right-of-return, loyalty points).
+- **14 worked numeric examples**, including a full three-year
+  construction contract (5,000 price / 4,000 cost) with year-by-year
+  revenue, and the two-year interest-free credit at 10%.
+- **The sections a complete set of DipIFR notes must carry**, previously
+  missing: variable consideration & the constraint as its own topic,
+  the significant financing component, non-cash consideration &
+  consideration payable to the customer, licensing (functional vs
+  symbolic IP), contract modifications (new contract / blend / catch-up),
+  presentation & disclosure, and transition & exam focus.
+- **A new depth bar that measures the right things** —
+  `scripts/test-v36.ts` (45 checks) enforces words, topics, amount-
+  carrying journal rows and worked examples, so the bar can no longer
+  be satisfied structurally. Every other standard keeps the v32 floor
+  (≥ 45 blocks) until its own true-depth rewrite lands.
+
+### Housekeeping
+
+- test-v30's flagship formula check generalised to all formula blocks
+  (the flagship now carries two); test-v35 made forward-compatible
+  (major ≥ 35) like v34 before it.
+- `scripts/measure-ifrs15.ts` — the depth audit used to compare any
+  standard against the notes-PDF benchmark.
+
+Verified: `tsc` clean, `eslint` clean, full chain green (v20–v36 +
+sectors/engagement/analyzer/models), and an 11/11 live headless pass
+(running case, allocation figures, all new topics, 14 journal tables,
+v36 badge).
+
 ## 35.0.0 — The exams open INSIDE the website + the v-release badge
 
 ### 1. Every Sameh Zidan paper now opens in the app — not on his site

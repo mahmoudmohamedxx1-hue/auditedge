@@ -118,7 +118,7 @@ async function main() {
   const pkg = JSON.parse(readFileSync("package.json", "utf-8"))
   const major = Number(pkg.version.split(".")[0])
   check("sw: cache stamp tracks the app version (auditedge-v35)", sw.includes(`VERSION = "auditedge-v${major}"`), `v${major}`)
-  check("package.json: version is 35.0.0", pkg.version === "35.0.0", pkg.version)
+  check("package.json: major ≥ 35 (v36+ releases carry the in-app archive forward)", major >= 35, pkg.version)
   const chain = pkg.scripts?.test ?? ""
   check("test-v35 wired into the test chain", chain.includes("test-v35"))
 
