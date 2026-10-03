@@ -191,7 +191,10 @@ async function main() {
   /* ---------------- 8. version ---------------- */
   console.log("── 8. Version ──")
   const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
-  check("package.json bumped to 30.0.0", pkg.version === "30.0.0", pkg.version)
+  // v31 relaxed the hard pin to a floor: the catalog keeps growing (v31 rewrote
+  // every standard to the flagship's depth bar).
+  const [major] = String(pkg.version).split(".").map(Number)
+  check("package.json at v30 or later", major >= 30, pkg.version)
   const testScript = pkg.scripts.test as string
   check("test-v30 wired into the main suite", testScript.includes("test-v30.ts"))
 

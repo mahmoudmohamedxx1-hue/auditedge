@@ -1,26 +1,28 @@
 "use client"
 
 /**
- * v30 — IFRS Summaries hub: every effective IFRS & IAS as a bilingual
+ * v30/v31 — IFRS Summaries hub: every effective IFRS & IAS as a bilingual
  * handwritten study-notes sheet, styled after the user's IFRS 15 notes
  * PDF (ruled paper, red-asterisk headings, decision trees, T-accounts,
  * formulas, margin annotations in the other language).
  *
- * Hub = topic chips + search + a card per standard (with a ruled-paper
- * strip preview); clicking a card opens the sheet with prev/next
- * navigation, a margin-notes toggle and a print action.
+ * v31 — COMPREHENSIVE REWRITE: every standard is now written to the depth
+ * bar of the flagship PDF (the catalog grew from 328 to 800+ revision
+ * blocks). The hub shows catalog-wide totals, and every card carries depth
+ * chips (blocks · trees · journals · examples) so the comprehensiveness is
+ * visible before you open a sheet.
  */
 
 import { useMemo, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
-import { IFRS_SUMMARIES, searchStandards, topicsOf } from "@/lib/ifrs"
+import { IFRS_SUMMARIES, searchStandards, topicsOf, depthOf, catalogStats } from "@/lib/ifrs"
 import type { Standard, TopicId } from "@/lib/ifrs/types"
 import { pick, tt } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { IfrsSheet } from "./ifrs-sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, ArrowRight, NotebookPen, Printer, Search, Star } from "lucide-react"
+import { ArrowLeft, ArrowRight, ListTree, NotebookPen, Printer, Search, Sigma, Star, Table2 } from "lucide-react"
 
 /** Accent classes for the topic tags (theme-aware palette tints). */
 const ACCENT_CHIP: Record<string, string> = {
@@ -64,6 +66,7 @@ function StandardCard({
   onOpen: () => void
 }) {
   const topic = topicsOf().find((t) => t.id === std.topic)
+  const depth = depthOf(std)
   return (
     <button
       onClick={onOpen}
@@ -83,6 +86,27 @@ function StandardCard({
       <p dir="auto" className="line-clamp-2 text-[14px] font-medium leading-snug text-foreground">
         {pick(std.title, lang)}
       </p>
+      {/* v31 depth chips — the PDF device set, visible before opening */}
+      <div className="flex flex-wrap items-center gap-1 text-[10.5px] text-muted-foreground">
+        <span className="rounded-full border bg-background/60 px-1.5 py-0.5 font-medium">
+          {depth.blocks} {tt("ifrs30.sections", lang)}
+        </span>
+        {depth.trees > 0 && (
+          <span className="flex items-center gap-0.5 rounded-full border bg-background/60 px-1.5 py-0.5">
+            <ListTree className="h-3 w-3" /> {depth.trees}
+          </span>
+        )}
+        {depth.journals > 0 && (
+          <span className="flex items-center gap-0.5 rounded-full border bg-background/60 px-1.5 py-0.5">
+            <Table2 className="h-3 w-3" /> {depth.journals}
+          </span>
+        )}
+        {depth.formulas > 0 && (
+          <span className="flex items-center gap-0.5 rounded-full border bg-background/60 px-1.5 py-0.5">
+            <Sigma className="h-3 w-3" /> {depth.formulas}
+          </span>
+        )}
+      </div>
       <div className="mt-auto flex items-center justify-between gap-2">
         <span
           dir="auto"
@@ -92,9 +116,6 @@ function StandardCard({
           )}
         >
           {topic ? pick(topic.label, lang) : ""}
-        </span>
-        <span className="shrink-0 text-[11px] text-muted-foreground">
-          {std.blocks.length} {tt("ifrs30.sections", lang)}
         </span>
       </div>
     </button>
@@ -145,6 +166,30 @@ export function IfrsSummaries() {
               {tt("ifrs30.print", lang)}
             </Button>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 print:hidden">
+          {(() => {
+            const d = depthOf(current)
+            const chips: Array<[string, string]> = [
+              [`${d.blocks} ${tt("ifrs30.sections", lang)}`, ""],
+              [`${d.trees} ${tt("ifrs31.trees", lang)}`, "tree"],
+              [`${d.journals} ${tt("ifrs31.journals", lang)}`, "journal"],
+              [`${d.formulas} ${tt("ifrs31.formulas", lang)}`, "formula"],
+              [`${d.examples} ${tt("ifrs31.examples", lang)}`, "example"],
+              [`${d.tips} ${tt("ifrs31.tips", lang)}`, "tip"],
+            ]
+            return chips
+              .filter(([label]) => !label.startsWith("0"))
+              .map(([label, key]) => (
+                <span
+                  key={key || label}
+                  className="rounded-full border bg-card px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                >
+                  {label}
+                </span>
+              ))
+          })()}
         </div>
 
         <IfrsSheet
@@ -212,6 +257,33 @@ export function IfrsSummaries() {
           </h1>
           <p className="mt-1 max-w-2xl text-[13.5px] leading-relaxed text-muted-foreground">
             {tt("ifrs30.subtitle", lang)}
+          </p>
+          {/* v31 — the comprehensiveness strip: what the whole catalog holds */}
+          {(() => {
+            const st = catalogStats()
+            const chips: Array<[string, string]> = [
+              [String(st.standards), tt("ifrs31.standards", lang)],
+              [st.blocks.toLocaleString(), tt("ifrs31.blocks", lang)],
+              [String(st.trees), tt("ifrs31.trees", lang)],
+              [String(st.journals), tt("ifrs31.journals", lang)],
+              [String(st.examples), tt("ifrs31.examples", lang)],
+            ]
+            return (
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                {chips.map(([n, label]) => (
+                  <span
+                    key={label}
+                    className="rounded-full border bg-card px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                  >
+                    <span className="font-semibold text-foreground">{n}</span>{" "}
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )
+          })()}
+          <p className="mt-2 max-w-2xl text-[12.5px] italic leading-relaxed text-muted-foreground/80">
+            {tt("ifrs31.catalog", lang)}
           </p>
         </div>
       </header>

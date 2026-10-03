@@ -4,6 +4,55 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 31.0.0 — Every summary written to the depth of the sample PDF
+
+**The user's verdict on v30: the summaries must be "more comprehensive, just
+the same as the pdf".** v30 shipped the other 40 standards at 5–13 blocks
+each while the flagship (mirroring the 12-page IFRS 15 notes PDF) carried 64.
+v31 closes that gap: **every one of the 41 standards was rewritten to the
+depth bar of the PDF** — the catalog grew from **328 to 821 revision blocks**
+(2.5×), with no standard below 13 blocks and an average of 20.
+
+**What every sheet now carries** (the PDF's device set, standard by
+standard): red-asterisk section headings (4–9 per sheet), dense principle
+paragraphs, numbered models (five-step / PIRATE / acquisition method /
+three-element control), **73 decision trees** (up from 33) with red-ink
+accounting answers, **40 T-account journal sets** (up from 11) covering
+initial recognition, subsequent measurement, derecognition and the classic
+exam entries, 41 formula panels, 36 worked numeric examples, 80+ exam tips
+and Arabic margin annotations in the other language exactly like the notes.
+The exam big-hitters went deepest: IFRS 9 (the SPPI + business-model
+classification, the 3-stage ECL model, POCI, derecognition, hedge
+accounting), IFRS 16 (the lease-identification test, the lessee engine,
+modifications, lessor classification, sale & leaseback with the gain-
+recognition cap), IAS 36 (VIU vs FVLCD, the CGU allocation with per-asset
+floors, the goodwill gross-up, the reversal wall), IAS 12 (tax bases, the
+initial-recognition exceptions, the IFRS 3 interplay), IAS 19 (the
+four-category split, the DB engine's P&L/OCI geography, settlements &
+curtailments), IFRS 3 (the goodwill equation both ways, contingent
+liabilities overriding IAS 37, step acquisitions, reverse acquisitions),
+IFRS 10 (power/exposure/linkage, de facto control, the loss-of-control
+cascade, investment entities) and IAS 33 (basic & diluted EPS with the
+full treasury-method and rights-issue bonus-factor worked examples).
+
+**A per-standard architecture.** The six monolithic data files became thin
+arrays over `src/lib/ifrs/standards/` — **41 files, one per standard** — so
+any sheet can be deepened independently without touching a 4,000-line
+monolith. The flagship lives at `standards/ifrs-15.ts` unchanged (it IS the
+reference); the other 40 were authored fresh, bilingual throughout, with
+Arabic-Indic numerals in the Arabic text and the same CAPS-emphasis style
+the notes use.
+
+**The comprehensiveness is now visible.** The hub header carries a catalog
+totals strip (41 standards · 821 revision blocks · 73 trees · 40 journal
+sets · 36 worked examples); every card shows depth chips (sections · trees ·
+journals · formulas) before you open it; and the sheet view tops the paper
+with per-standard device chips. 44 new checks in `test-v31.ts` enforce the
+bar permanently (per-standard minimums, major-standard floors, the 750+
+block catalog total, bilingual integrity of every string, the stats helpers
+and the UI chips) — wired into the main suite, which now totals 44 checks
+for this section alone.
+
 ## 30.0.0 — The IFRS Summaries release
 
 **A new section: IFRS Summaries.** The user shared their handwritten IFRS 15

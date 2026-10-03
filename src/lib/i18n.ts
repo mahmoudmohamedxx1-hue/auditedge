@@ -1358,6 +1358,19 @@ export const T = {
     notesToggle: { en: "Margin notes", ar: "ملاحظات الهامش" },
     empty: { en: "No standard matches that search.", ar: "لا يطابق هذا البحث أي معيار." },
   },
+  ifrs31: {
+    standards: { en: "standards", ar: "معيارًا" },
+    blocks: { en: "revision blocks", ar: "مقطعًا للمراجعة" },
+    trees: { en: "decision trees", ar: "أشجار قرار" },
+    journals: { en: "T-account sets", ar: "مجموعات قيود" },
+    formulas: { en: "formula panels", ar: "لوحات معادلات" },
+    examples: { en: "worked examples", ar: "أمثلة محلولة" },
+    tips: { en: "exam tips", ar: "نصائح امتحان" },
+    catalog: {
+      en: "Every sheet written to the depth of the IFRS 15 notes — headings, decision trees, T-accounts, formulas and worked examples throughout.",
+      ar: "كل ورقة مكتوبة بعمق مذكرات IFRS 15 — عناوين وأشجار قرار وقيود ولوحات معادلات وأمثلة محلولة في جميع المعايير.",
+    },
+  },
 } as const
 
 /** Dot-lookup helper: tt("nav.home", lang) — typed for key safety. */
