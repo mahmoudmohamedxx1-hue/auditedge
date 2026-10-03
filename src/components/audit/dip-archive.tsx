@@ -4,11 +4,13 @@ import { useMemo, useState } from "react"
 import {
   Archive,
   BookOpen,
-  CheckCircle2,
+  Download,
   ExternalLink,
   FileSpreadsheet,
   FileText,
+  HardDriveDownload,
   Languages,
+  MonitorPlay,
   ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -19,15 +21,16 @@ import {
   DIP_SOURCE,
   type DipResourceKind,
   type DipSession,
+  type DipSitting,
 } from "@/lib/dipifr-archive"
+import { ExamViewer, type ExamDoc } from "./exam-viewer"
 
 /** v34 — the REAL DipIFR past-paper archive (Sameh Zidan / efham IFRS).
- *
- * Sits under the "IFRS diploma" family in the Exam Center next to the
- * in-app adapted papers: 26 actual sitting papers (June 2013 → December
- * 2025) as direct PDFs, plus the combined archive, the examiner question
- * workbooks, the BPP study kit and the EN↔AR terms glossary. Every link
- * was verified live before shipping. */
+ *  v35 — every paper opens INSIDE the website: the sitting chips and the
+ *  mirrored companion files open the in-app exam viewer instead of
+ *  navigating to the author's CDN. Only the files too heavy to mirror
+ *  (three examiner workbooks + the BPP kit) stay external downloads,
+ *  clearly labelled with their size. */
 
 const KIND_ICON: Record<DipResourceKind, typeof FileText> = {
   archive: Archive,
@@ -51,24 +54,27 @@ const KIND_LABEL: Record<DipResourceKind, string> = {
 }
 
 function SessionChip({
-  year,
-  session,
-  url,
-  answers,
+  sitting,
   lang,
+  onOpen,
 }: {
-  year: number
-  session: DipSession
-  url: string
-  answers?: boolean
+  sitting: DipSitting
   lang: Lang
+  onOpen: (doc: ExamDoc) => void
 }) {
+  const answers = sitting.answers
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      title={`${tt("exam.dipOpenPaper", lang)} — ${session === "june" ? tt("exam.dipJune", lang) : tt("exam.dipDecember", lang)} ${year}`}
+    <button
+      type="button"
+      onClick={() =>
+        onOpen({
+          title: `${sitting.session === "june" ? tt("exam.dipJune", lang) : tt("exam.dipDecember", lang)} ${sitting.year} — ${tt("exam.dipArchiveShort", lang)}`,
+          local: sitting.local,
+          url: sitting.url,
+          answers: sitting.answers,
+        })
+      }
+      title={`${tt("exam.dipOpenPaper", lang)} — ${sitting.session === "june" ? tt("exam.dipJune", lang) : tt("exam.dipDecember", lang)} ${sitting.year}`}
       className={cn(
         "group inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all hover:-translate-y-px hover:shadow-pop focus-ring",
         answers
@@ -76,26 +82,27 @@ function SessionChip({
           : "border-primary/30 bg-primary/[0.07] text-primary hover:bg-primary/[0.14]"
       )}
     >
-      <FileText className="h-3.5 w-3.5 shrink-0" />
+      <MonitorPlay className="h-3.5 w-3.5 shrink-0" />
       <span className="tabular-nums">
-        {session === "june" ? tt("exam.dipJune", lang) : tt("exam.dipDecember", lang)} {year}
+        {sitting.session === "june" ? tt("exam.dipJune", lang) : tt("exam.dipDecember", lang)} {sitting.year}
       </span>
       {answers && (
         <span className="rounded-full bg-sage-deep/15 px-1.5 py-px text-[10px] font-semibold">
           {tt("exam.dipWithAnswers", lang)}
         </span>
       )}
-      <ExternalLink className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-70" />
-    </a>
+    </button>
   )
 }
 
 export function DipArchivePanel({ lang }: { lang: Lang }) {
   /** collapsed → newest 5 years; one click opens the full 13-year history */
   const [expanded, setExpanded] = useState(false)
+  /** the paper currently shown in the in-app viewer */
+  const [doc, setDoc] = useState<ExamDoc | null>(null)
 
   const years = useMemo(() => {
-    const byYear = new Map<number, { june?: (typeof DIP_SITTINGS)[number]; december?: (typeof DIP_SITTINGS)[number] }>()
+    const byYear = new Map<number, { june?: DipSitting; december?: DipSitting }>()
     for (const s of DIP_SITTINGS) {
       const entry = byYear.get(s.year) ?? {}
       entry[s.session] = s
@@ -148,13 +155,13 @@ export function DipArchivePanel({ lang }: { lang: Lang }) {
         {tt("exam.dipFormatFacts", lang)}
       </p>
 
-      {/* papers — a row per year, newest first */}
+      {/* papers — a row per year, newest first; each opens in-app */}
       <div className="mt-4 space-y-2">
         {shown.map(([year, s]) => (
           <div key={year} className="flex flex-wrap items-center gap-2">
             <span className="w-12 shrink-0 text-[13px] font-bold tabular-nums text-foreground/70">{year}</span>
-            {s.june && <SessionChip lang={lang} year={year} session="june" url={s.june.url} answers={s.june.answers} />}
-            {s.december && <SessionChip lang={lang} year={year} session="december" url={s.december.url} />}
+            {s.june && <SessionChip sitting={s.june} lang={lang} onOpen={setDoc} />}
+            {s.december && <SessionChip sitting={s.december} lang={lang} onOpen={setDoc} />}
             {!expanded && year === shown[shown.length - 1]?.[0] && (
               <button
                 onClick={() => setExpanded(true)}
@@ -186,14 +193,9 @@ export function DipArchivePanel({ lang }: { lang: Lang }) {
         <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {DIP_RESOURCES.map((r) => {
             const Icon = KIND_ICON[r.kind]
-            return (
-              <a
-                key={r.id}
-                href={r.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex h-full flex-col gap-2 rounded-xl border bg-secondary/25 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-pop focus-ring"
-              >
+            const hosted = Boolean(r.local)
+            const body = (hovering: boolean) => (
+              <>
                 <div className="flex items-start justify-between gap-2">
                   <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <span
@@ -209,15 +211,62 @@ export function DipArchivePanel({ lang }: { lang: Lang }) {
                 <p dir="auto" className="flex-1 text-[11.5px] leading-relaxed text-muted-foreground">
                   {lang === "ar" ? r.descAr : r.descEn}
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1 text-[11px] font-medium text-primary">
-                  <CheckCircle2 className="h-3 w-3" /> {tt("exam.dipOpenPaper", lang)}
-                  <ExternalLink className="h-3 w-3 opacity-60" />
+                <span
+                  className={cn(
+                    "mt-auto inline-flex items-center gap-1 text-[11px] font-medium",
+                    hovering ? "text-primary" : hosted ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  {hosted ? (
+                    <>
+                      <MonitorPlay className="h-3 w-3" /> {tt("exam.dipHostedInApp", lang)}
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-3 w-3" />
+                      {tt("exam.dipExternalDownload", lang)}
+                      {r.externalMb ? ` · ${r.externalMb} MB` : ""}
+                    </>
+                  )}
+                </span>
+              </>
+            )
+            return hosted ? (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() =>
+                  setDoc({
+                    title: lang === "ar" ? r.labelAr : r.labelEn,
+                    local: r.local!,
+                    url: r.url,
+                  })
+                }
+                className="group flex h-full w-full flex-col gap-2 rounded-xl border bg-secondary/25 p-3.5 text-start transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-pop focus-ring"
+              >
+                {body(true)}
+              </button>
+            ) : (
+              <a
+                key={r.id}
+                href={r.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="group flex h-full flex-col gap-2 rounded-xl border border-dashed bg-secondary/15 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-pop focus-ring"
+              >
+                {body(false)}
+                <span dir="auto" className="inline-flex items-center gap-1 text-[10.5px] text-muted-foreground/80">
+                  <HardDriveDownload className="h-3 w-3" /> {tt("exam.dipExternalWhy", lang)}
                 </span>
               </a>
             )
           })}
         </div>
       </div>
+
+      {/* the in-app paper viewer */}
+      <ExamViewer doc={doc} lang={lang} onClose={() => setDoc(null)} />
     </section>
   )
 }

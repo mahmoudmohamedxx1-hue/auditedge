@@ -4,6 +4,61 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 35.0.0 — The exams open INSIDE the website + the v-release badge
+
+### 1. Every Sameh Zidan paper now opens in the app — not on his site
+
+v34 pointed the DipIFR archive at the author's CDN. v35 mirrors the
+papers into the app itself and opens them in a built-in reader, so the
+learner never leaves the website:
+
+- **30 files mirrored into `public/exams/dipifr/` (33 MB)**: all 26 real
+  sitting papers (June 2013 → December 2025, the June 2025 answered copy
+  included), the combined Jun 2013–Dec 2024 archive, the Q4 multi-topic
+  bank, the exam-questions index, and the EN↔AR all-standards glossary.
+  Downloaded from the author's public CDN with attribution kept on the
+  panel (`scripts/fetch-dip-exams.sh` re-runs the mirror).
+- **A new in-app exam viewer** (`exam-viewer.tsx`): PDFs render in a
+  same-origin iframe — the browser's own zoom, search and page chrome —
+  inside an accessible Dialog (ESC + focus management). Header actions:
+  download the self-hosted file, or fall back to the CDN original.
+  Spreadsheets get a download card (they can't preview in-browser).
+- The sitting chips and hosted companion cards are now **buttons that
+  open the viewer**; nothing navigates away from the app anymore.
+- The five files too heavy to mirror stay **clearly-labelled external
+  downloads with their sizes**: the three examiner xlsx workbooks
+  (24/17/16 MB), the BPP Exam Practice Kit (46 MB) and the BPP Study
+  Text (103 MB — above git's 100 MB per-file limit).
+- `X-Frame-Options: SAMEORIGIN` (already set app-wide) keeps the
+  same-origin PDF iframe working while blocking clickjacking.
+
+### 2. The sidebar release badge — "is the site updated?" at a glance
+
+- A small **v-number badge** now sits at the bottom of the sidebar
+  (shows the major, e.g. `v35`; collapses gracefully with the sidebar).
+- Its value is inlined at build time from **package.json** via
+  `next.config.ts` (`NEXT_PUBLIC_APP_VERSION`) — one source of truth,
+  kept in lockstep with the service-worker stamp by `scripts/test-v35.ts`.
+- If the badge is behind the changelog, one refresh picks up the new
+  build (the v34 SW self-heal auto-reloads once the worker updates).
+
+### 3. Fixes carried in this release
+
+- `scripts/e2e-v35.sh`: staged browser navigation (root → shell → hash
+  route) after a freshly-launched browser was seen dropping a direct
+  hash-URL open, plus a robust `.next` clean retry in the dev boot.
+- `scripts/test-v34.ts` made forward-compatible (major ≥ 34 instead of
+  pinning 34.0.0) so the chain stays green as the archive ships forward.
+
+Verified: `tsc` clean, `eslint` clean, full chain green (v20–v35 +
+sectors/engagement/analyzer/models — incl. the new 43-check test-v35),
+and a live 10/10 headless pass: the app serves the mirrored PDF
+(application/pdf), the December 2024 chip opens the self-hosted iframe,
+ESC closes, June 2025 opens with its answered badge, external sizes
+(103 MB / 46 MB) and "Opens in-app" labels all render. The live Vercel
+deployment was also re-verified in a fresh browser: IFRS 15 deep link
+serves all six journal T-account tables.
+
 ## 34.0.0 — The REAL DipIFR past papers (2013–2025) + SW self-heal
 
 ### 1. Every actual DipIFR exam paper, straight from the examiner

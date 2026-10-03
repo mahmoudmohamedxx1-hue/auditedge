@@ -1,8 +1,17 @@
 import type { NextConfig } from "next";
+import { readFileSync } from "node:fs";
+
+/** v35 — the sidebar's version badge reads this env var (inlined at build
+ *  time) so there is exactly ONE source of truth for the app version:
+ *  package.json. scripts/test-v35.ts keeps sw.js in lockstep with it. */
+const pkg = JSON.parse(readFileSync("./package.json", "utf8")) as { version: string };
 
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: false,
+  env: {
+    NEXT_PUBLIC_APP_VERSION: pkg.version,
+  },
   // ship the sanitized demo database with every serverless function so
   // src/lib/db.ts can provision it into TMPDIR on Vercel (see that file
   // for the full story). Without this, output tracing would leave the

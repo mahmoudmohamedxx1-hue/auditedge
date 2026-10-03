@@ -103,7 +103,10 @@ async function main() {
   check("panel rides under the ifrs paper group", examSrc.includes(`g.id === "ifrs" && <DipArchivePanel lang={lang} />`))
 
   const panelSrc = readFileSync("src/components/audit/dip-archive.tsx", "utf-8")
-  check("panel renders every sitting with target=_blank + rel=noopener", panelSrc.includes('target="_blank"') && panelSrc.includes('rel="noopener noreferrer"'))
+  // v35 moved the sitting papers into the in-app viewer; what still
+  // navigates externally (source attribution + heavy companion files)
+  // must keep the safe target/rel pair.
+  check("external links keep target=_blank + rel=noopener", panelSrc.includes('target="_blank"') && panelSrc.includes('rel="noopener noreferrer"'))
   check("panel shows the source attribution link", panelSrc.includes("DIP_SOURCE.url"))
   check("panel labels the June 2025 answered copy", panelSrc.includes("answers"))
   check("panel states the real format facts", panelSrc.includes("dipFormatFacts"))
@@ -116,7 +119,7 @@ async function main() {
   const pkg = JSON.parse(readFileSync("package.json", "utf-8"))
   const major = Number(pkg.version.split(".")[0])
   check("sw: cache stamp tracks the app version (auditedge-v34)", sw.includes(`VERSION = "auditedge-v${major}"`))
-  check("package.json: version is 34.0.0", pkg.version === "34.0.0", pkg.version)
+  check("package.json: major ≥ 34 (v35+ releases carry the archive forward)", major >= 34, pkg.version)
 
   /* ---------------- done ---------------- */
   console.log(`\n${pass} passed · ${fail} failed`)

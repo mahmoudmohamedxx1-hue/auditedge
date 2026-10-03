@@ -1,21 +1,28 @@
 /** v34 — the REAL DipIFR past-exam archive (Sameh Zidan / efham IFRS Academy).
+ *  v35 — every exam paper now lives INSIDE the app (public/exams/dipifr/) and
+ *  opens in the in-app paper viewer; the app no longer navigates away to the
+ *  author's CDN for any sitting paper. Only the three heavy xlsx workbooks
+ *  and the two BPP books (46 MB and 103 MB — the latter above git's 100 MB
+ *  file limit) stay on the source CDN, clearly labelled as external.
  *
- * The Exam Center's "IFRS diploma" family always served ADAPTED papers from
- * the question bank (flagship + four dated sittings). This module adds the
- * real thing: every actual ACCA DipIFR sitting paper from June 2013 to
- * December 2025 as a direct PDF, plus the examiner question workbooks and
- * the BPP study kit — all hosted on the source's CDN and verified live
- * (HTTP 200) before shipping.
+ * The Exam Center's "IFRS diploma" family serves ADAPTED papers from the
+ * question bank; this module carries the real thing: every actual ACCA
+ * DipIFR sitting paper from June 2013 to December 2025, plus the examiner
+ * question workbooks and the BPP study kit.
  *
  * Source page: https://www.samehzidan.com/course-resources1/
- * Every file is public on the author's CDN (sameh-files.b-cdn.net).
+ * Mirrored files were downloaded from the author's CDN (sameh-files.b-cdn.net)
+ * with attribution, and every original link verified live (HTTP 200).
  *
  * Format facts of the real exam (worth telling the learner up-front):
  * 4 questions × 25 marks · 3 hours · Q1 is ALWAYS a consolidation
- * (statement of financial position or statement of profit or loss — the
+ * (statement of financial position or statement of financial position — the
  * Consolidation workbook below tracks which one every sitting examined). */
 
 const CDN = "https://sameh-files.b-cdn.net"
+
+/** Where the mirrored papers live inside this app (served by Next.js). */
+const LOCAL = "/exams/dipifr"
 
 export type DipSession = "june" | "december"
 
@@ -24,39 +31,43 @@ export type DipSitting = {
   session: DipSession
   label: string
   labelAr: string
+  /** the author's original CDN copy — kept as the "open externally" fallback */
   url: string
+  /** self-hosted copy inside the app — what the in-app viewer renders */
+  local: string
   /** June 2025 paper is published as the answered copy */
   answers?: boolean
 }
 
-/** Every real sitting paper, newest first. 26 papers across 13 years. */
+/** Every real sitting paper, newest first. 26 papers across 13 years,
+ *  all mirrored into public/exams/dipifr/ (33 MB total). */
 export const DIP_SITTINGS: DipSitting[] = [
-  { year: 2025, session: "december", label: "December 2025", labelAr: "ديسمبر 2025", url: `${CDN}/matrials/D25-Dec.pdf` },
-  { year: 2025, session: "june", label: "June 2025 — with answers", labelAr: "يونيو 2025 — مع الحلول", url: `${CDN}/matrials/2025-6%20%20Answers.pdf`, answers: true },
-  { year: 2024, session: "december", label: "December 2024", labelAr: "ديسمبر 2024", url: `${CDN}/matrials/2024-12%20December%20Exam.pdf` },
-  { year: 2024, session: "june", label: "June 2024", labelAr: "يونيو 2024", url: `${CDN}/matrials/2024-6%20June%20Exam.pdf` },
-  { year: 2023, session: "december", label: "December 2023", labelAr: "ديسمبر 2023", url: `${CDN}/matrials/2023-12%20December%20Exam.pdf` },
-  { year: 2023, session: "june", label: "June 2023", labelAr: "يونيو 2023", url: `${CDN}/matrials/2023-6%20June%20Exam.pdf` },
-  { year: 2022, session: "december", label: "December 2022", labelAr: "ديسمبر 2022", url: `${CDN}/matrials/2022-12%20December%20Exam.pdf` },
-  { year: 2022, session: "june", label: "June 2022", labelAr: "يونيو 2022", url: `${CDN}/matrials/2022-6%20June%20Exam.pdf` },
-  { year: 2021, session: "december", label: "December 2021", labelAr: "ديسمبر 2021", url: `${CDN}/matrials/2021-12%20December%20Exam.pdf` },
-  { year: 2021, session: "june", label: "June 2021", labelAr: "يونيو 2021", url: `${CDN}/matrials/2021-6%20June%20Exam.pdf` },
-  { year: 2020, session: "december", label: "December 2020", labelAr: "ديسمبر 2020", url: `${CDN}/matrials/2020-12%20December%20Exam.pdf` },
-  { year: 2020, session: "june", label: "June 2020", labelAr: "يونيو 2020", url: `${CDN}/matrials/2020-6%20June%20Exam.pdf` },
-  { year: 2019, session: "december", label: "December 2019", labelAr: "ديسمبر 2019", url: `${CDN}/matrials/2019-12%20December%20Exam.pdf` },
-  { year: 2019, session: "june", label: "June 2019", labelAr: "يونيو 2019", url: `${CDN}/matrials/2019-6%20June%20Exam.pdf` },
-  { year: 2018, session: "december", label: "December 2018", labelAr: "ديسمبر 2018", url: `${CDN}/matrials/2018-12%20December%20Exam.pdf` },
-  { year: 2018, session: "june", label: "June 2018", labelAr: "يونيو 2018", url: `${CDN}/matrials/2018-6%20June%20Exam.pdf` },
-  { year: 2017, session: "december", label: "December 2017", labelAr: "ديسمبر 2017", url: `${CDN}/matrials/2017-12%20December%20Exam.pdf` },
-  { year: 2017, session: "june", label: "June 2017", labelAr: "يونيو 2017", url: `${CDN}/matrials/2017-6%20June%20Exam.pdf` },
-  { year: 2016, session: "december", label: "December 2016", labelAr: "ديسمبر 2016", url: `${CDN}/matrials/2016-12%20December%20Exam.pdf` },
-  { year: 2016, session: "june", label: "June 2016", labelAr: "يونيو 2016", url: `${CDN}/matrials/2016-6%20June%20Exam.pdf` },
-  { year: 2015, session: "december", label: "December 2015", labelAr: "ديسمبر 2015", url: `${CDN}/matrials/2015-12%20December%20Exam.pdf` },
-  { year: 2015, session: "june", label: "June 2015", labelAr: "يونيو 2015", url: `${CDN}/matrials/2015-6%20June%20Exam.pdf` },
-  { year: 2014, session: "december", label: "December 2014", labelAr: "ديسمبر 2014", url: `${CDN}/matrials/2014-12%20December%20Exam.pdf` },
-  { year: 2014, session: "june", label: "June 2014", labelAr: "يونيو 2014", url: `${CDN}/matrials/2014-6%20June%20Exam.pdf` },
-  { year: 2013, session: "december", label: "December 2013", labelAr: "ديسمبر 2013", url: `${CDN}/matrials/2013-12%20December%20Exam.pdf` },
-  { year: 2013, session: "june", label: "June 2013", labelAr: "يونيو 2013", url: `${CDN}/matrials/2013-6%20June%20Exam.pdf` },
+  { year: 2025, session: "december", label: "December 2025", labelAr: "ديسمبر 2025", url: `${CDN}/matrials/D25-Dec.pdf`, local: `${LOCAL}/2025-12.pdf` },
+  { year: 2025, session: "june", label: "June 2025 — with answers", labelAr: "يونيو 2025 — مع الحلول", url: `${CDN}/matrials/2025-6%20%20Answers.pdf`, local: `${LOCAL}/2025-06-answers.pdf`, answers: true },
+  { year: 2024, session: "december", label: "December 2024", labelAr: "ديسمبر 2024", url: `${CDN}/matrials/2024-12%20December%20Exam.pdf`, local: `${LOCAL}/2024-12.pdf` },
+  { year: 2024, session: "june", label: "June 2024", labelAr: "يونيو 2024", url: `${CDN}/matrials/2024-6%20June%20Exam.pdf`, local: `${LOCAL}/2024-06.pdf` },
+  { year: 2023, session: "december", label: "December 2023", labelAr: "ديسمبر 2023", url: `${CDN}/matrials/2023-12%20December%20Exam.pdf`, local: `${LOCAL}/2023-12.pdf` },
+  { year: 2023, session: "june", label: "June 2023", labelAr: "يونيو 2023", url: `${CDN}/matrials/2023-6%20June%20Exam.pdf`, local: `${LOCAL}/2023-06.pdf` },
+  { year: 2022, session: "december", label: "December 2022", labelAr: "ديسمبر 2022", url: `${CDN}/matrials/2022-12%20December%20Exam.pdf`, local: `${LOCAL}/2022-12.pdf` },
+  { year: 2022, session: "june", label: "June 2022", labelAr: "يونيو 2022", url: `${CDN}/matrials/2022-6%20June%20Exam.pdf`, local: `${LOCAL}/2022-06.pdf` },
+  { year: 2021, session: "december", label: "December 2021", labelAr: "ديسمبر 2021", url: `${CDN}/matrials/2021-12%20December%20Exam.pdf`, local: `${LOCAL}/2021-12.pdf` },
+  { year: 2021, session: "june", label: "June 2021", labelAr: "يونيو 2021", url: `${CDN}/matrials/2021-6%20June%20Exam.pdf`, local: `${LOCAL}/2021-06.pdf` },
+  { year: 2020, session: "december", label: "December 2020", labelAr: "ديسمبر 2020", url: `${CDN}/matrials/2020-12%20December%20Exam.pdf`, local: `${LOCAL}/2020-12.pdf` },
+  { year: 2020, session: "june", label: "June 2020", labelAr: "يونيو 2020", url: `${CDN}/matrials/2020-6%20June%20Exam.pdf`, local: `${LOCAL}/2020-06.pdf` },
+  { year: 2019, session: "december", label: "December 2019", labelAr: "ديسمبر 2019", url: `${CDN}/matrials/2019-12%20December%20Exam.pdf`, local: `${LOCAL}/2019-12.pdf` },
+  { year: 2019, session: "june", label: "June 2019", labelAr: "يونيو 2019", url: `${CDN}/matrials/2019-6%20June%20Exam.pdf`, local: `${LOCAL}/2019-06.pdf` },
+  { year: 2018, session: "december", label: "December 2018", labelAr: "ديسمبر 2018", url: `${CDN}/matrials/2018-12%20December%20Exam.pdf`, local: `${LOCAL}/2018-12.pdf` },
+  { year: 2018, session: "june", label: "June 2018", labelAr: "يونيو 2018", url: `${CDN}/matrials/2018-6%20June%20Exam.pdf`, local: `${LOCAL}/2018-06.pdf` },
+  { year: 2017, session: "december", label: "December 2017", labelAr: "ديسمبر 2017", url: `${CDN}/matrials/2017-12%20December%20Exam.pdf`, local: `${LOCAL}/2017-12.pdf` },
+  { year: 2017, session: "june", label: "June 2017", labelAr: "يونيو 2017", url: `${CDN}/matrials/2017-6%20June%20Exam.pdf`, local: `${LOCAL}/2017-06.pdf` },
+  { year: 2016, session: "december", label: "December 2016", labelAr: "ديسمبر 2016", url: `${CDN}/matrials/2016-12%20December%20Exam.pdf`, local: `${LOCAL}/2016-12.pdf` },
+  { year: 2016, session: "june", label: "June 2016", labelAr: "يونيو 2016", url: `${CDN}/matrials/2016-6%20June%20Exam.pdf`, local: `${LOCAL}/2016-06.pdf` },
+  { year: 2015, session: "december", label: "December 2015", labelAr: "ديسمبر 2015", url: `${CDN}/matrials/2015-12%20December%20Exam.pdf`, local: `${LOCAL}/2015-12.pdf` },
+  { year: 2015, session: "june", label: "June 2015", labelAr: "يونيو 2015", url: `${CDN}/matrials/2015-6%20June%20Exam.pdf`, local: `${LOCAL}/2015-06.pdf` },
+  { year: 2014, session: "december", label: "December 2014", labelAr: "ديسمبر 2014", url: `${CDN}/matrials/2014-12%20December%20Exam.pdf`, local: `${LOCAL}/2014-12.pdf` },
+  { year: 2014, session: "june", label: "June 2014", labelAr: "يونيو 2014", url: `${CDN}/matrials/2014-6%20June%20Exam.pdf`, local: `${LOCAL}/2014-06.pdf` },
+  { year: 2013, session: "december", label: "December 2013", labelAr: "ديسمبر 2013", url: `${CDN}/matrials/2013-12%20December%20Exam.pdf`, local: `${LOCAL}/2013-12.pdf` },
+  { year: 2013, session: "june", label: "June 2013", labelAr: "يونيو 2013", url: `${CDN}/matrials/2013-6%20June%20Exam.pdf`, local: `${LOCAL}/2013-06.pdf` },
 ]
 
 export type DipResourceKind = "archive" | "workbook" | "study" | "glossary"
@@ -67,12 +78,19 @@ export type DipResource = {
   labelAr: string
   descEn: string
   descAr: string
+  /** the author's original CDN copy */
   url: string
+  /** self-hosted copy inside the app — opens in the in-app viewer */
+  local?: string
+  /** present when the file is too heavy to mirror (MB) — rendered as a
+   *  clearly-labelled external download instead of an in-app document */
+  externalMb?: number
   kind: DipResourceKind
 }
 
 /** Everything that rides alongside the papers: the combined archive, the
- *  examiner question workbooks, the BPP study kit, and the terms glossary. */
+ *  examiner question workbooks, the BPP study kit, and the terms glossary.
+ *  Files small enough to mirror are served by the app itself. */
 export const DIP_RESOURCES: DipResource[] = [
   {
     id: "combined",
@@ -81,6 +99,7 @@ export const DIP_RESOURCES: DipResource[] = [
     descEn: "Every sitting in one PDF — the heaviest file here, and the only one you need offline.",
     descAr: "كل الجلسات في ملف PDF واحد — أثقل ملف هنا، وهو الوحيد الذي تحتاجه دون اتصال.",
     url: `${CDN}/Jun%202013-Dec%202024%20IFRS%20Dip%20Exams.pdf`,
+    local: `${LOCAL}/combined-2013-2024.pdf`,
     kind: "archive",
   },
   {
@@ -90,6 +109,7 @@ export const DIP_RESOURCES: DipResource[] = [
     descEn: "Every question of every sitting transcribed: Q1 consolidation + Q2, Q3 and Q4 sheets, trial balances included.",
     descAr: "كل سؤال في كل جلسة منقول: سؤال التوحيد الأول + أوراق الأسئلة 2 و3 و4 مع موازين المراجعة.",
     url: `${CDN}/pastDec-19%20to%20June-25.xlsx`,
+    externalMb: 24,
     kind: "workbook",
   },
   {
@@ -99,6 +119,7 @@ export const DIP_RESOURCES: DipResource[] = [
     descEn: "The earlier years in the same format — Alpha, Beta and Gamma from the very beginning.",
     descAr: "السنوات السابقة بنفس التنسيق — ألفا وبيتا وجاما من البداية.",
     url: `${CDN}/Summary/Past%20Exams2015%20to%20%20June-19.xlsx`,
+    externalMb: 17,
     kind: "workbook",
   },
   {
@@ -108,6 +129,7 @@ export const DIP_RESOURCES: DipResource[] = [
     descEn: "Every Q1 ever set, tagged by whether it consolidates the SOFP or the SOPL — the classic 25-mark opener.",
     descAr: "كل سؤال توحيد حتى الآن، مصنّف حسب توحيده لقائمة المركز المالي أو قائمة الدخل — سؤال الـ25 درجة الافتتاحي الشهير.",
     url: `${CDN}/Consolidation%20(Jun%2015%20-%20Dec%2025)%20(1).xlsx`,
+    externalMb: 16,
     kind: "workbook",
   },
   {
@@ -117,6 +139,7 @@ export const DIP_RESOURCES: DipResource[] = [
     descEn: "The multi-topic Q4 sittings, one sheet per exam — June 2015 onwards.",
     descAr: "أسئلة الجلسة الرابعة متعددة المعايير، ورقة لكل امتحان — من يونيو 2015 فصاعدًا.",
     url: `${CDN}/Question%204.xlsx`,
+    local: `${LOCAL}/question-4-bank.xlsx`,
     kind: "workbook",
   },
   {
@@ -126,6 +149,7 @@ export const DIP_RESOURCES: DipResource[] = [
     descEn: "The author's running index of exam questions across the years.",
     descAr: "فهرس المتابعة الذي يعدّه المؤلف لأسئلة الامتحانات عبر السنوات.",
     url: `${CDN}/Exams%20Questions.xlsx`,
+    local: `${LOCAL}/exams-questions-index.xlsx`,
     kind: "workbook",
   },
   {
@@ -135,6 +159,7 @@ export const DIP_RESOURCES: DipResource[] = [
     descEn: "The current BPP text for the next sittings — the full syllabus, chapter by chapter.",
     descAr: "كتاب BPP الحالي للجلسات القادمة — المنهج كاملًا فصلًا بفصل.",
     url: `${CDN}/BPP%20Study%20Text%20DipIFR%20Dec26-Jun27.pdf`,
+    externalMb: 103,
     kind: "study",
   },
   {
@@ -144,6 +169,7 @@ export const DIP_RESOURCES: DipResource[] = [
     descEn: "The practice kit that pairs with the study text — question banks with model answers.",
     descAr: "بنك الأسئلة المرافق للكتاب الدراسي — أسئلة مع إجابات نموذجية.",
     url: `${CDN}/Exam%20Practice%20Kit%20DipIFR%20Dec26-Jun27.pdf`,
+    externalMb: 46,
     kind: "study",
   },
   {
@@ -153,11 +179,13 @@ export const DIP_RESOURCES: DipResource[] = [
     descEn: "One sheet per standard — every English term with its Arabic translation and a note.",
     descAr: "ورقة لكل معيار — كل مصطلح إنجليزي مع ترجمته العربية وملاحظة.",
     url: `${CDN}/DipIFR_ALL_Standards_%D8%A7%D9%84%D9%85%D8%B5%D8%B7%D9%84%D8%AD%D8%A7%D8%AA_%D8%A7%D9%84%D8%A7%D9%86%D8%AC%D9%84%D9%8A%D8%B2%D9%8A%D8%A9_1.xlsx`,
+    local: `${LOCAL}/glossary-en-ar.xlsx`,
     kind: "glossary",
   },
 ]
 
-/** Attribution — the archive is the author's work; the app only points at it. */
+/** Attribution — the archive is the author's work; the mirrored papers are
+ *  served by this app with credit and a link back to the source page. */
 export const DIP_SOURCE = {
   nameEn: "Sameh Zidan — efham IFRS Academy",
   nameAr: "سامح زيدان — أكاديمية افهم IFRS",
@@ -170,4 +198,10 @@ export const DIP_FORMAT_FACTS = {
   questions: 4,
   marksEach: 25,
   durationMin: 180,
+}
+
+/** True when the viewer should render the document as a spreadsheet
+ *  (download card) rather than an inline PDF. */
+export function dipIsSheet(local: string): boolean {
+  return /\.(xlsx|xls|csv)$/i.test(local)
 }

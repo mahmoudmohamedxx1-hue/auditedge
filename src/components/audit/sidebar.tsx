@@ -2,6 +2,7 @@
 
 import { useAppStore } from "@/store/useAppStore"
 import { cn } from "@/lib/utils"
+import { APP_MAJOR } from "@/lib/app-version"
 import { Wordmark } from "./shared"
 import { LangToggle } from "./lang-toggle"
 import { ThemeToggle } from "./theme-toggle"
@@ -333,6 +334,21 @@ function SidebarContent({
               aria-label={tt("nav.adminBadge", lang)}
             />
           )}
+        </div>
+
+        {/* v35 — release badge: one glance tells the learner (and us)
+            whether this browser is running the current build */}
+        <div
+          className={cn(
+            "flex w-full items-center rounded-lg border border-border/60 bg-secondary/20 text-[10.5px] font-medium text-muted-foreground",
+            collapsed ? "justify-center px-1 py-1" : "justify-between px-2.5 py-1"
+          )}
+          title={tt("shell.versionBadge", lang)}
+        >
+          {!collapsed && <span className="truncate">AuditEdge</span>}
+          <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-px font-semibold tabular-nums text-primary">
+            v{APP_MAJOR}
+          </span>
         </div>
       </div>
     </div>

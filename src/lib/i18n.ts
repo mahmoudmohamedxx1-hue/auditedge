@@ -744,6 +744,7 @@ export const T = {
     retry: { en: "Retry", ar: "إعادة المحاولة" },
     navigation: { en: "Navigation", ar: "التنقل" },
     navDesc: { en: "Main navigation for the AuditEdge workspace", ar: "التنقل الرئيسي لمساحة عمل AuditEdge" },
+    versionBadge: { en: "AuditEdge release — if this number is behind the changelog, refresh once", ar: "إصدار AuditEdge — إن كان هذا الرقم أقدم من سجل التحديث حدّث الصفحة مرة" },
   },
 
   /* ---------- studio (admin) ---------- */
@@ -977,9 +978,10 @@ export const T = {
     // v34 — the real DipIFR past-paper archive (Sameh Zidan / efham IFRS)
     dipArchiveTitle: { en: "The real papers — DipIFR 2013 to 2025", ar: "الامتحانات الحقيقية — DipIFR من 2013 إلى 2025" },
     dipArchiveSub: {
-      en: "Every actual ACCA DipIFR sitting as a direct PDF — 26 papers across 13 years, straight from the examiner.",
-      ar: "كل جلسة حقيقية من ACCA DipIFR كملف PDF مباشر — 26 ورقة عبر 13 سنة، من المُمتحِن مباشرة.",
+      en: "Every actual ACCA DipIFR sitting, hosted inside the app — 26 papers across 13 years that open right here in the built-in reader.",
+      ar: "كل جلسة حقيقية من ACCA DipIFR مستضافة داخل الموقع — 26 ورقة عبر 13 سنة تفتح هنا مباشرة في القارئ المدمج.",
     },
+    dipArchiveShort: { en: "DipIFR paper", ar: "ورقة DipIFR" },
     dipFormatFacts: {
       en: "4 questions · 25 marks each · 3 hours · Q1 is always a consolidation (SOFP or SOPL)",
       ar: "4 أسئلة · 25 درجة لكل سؤال · 3 ساعات · السؤال الأول دائمًا توحيد (مركز مالي أو قائمة دخل)",
@@ -1001,6 +1003,21 @@ export const T = {
     dipVerified: { en: "All links verified live", ar: "كل الروابط متاحة ومؤكدة" },
     dipShowAll: { en: "Show every year", ar: "اعرض كل السنوات" },
     dipShowLess: { en: "Collapse", ar: "تصغير" },
+    // v35 — the in-app paper viewer + self-hosted archive
+    dipHostedInApp: { en: "Opens in-app", ar: "يفتح داخل الموقع" },
+    dipExternalDownload: { en: "External download", ar: "تنزيل من المصدر" },
+    dipExternalWhy: {
+      en: "Too heavy to mirror inside the app — served by the author's CDN.",
+      ar: "حجمه أكبر من أن يُستضاف داخل الموقع — يُقدَّم من مصدر المؤلف.",
+    },
+    viewerDownload: { en: "Download", ar: "تنزيل" },
+    viewerExternal: { en: "Open externally", ar: "فتح خارج الموقع" },
+    viewerSheetTitle: { en: "Spreadsheet workbook", ar: "كراسة جداول بيانات" },
+    viewerSheetNote: {
+      en: "Spreadsheets can't be previewed inside the browser — download the file and open it in Excel or Google Sheets.",
+      ar: "لا يمكن معاينة جداول البيانات داخل المتصفح — نزّل الملف وافتحه في Excel أو Google Sheets.",
+    },
+    viewerDownloadFile: { en: "Download the file", ar: "تنزيل الملف" },
     // v27 — sectioned sitting (testlets / sections)
     sectionNav: { en: "Sections", ar: "الأقسام" },
     sectionBegin: { en: "Begin section", ar: "ابدأ القسم" },

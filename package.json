@@ -1,6 +1,6 @@
 {
   "name": "auditedge",
-  "version": "34.0.0",
+  "version": "35.0.0",
   "description": "Bilingual (EN/AR) AI-powered audit & accounting academy — IFRS handwritten summaries for all 41 standards, AI program customizer, real-structure exams with certified-solution grading, and 23 neural read-aloud voices.",
   "private": true,
   "license": "MIT",
@@ -22,7 +22,7 @@
     "db:deploy": "bun run scripts/db-deploy.ts",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
-    "test": "bun run scripts/test-v20.ts && bun run scripts/test-v21.ts && bun run scripts/test-v22.ts && bun run scripts/test-v23.ts && bun run scripts/test-v24.ts && bun run scripts/test-v25.ts && bun run scripts/test-v26.ts && bun run scripts/test-v27.ts && bun run scripts/test-v28.ts && bun run scripts/test-v29.ts && bun run scripts/test-v30.ts && bun run scripts/test-v31.ts && bun run scripts/test-v32.ts && bun run scripts/test-v34.ts && bun run scripts/test-sectors-v15.ts && bun run scripts/test-engagement-v12.ts && bun run scripts/test-analyzer-v11.ts && bun run scripts/test-models-v15.ts",
+    "test": "bun run scripts/test-v20.ts && bun run scripts/test-v21.ts && bun run scripts/test-v22.ts && bun run scripts/test-v23.ts && bun run scripts/test-v24.ts && bun run scripts/test-v25.ts && bun run scripts/test-v26.ts && bun run scripts/test-v27.ts && bun run scripts/test-v28.ts && bun run scripts/test-v29.ts && bun run scripts/test-v30.ts && bun run scripts/test-v31.ts && bun run scripts/test-v32.ts && bun run scripts/test-v34.ts && bun run scripts/test-v35.ts && bun run scripts/test-sectors-v15.ts && bun run scripts/test-engagement-v12.ts && bun run scripts/test-analyzer-v11.ts && bun run scripts/test-models-v15.ts",
     "test:all": "bun run test && bun run scripts/test-vercel-db.ts"
   },
   "dependencies": {
