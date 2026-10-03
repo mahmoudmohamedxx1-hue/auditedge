@@ -4,6 +4,35 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 33.0.0 — Stale-cache fix: every browser now sees the v30–v32 Summaries
+
+**What happened:** the IFRS Summaries (all 41 standards at the full
+12-page PDF depth, 2,079 revision blocks) shipped in v30–v32, but a small
+subset of visitors kept seeing the old pre-Summaries app. Root cause: the
+service worker's cache stamp (`auditedge-v27`) was never bumped after v27.
+When the preview server was unreachable (the sandbox sleeps and kills
+processes between sessions), the SW fell back to its cached app shell —
+which was still the **v27** build, i.e. the app exactly as it was *before*
+the Summaries section existed.
+
+**The fix:**
+
+- `public/sw.js` cache stamp bumped `auditedge-v27` → `auditedge-v33`.
+  The moment any browser fetches the new worker, its `activate` handler
+  deletes every cache that doesn't start with the new stamp — the stale
+  v27 shell, data and asset caches are dropped automatically, and the
+  offline fallback shell becomes the current app instead of v27.
+- Navigations were already network-first; with the stamp fixed, the
+  offline fallback can no longer masquerade as the live app for six
+  versions.
+- Dev server rebooted and the Summaries verified live (boot 200, sidebar
+  → IFRS Summaries → all 41 standards render with journal entries,
+  decision trees, formula panels and EN/AR toggle).
+
+If your browser still shows the old app after this release: hard-refresh
+once (Ctrl/Cmd+Shift+R) or open DevTools → Application → Service Workers →
+Unregister — you will then get v33 and it will stick.
+
 ## 32.0.0 — Shareable deep links + every IFRS summary at the FULL 12-page depth
 
 Two headline deliveries:

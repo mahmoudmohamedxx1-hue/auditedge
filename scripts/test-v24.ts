@@ -152,9 +152,15 @@ async function main() {
 
   /* ---- sw cache + version bump (offline) ---- */
   const sw = readFileSync("public/sw.js", "utf-8")
-  check("sw: cache bumped past v24 (v25 = auditedge-v25)", /auditedge-v2[4-9]/.test(sw) && !sw.includes('VERSION = "auditedge-v23"'))
   const pkg = JSON.parse(readFileSync("package.json", "utf-8"))
-  check("package.json: version ≥24 (v25 = 25.0.0)", Number(pkg.version.split(".")[0]) >= 24, pkg.version)
+  const major = Number(pkg.version.split(".")[0])
+  // v33 lesson: the stamp froze at v27 while the app shipped v28–v32, so
+  // offline visitors kept a stale shell. The stamp must EQUAL the app major.
+  check(
+    `sw: cache stamp tracks the app version (auditedge-v${major})`,
+    sw.includes(`VERSION = "auditedge-v${major}"`),
+  )
+  check("package.json: version ≥24 (v25 = 25.0.0)", major >= 24, pkg.version)
   const playerSrc = readFileSync("src/components/audit/audio-player.tsx", "utf-8")
   check("player: MediaSession wired", playerSrc.includes("mediaSession") && playerSrc.includes("MediaMetadata"))
   const page = readFileSync("src/app/page.tsx", "utf-8")
