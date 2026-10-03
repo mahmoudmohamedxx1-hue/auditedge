@@ -974,6 +974,33 @@ export const T = {
     paperPickerFlagship: { en: "Flagship paper", ar: "الورقة الرئيسية" },
     paperPickerSitting: { en: "Dated sitting", ar: "جلسة مؤرخة" },
     paperRealFormat: { en: "Real-exam format", ar: "بهيكل الامتحان الحقيقي" },
+    // v34 — the real DipIFR past-paper archive (Sameh Zidan / efham IFRS)
+    dipArchiveTitle: { en: "The real papers — DipIFR 2013 to 2025", ar: "الامتحانات الحقيقية — DipIFR من 2013 إلى 2025" },
+    dipArchiveSub: {
+      en: "Every actual ACCA DipIFR sitting as a direct PDF — 26 papers across 13 years, straight from the examiner.",
+      ar: "كل جلسة حقيقية من ACCA DipIFR كملف PDF مباشر — 26 ورقة عبر 13 سنة، من المُمتحِن مباشرة.",
+    },
+    dipFormatFacts: {
+      en: "4 questions · 25 marks each · 3 hours · Q1 is always a consolidation (SOFP or SOPL)",
+      ar: "4 أسئلة · 25 درجة لكل سؤال · 3 ساعات · السؤال الأول دائمًا توحيد (مركز مالي أو قائمة دخل)",
+    },
+    dipJune: { en: "June", ar: "يونيو" },
+    dipDecember: { en: "December", ar: "ديسمبر" },
+    dipWithAnswers: { en: "with answers", ar: "مع الحلول" },
+    dipOpenPaper: { en: "Open the paper", ar: "افتح الورقة" },
+    dipCompanion: { en: "Companion shelf", ar: "الرف المرافق" },
+    dipCompanionSub: {
+      en: "The combined archive, the examiner workbooks, the BPP study kit and the terms glossary.",
+      ar: "الأرشيف الكامل وكراسات الأسئلة ومواد BPP الدراسية وملف المصطلحات.",
+    },
+    dipKindArchive: { en: "Combined archive", ar: "الأرشيف المجمع" },
+    dipKindWorkbook: { en: "Question workbook", ar: "كراسة أسئلة" },
+    dipKindStudy: { en: "Study kit", ar: "المواد الدراسية" },
+    dipKindGlossary: { en: "Glossary", ar: "المصطلحات" },
+    dipSource: { en: "Source", ar: "المصدر" },
+    dipVerified: { en: "All links verified live", ar: "كل الروابط متاحة ومؤكدة" },
+    dipShowAll: { en: "Show every year", ar: "اعرض كل السنوات" },
+    dipShowLess: { en: "Collapse", ar: "تصغير" },
     // v27 — sectioned sitting (testlets / sections)
     sectionNav: { en: "Sections", ar: "الأقسام" },
     sectionBegin: { en: "Begin section", ar: "ابدأ القسم" },

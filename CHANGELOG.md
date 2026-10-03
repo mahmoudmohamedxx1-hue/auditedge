@@ -4,6 +4,59 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 34.0.0 — The REAL DipIFR past papers (2013–2025) + SW self-heal
+
+### 1. Every actual DipIFR exam paper, straight from the examiner
+
+The Exam Center's "IFRS diploma — DipIFR style" shelf always served
+ADAPTED papers from the question bank. It now also carries **the real
+thing**: a new archive panel (sourced from Sameh Zidan / efham IFRS
+Academy's public course-resources page) with:
+
+- **26 actual sitting papers** — June + December of every year from 2013
+  to 2025, each a direct PDF (opens in a new tab). June 2025 is the
+  answered copy and is badged as such.
+- The real exam's shape stated up-front: 4 questions × 25 marks · 3
+  hours · Q1 is always a consolidation (SOFP or SOPL).
+- A **companion shelf** of 9 resources: the combined Jun 2013–Dec 2024
+  archive PDF, the examiner question workbooks (Dec 2019–June 2025 and
+  2015–June 2019 — every Q1–Q4 transcribed with trial balances), the
+  consolidation bank tagged SOFP-vs-SOPL per sitting (Jun 2015–Dec 2025),
+  the Q4 multi-topic bank, the exam-questions index, the BPP Study Text
+  and Exam Practice Kit for the Dec 2026 / Jun 2027 sittings, and the
+  EN↔AR all-standards terms glossary.
+- Source attribution on the panel links to the author's page; every one
+  of the 35 links was verified live (HTTP 200) before shipping.
+- Fully bilingual (EN/AR), `dir="auto"` on every label, opens in new
+  tabs with `rel="noopener noreferrer"`.
+
+Data lives in `src/lib/dipifr-archive.ts`; the panel is
+`src/components/audit/dip-archive.tsx`, mounted under the IFRS diploma
+group in the Exam Center (`exam-center.tsx`). Years collapse to the
+newest five with a "Show every year" expander.
+
+### 2. The service worker now self-heals stale pages
+
+v33 fixed the frozen cache stamp; v34 closes the other half of that
+incident: if a new worker takes control while a page is open
+(`skipWaiting` + `clients.claim`), the page now reloads itself once
+(`controllerchange` guard in `pwa.tsx`, only on real updates, at most
+once per page life) — an open tab can no longer keep running an old
+shell against fresh caches.
+
+### 3. Sandbox-restore recovery (no user-visible change)
+
+Mid-build the workspace snapshot-restored the tree back to the v27
+baseline. Re-synced to origin/main (v33), re-applied this release's
+edits on the correct base, purged stray download artifacts from the
+repo root, and re-seeded the local DB (bank 2,685 · 41 courses · 990
+lessons) via `scripts/restore-local-db.ts`.
+
+Verified: `tsc` clean, `eslint` clean, new `test-v34.ts` 48/48 (wired
+into the `test` chain), full battery green, and a live browser pass —
+panel renders 19 links collapsed / 35 expanded, 2013–2025 all present,
+"with answers" badge, EN and AR both verified on a booted dev server.
+
 ## 33.0.0 — Stale-cache fix: every browser now sees the v30–v32 Summaries
 
 **What happened:** the IFRS Summaries (all 41 standards at the full

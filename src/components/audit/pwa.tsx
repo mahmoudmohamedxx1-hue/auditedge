@@ -33,6 +33,18 @@ export function PwaProvider() {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return
 
     let reg: ServiceWorkerRegistration | undefined
+    // v34 — self-heal: if a new worker takes control of this page while it
+    // is open (skipWaiting + clients.claim), reload ONCE so the page never
+    // keeps running an old shell against fresh caches. Only when the page
+    // was already controlled by a previous worker (a real update, not the
+    // first install) and at most once per page life.
+    let reloaded = false
+    const hadController = Boolean(navigator.serviceWorker.controller)
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloaded || !hadController) return
+      reloaded = true
+      window.location.reload()
+    })
 
     const onWaiting = (waiting: ServiceWorker | null) => {
       if (!waiting) return

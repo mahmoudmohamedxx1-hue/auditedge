@@ -7,6 +7,7 @@ import { PAPER_FAMILIES, PAPER_GROUPS, PAPER_SITTINGS, getPastPaper, type PaperF
 import { getRouteParam, onRouteParams, setRouteParam, shareUrlFor } from "@/lib/deeplink"
 import { ShareButton } from "./share-button"
 import { formatForPaper, type PaperFormat } from "@/lib/paper-formats"
+import { DipArchivePanel } from "@/components/audit/dip-archive"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
@@ -959,6 +960,9 @@ export function ExamCenter() {
                     </div>
                   )}
                 </div>
+                {/* v34 — the REAL DipIFR papers (2013–2025 PDFs) ride under
+                    the IFRS diploma group, next to the in-app adapted papers */}
+                {g.id === "ifrs" && <DipArchivePanel lang={lang} />}
               </div>
             )
           })}
