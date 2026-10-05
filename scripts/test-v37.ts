@@ -193,6 +193,30 @@ async function main() {
   check("extractor survives reasoning prose with stray braces before the JSON", fromReasoned !== null)
   const reasonedNorm = normalizeAiQuestionnaire(fromReasoned, "Fallback")
   check("the reasoned payload normalizes to a valid questionnaire", reasonedNorm.ok, reasonedNorm.ok ? "" : reasonedNorm.error)
+  // weak pool engines: questions delivered as a JSON STRING, wrapper key,
+  // word weights, question text under "question" instead of "q"
+  const weak = {
+    title: "Coffee Carts ToC",
+    data: {
+      scope: "5 carts, cash heavy",
+      questions: JSON.stringify(
+        Array.from({ length: 9 }, (_, i) => ({
+          domain: ["control-environment", "risk-assessment", "control-activities", "info-communication", "monitoring", "it-cyber"][i % 6],
+          question: `Manager question number ${i + 1} about the cart operation controls?`,
+          hint: `probe hint ${i + 1}`,
+          weight: ["high", "medium", "low"][i % 3],
+          critical: i === 0 ? "yes" : "false",
+        }))
+      ),
+      procedures: ["Inspect daily cash sheets", "Observe cart stock counts"],
+    },
+  }
+  const weakNorm = normalizeAiQuestionnaire(weak, "Fallback")
+  check("stringified questions array + wrapper key + word weights normalize", weakNorm.ok, weakNorm.ok ? "" : weakNorm.error)
+  if (weakNorm.ok) {
+    check("word weights mapped (high→3, medium→2, low→1)", weakNorm.data.questions[0].weight === 3 && weakNorm.data.questions[1].weight === 2 && weakNorm.data.questions[2].weight === 1)
+    check("critical accepted as \"yes\"", weakNorm.data.questions[0].critical === true)
+  }
 
   /* ---------------- 5. wiring ---------------- */
   console.log("\n── 5. Wiring (router, sidebar, palette, i18n) ──")
@@ -249,7 +273,8 @@ async function main() {
   const routeSrc = readFileSync(routePath, "utf-8")
   check("rate-limited under the draft policy", routeSrc.includes("AI_POLICIES.draft"))
   check("session-gated (no anonymous generation)", routeSrc.includes("getSessionUser") && routeSrc.includes("unauthenticated"))
-  check("uses the non-streaming engine with reasoning", routeSrc.includes("generateOnce") && routeSrc.includes("thinking: true"))
+  check("uses the non-streaming engine with reasoning off for strict JSON", routeSrc.includes("generateOnce") && routeSrc.includes("thinking: false"))
+  check("attempt 2 switches engines (Qwen-397B route) instead of re-rolling", routeSrc.includes('"pool-qwen3.5-397b"'))
   check("two attempts before giving up", routeSrc.includes("attempt < 2"))
   check("every reply hardened through the normalizer", routeSrc.includes("normalizeAiQuestionnaire"))
   check("bilingual prompts (EN + AR)", routeSrc.includes("صمّم استبيان رقابة داخلية"))

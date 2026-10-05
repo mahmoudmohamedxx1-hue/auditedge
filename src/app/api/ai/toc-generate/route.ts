@@ -119,14 +119,19 @@ export async function POST(req: NextRequest) {
     { role: "user", content: user },
   ]
 
-  // two attempts: reasoning models occasionally wrap JSON or drift schema.
-  // attempt 2 carries a sterner JSON-only nudge for engines that prepend
-  // reasoning or prose to the payload.
+  // two attempts with ENGINE DIVERSITY: reasoning models occasionally wrap
+  // JSON or drift schema, and on keyless deployments the first pool engine
+  // can be a small model. Attempt 1 runs with thinking off (the chain then
+  // prefers bigger engines first — this is strict-JSON generation, not
+  // essay writing); attempt 2 switches to the big Qwen-397B pool route (a
+  // different engine, not a re-roll) plus a sterner JSON-only nudge.
+  const retryModel: AiModelId = "pool-qwen3.5-397b"
   let lastError = "no-response"
   for (let attempt = 0; attempt < 2; attempt++) {
+    const attemptModel = attempt === 0 ? model : retryModel
     const result = await generateOnce({
-      model,
-      thinking: true,
+      model: attemptModel,
+      thinking: false,
       messages:
         attempt === 0
           ? messages
@@ -135,7 +140,7 @@ export async function POST(req: NextRequest) {
               {
                 role: "user",
                 content:
-                  "IMPORTANT: your previous reply was not parseable. Return ONLY the raw JSON object now — the very first character must be { and the very last must be }. No reasoning, no explanations, no markdown fences.",
+                  "IMPORTANT: your previous reply was not usable. Return ONLY the raw JSON object now — the very first character must be { and the very last must be }. No reasoning, no explanations, no markdown fences.",
               },
             ],
     })
