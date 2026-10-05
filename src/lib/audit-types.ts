@@ -19,6 +19,7 @@ export type ViewName =
   | "simulation"
   | "podcast"
   | "ifrs"
+  | "toc"
 
 export type AiSource = {
   url: string

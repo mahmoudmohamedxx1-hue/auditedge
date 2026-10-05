@@ -3,6 +3,7 @@
 import { useAppStore } from "@/store/useAppStore"
 import { cn } from "@/lib/utils"
 import { APP_MAJOR } from "@/lib/app-version"
+import { TOC_INDUSTRIES_COUNT } from "@/lib/toc/library"
 import { Wordmark } from "./shared"
 import { LangToggle } from "./lang-toggle"
 import { ThemeToggle } from "./theme-toggle"
@@ -19,6 +20,7 @@ import {
   GraduationCap,
   Headphones,
   Layers,
+  ListChecks,
   Medal,
   Moon,
   NotebookPen,
@@ -254,6 +256,14 @@ function SidebarContent({
           onClick={() => go("library")}
         />
         <NavItem collapsed={collapsed} icon={ClipboardCheck} label={tt("nav.program", lang)} active={view === "program"} onClick={() => go("program")} />
+        <NavItem
+          collapsed={collapsed}
+          icon={ListChecks}
+          label={tt("nav37.toc", lang)}
+          active={view === "toc"}
+          badge={String(TOC_INDUSTRIES_COUNT)}
+          onClick={() => go("toc")}
+        />
         <NavItem collapsed={collapsed} icon={Factory} label={tt("nav.sectors", lang)} active={view === "sectors"} onClick={() => go("sectors")} />
         <NavItem collapsed={collapsed} icon={BarChart3} label={tt("nav20.analytics", lang)} active={view === "team"} onClick={() => go("team")} />
         <NavItem collapsed={collapsed} icon={Headphones} label={tt("nav20.podcast", lang)} active={view === "podcast"} onClick={() => go("podcast")} />

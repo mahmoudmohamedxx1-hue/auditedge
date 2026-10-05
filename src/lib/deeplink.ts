@@ -11,6 +11,7 @@
  *   #/quiz/<id>?c=<courseId>        One lesson quiz
  *   #/exam                          Exam Center          (?paper=<familyId> pre-opens that paper family)
  *   #/ifrs                          IFRS Summaries hub   (?std=IFRS+15 opens one sheet)
+ *   #/toc                           Test of Control       (?ind=banking opens one questionnaire, ?ai=1 the AI tab)
  *   #/sectors                       Sector library       (?sector=banks opens one sector)
  *   #/review #/simulation #/podcast #/library #/program
  *   #/analytics #/achievements #/certificate #/discover
@@ -52,6 +53,7 @@ const VIEW_ROUTES: Partial<Record<ViewName, string>> = {
   simulation: "simulation",
   podcast: "podcast",
   ifrs: "ifrs",
+  toc: "toc",
 }
 
 /** The route every view writes into the address bar. */
@@ -91,6 +93,8 @@ const PARAM_OWNERS: Record<string, ViewName[]> = {
   paper: ["exam"],
   sector: ["sectors"],
   video: ["courses"],
+  ind: ["toc"],
+  ai: ["toc"],
 }
 
 /** The route for the shell to write, PRESERVING any component-owned params
@@ -156,6 +160,7 @@ export function parseHash(hash: string): ParsedRoute | null {
     case "simulation":
     case "podcast":
     case "ifrs":
+    case "toc":
     case "exam":
     case "discover":
     case "achievements":

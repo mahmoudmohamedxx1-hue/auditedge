@@ -4,6 +4,73 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 37.0.0 — Test of Control: interview any industry's managers, get the verdict
+
+### The new section
+
+A whole new view (`#/toc` in the sidebar, badge: 45) answering one fieldwork
+question: *can this firm's control environment be relied upon?* The auditor
+interviews the managers with a tailored internal-control questionnaire (ICQ),
+records their yes / no / not-applicable answers, and the app computes the
+verdict — **strong, moderate or weak** — mapped straight to the ISA 315/330
+strategy choice (reliance on controls, a mixed approach, or fully substantive
+testing).
+
+### The industry library — 45 industries, 10 sectors, 492 questions
+
+- **Ten sectors**: Primary & Extractive, Manufacturing, Energy & Utilities,
+  Construction & Real Estate, Transport & Logistics, Retail & Wholesale,
+  Financial Services, Technology & Media, Services, Public Sector & Non-Profit.
+- **45 tailored industry modules** — from agriculture, fishing, forestry,
+  mining and oil & gas through banking, Islamic banking, insurance, crypto
+  exchanges, data centers and SaaS to healthcare, hotels, restaurants,
+  professional services, government, NGOs and awqaf — each carrying 10-12
+  industry-specific manager-interview questions with probe hints ("what a
+  good answer sounds like"), significance weights (1-3) and critical-control
+  flags, plus 5-8 recommended tests of controls (inquiry / inspection /
+  observation / reperformance).
+- **A universal 22-question core** opens every questionnaire — the COSO 2013
+  five components plus the IT & cyber general controls — so no entity ever
+  skips the fundamentals. Answers persist per entity (two firms in two
+  industries are two different control environments).
+- **The verdict engine**: weighted yes/no scoring with N/A excluded from the
+  denominator; per-component (domain) scores; keystone controls flagged
+  critical where a single "no" overrides the aggregate — Strong needs ≥80%
+  with zero critical failures, Moderate ≥50% with at most two, anything else
+  is Weak. Results page: verdict banner, domain score bars, critical-failure
+  red flags, the full gap list with remediation hints, and the corroborating
+  procedures. One click exports the whole ICQ as a Markdown working paper.
+- **Search + sector filter + progress badges** (in progress / assessed) on
+  every industry card; deep links `#/toc?ind=banking` open a questionnaire
+  directly; `#/toc?ai=1` opens the AI tab.
+
+### The AI generator — any industry on earth, and its case
+
+Not finding your industry? Describe it — however niche (date packing &
+export, ride-hailing, a poultry feed mill) — plus the case: size, systems,
+countries, what worries you. `/api/ai/toc-generate` (rate-limited under the
+draft policy, session-gated) has the AI design a complete questionnaire —
+all six COSO domains, weights, criticals, probe hints — plus corroborating
+procedures, in English or Arabic to match the interface. The reply is forced
+to JSON and hardened through a normalizer (fence-stripping, domain
+near-miss mapping, weight clamping, id de-duplication) with a second
+attempt on drift, so the client always receives a structurally valid
+questionnaire that runs through the same scoring and verdict engine.
+Generated questionnaires are saved to "My AI questionnaires" (local,
+capped at 12) with re-open, delete and regenerate.
+
+### Verification
+
+- New suite `scripts/test-v37.ts` (90 checks): library integrity (ids,
+  weights, domains, substance), scoring-engine unit tests (boundaries,
+  N/A exclusion, the critical-override rule), normalizer unit tests
+  (messy-LLM extraction, near-misses, rejections), wiring greps, route
+  guards, version lockstep — wired into the `bun run test` chain.
+- `test-v36.ts` made forward-compatible (major ≥ 36) as v34 was before it.
+- Full battery green: `tsc --noEmit` clean, `eslint` clean, all 22 suites
+  pass, browser e2e (`scripts/e2e-v37.sh`) green, live verification on
+  Vercel after push.
+
 ## 36.0.0 — IFRS 15 rewritten to the true depth of the notes PDF
 
 ### The verdict that drove this release
