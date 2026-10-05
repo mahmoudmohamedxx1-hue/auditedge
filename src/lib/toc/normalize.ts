@@ -30,21 +30,57 @@ function mapDomain(raw: unknown): TocDomain | null {
   return null
 }
 
-/** Pull the first balanced JSON object out of an LLM reply: strips code
- *  fences, finds the outermost braces, parses. Returns null when there is
- *  no parseable object. */
+/** Pull the first balanced JSON object out of an LLM reply. Handles the
+ *  field's real failure modes: markdown fences, prose before/after the
+ *  JSON, reasoning prefixes that contain stray braces, and (as a last
+ *  resort) multiple candidate objects — returns the first that parses.
+ *  String-aware, so braces inside JSON string values do not confuse it. */
 export function extractJsonObject(text: string): unknown | null {
-  let t = text.trim()
-  t = t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim()
+  const t = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim()
+
+  // attempt 1: the whole span from the first { to the last }
   const first = t.indexOf("{")
   const last = t.lastIndexOf("}")
-  if (first === -1 || last === -1 || last <= first) return null
-  const slice = t.slice(first, last + 1)
-  try {
-    return JSON.parse(slice)
-  } catch {
-    return null
+  if (first !== -1 && last > first) {
+    try {
+      return JSON.parse(t.slice(first, last + 1))
+    } catch {
+      /* fall through to the scanner */
+    }
   }
+
+  // attempt 2: scan brace-balanced candidate objects, string-aware
+  for (let start = t.indexOf("{"); start !== -1; start = t.indexOf("{", start + 1)) {
+    let depth = 0
+    let inStr = false
+    let esc = false
+    for (let i = start; i < t.length; i++) {
+      const c = t[i]
+      if (inStr) {
+        if (esc) esc = false
+        else if (c === "\\") esc = true
+        else if (c === '"') inStr = false
+        continue
+      }
+      if (c === '"') inStr = true
+      else if (c === "{") depth++
+      else if (c === "}") {
+        depth--
+        if (depth === 0) {
+          try {
+            return JSON.parse(t.slice(start, i + 1))
+          } catch {
+            break // unparseable object starting here — try the next {
+          }
+        }
+      }
+    }
+  }
+  return null
 }
 
 const PROC_TYPES: TocAiProcedure["type"][] = ["inquiry", "inspection", "observation", "reperformance"]

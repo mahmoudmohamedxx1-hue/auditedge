@@ -119,22 +119,38 @@ export async function POST(req: NextRequest) {
     { role: "user", content: user },
   ]
 
-  // two attempts: reasoning models occasionally wrap JSON or drift schema
+  // two attempts: reasoning models occasionally wrap JSON or drift schema.
+  // attempt 2 carries a sterner JSON-only nudge for engines that prepend
+  // reasoning or prose to the payload.
   let lastError = "no-response"
   for (let attempt = 0; attempt < 2; attempt++) {
-    const result = await generateOnce({ model, thinking: true, messages })
+    const result = await generateOnce({
+      model,
+      thinking: true,
+      messages:
+        attempt === 0
+          ? messages
+          : [
+              ...messages,
+              {
+                role: "user",
+                content:
+                  "IMPORTANT: your previous reply was not parseable. Return ONLY the raw JSON object now — the very first character must be { and the very last must be }. No reasoning, no explanations, no markdown fences.",
+              },
+            ],
+    })
     if (!result || !result.text.trim()) {
       lastError = "no-response"
       continue
     }
     const parsed = extractJsonObject(result.text)
     if (!parsed) {
-      lastError = "unparseable-json"
+      lastError = `unparseable-json (${result.engine})`
       continue
     }
     const normalized = normalizeAiQuestionnaire(parsed, industry)
     if (!normalized.ok) {
-      lastError = normalized.error
+      lastError = `${normalized.error} (${result.engine})`
       continue
     }
     return Response.json({

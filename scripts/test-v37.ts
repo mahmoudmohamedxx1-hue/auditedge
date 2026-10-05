@@ -185,6 +185,14 @@ async function main() {
   check("rejects too-few questions", !normalizeAiQuestionnaire({ questions: [{ domain: "monitoring", q: "only one", hint: "h", weight: 1 }], procedures: [{ title: "p" }] }, "x").ok)
   check("rejects missing procedures", !normalizeAiQuestionnaire({ questions: Array.from({ length: 10 }, (_, i) => ({ domain: "monitoring", q: `q${i} long enough question text`, hint: "h", weight: 1 })) }, "x").ok)
   check("extractJsonObject returns null on non-JSON", extractJsonObject("just words, no braces") === null)
+  // the deployed keyless engines sometimes prefix reasoning prose (with
+  // stray braces) before the payload — the scanner must find the real object
+  const reasoned =
+    'Let me think. The schema needs { title, questions } fields. Wait — first, the domains {"control-environment" etc}. Here it is:\n{"title":"ToC","scope":"s","risks":["r"],"procedures":[{"title":"Inspect bank recs","detail":"monthly","type":"inspection"}],"questions":[{"domain":"monitoring","q":"Are findings tracked to closure each month?","hint":"check the tracker","weight":2},{"domain":"it-cyber","q":"Are leaver accounts disabled same day?","hint":"check the log","weight":3,"critical":true},{"domain":"control-activities","q":"Are journal entries approved before posting?","hint":"trace three","weight":3},{"domain":"risk-assessment","q":"Is fraud risk assessed with governance?","hint":"who attended","weight":2},{"domain":"control-environment","q":"Is the code of conduct acknowledged?","hint":"the log","weight":1},{"domain":"info-communication","q":"Is there a close calendar with owners?","hint":"ask for it","weight":1},{"domain":"monitoring","q":"Are KPI variances investigated?","hint":"evidence one","weight":2},{"domain":"control-activities","q":"Are bank mandates dual-authorized?","hint":"mandate copy","weight":3}]}'
+  const fromReasoned = extractJsonObject(reasoned)
+  check("extractor survives reasoning prose with stray braces before the JSON", fromReasoned !== null)
+  const reasonedNorm = normalizeAiQuestionnaire(fromReasoned, "Fallback")
+  check("the reasoned payload normalizes to a valid questionnaire", reasonedNorm.ok, reasonedNorm.ok ? "" : reasonedNorm.error)
 
   /* ---------------- 5. wiring ---------------- */
   console.log("\n── 5. Wiring (router, sidebar, palette, i18n) ──")
