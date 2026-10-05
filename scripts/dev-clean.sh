@@ -10,5 +10,11 @@
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+
+# v38 — auto-restore DB guard: a fresh sandbox boots with an EMPTY db/custom.db
+# skeleton while the real content ships in prisma/auditedge-demo.db.gz. Restore
+# it before the server starts so no clone ever serves a silent zero-content app.
+bun scripts/ensure-db.ts
+
 rm -rf .next
 exec next dev -p 3000

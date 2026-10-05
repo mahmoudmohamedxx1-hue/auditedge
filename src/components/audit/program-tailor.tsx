@@ -59,19 +59,25 @@ export function AiTailorDialog({
   eng,
   lang,
   onApply,
+  initialSectorFree = "",
+  initialConcerns = "",
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
   eng: Engagement
   lang: Lang
   onApply: (tailor: AiTailor) => void
+  /** v38 — one-shot seed values (the ToC → program bridge): pre-fill the
+   *  custom industry + the control-verdict context. Read once on mount. */
+  initialSectorFree?: string
+  initialConcerns?: string
 }) {
   const [sector, setSector] = useState(eng.sectorId ?? "")
-  const [sectorFree, setSectorFree] = useState("")
+  const [sectorFree, setSectorFree] = useState(initialSectorFree)
   const [size, setSize] = useState<"sme" | "mid" | "listed">("mid")
   const [listed, setListed] = useState(false)
   const [systems, setSystems] = useState("")
-  const [concerns, setConcerns] = useState("")
+  const [concerns, setConcerns] = useState(initialConcerns)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [draft, setDraft] = useState<TailorDraft | null>(null)

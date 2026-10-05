@@ -361,6 +361,13 @@ export function AuditProgram() {
 
   /* ---------------- v28: AI program customization ---------------- */
   const [tailorOpen, setTailorOpen] = useState(false)
+  /* v38 — the ToC → program bridge, effect-free: while a prefill sits in the
+   *  store the dialog is FORCED open with the seed values (a changing key
+   *  remounts it so the seed lands in its useState initializers); closing
+   *  the dialog clears the prefill. No effect, no set-state-in-render. */
+  const programTailorPrefill = useAppStore((s) => s.programTailorPrefill)
+  const clearProgramTailorPrefill = useAppStore((s) => s.clearProgramTailorPrefill)
+  const tailorSeed = programTailorPrefill
   const applyTailor = (tailor: Engagement["aiTailor"]) => {
     if (!tailor || !eng) return
     updateEng((e) => {
@@ -485,14 +492,24 @@ export function AuditProgram() {
         )}
       </div>
 
-      {/* v28 — the AI customizer dialog (memo + procedures + PBC) */}
+      {/* v28 — the AI customizer dialog (memo + procedures + PBC);
+          v38: open while a ToC bridge prefill is pending */}
       {ready && eng && (
         <AiTailorDialog
-          open={tailorOpen}
-          onOpenChange={setTailorOpen}
+          key={tailorSeed ? "seeded" : "plain"}
+          open={tailorOpen || !!tailorSeed}
+          onOpenChange={(v) => {
+            if (v) setTailorOpen(true)
+            else {
+              setTailorOpen(false)
+              clearProgramTailorPrefill()
+            }
+          }}
           eng={eng}
           lang={lang}
           onApply={applyTailor}
+          initialSectorFree={tailorSeed?.sectorFree ?? ""}
+          initialConcerns={tailorSeed?.concerns ?? ""}
         />
       )}
 

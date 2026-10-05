@@ -1,4 +1,12 @@
-/** IFRS 16 — Leases */
+/**
+ * IFRS 16 — Leases. THE SECOND FLAGSHIP summary (v38): rebuilt to the
+ * depth bar the IFRS 15 notes PDF set — every section of the lessee and
+ * lessor engines carries worked numbers from one running case (Delta Co:
+ * 4-year office-floor lease, 50,000 in arrears, IBR 6%), the remeasurement
+ * and modification machinery gets its own journals WITH amounts, and the
+ * sale-and-leaseback, exemption and presentation corners each carry a
+ * numeric treatment plus the exam-focus close.
+ */
 
 import type { Standard } from "../types"
 
@@ -7,6 +15,7 @@ export const IFRS_16: Standard = {
   title: { en: "Leases", ar: "الإيجارات" },
   topic: "assets",
   effective: { en: "Effective 1 Jan 2019 · lessee model — almost every lease on balance sheet", ar: "سارٍ من ١ يناير ٢٠١٩ · نموذج المستأجر — كل إيجار تقريبًا في الميزانية" },
+  flagship: true,
   blocks: [
     { kind: "h", text: { en: "Objective & core principle", ar: "الهدف والمبدأ الأساسي" } },
     {
@@ -23,6 +32,20 @@ export const IFRS_16: Standard = {
         ar: "السيطرة هنا = الحصول على جوهر المنافع الاقتصادية من الاستخدام + حق توجيه ذلك الاستخدام. ليست ملكية قانونية ولا حيازة — بل الاستخدام ذاته.",
       },
     },
+    {
+      kind: "p",
+      text: {
+        en: "The lens throughout is the PREPARER: you are the accountant at commencement day and at every reporting date after it — you measure the day-one liability and ROU, you unwind the interest, you depreciate, you decide whether a renegotiated deal is a modification or a remeasurement, and you produce the journals. The numbers below all come from ONE running case so the whole engine can be traced end-to-end, exactly the way a complete DipIFR answer is built.",
+        ar: "العدسة في كامل الملخص هي عدسة المُعِدّ: أنت المحاسب في يوم بدء الإيجار وفي كل تاريخ إقفال بعده — تقيس التزام اليوم الأول وأصل الحق، وتفك الفائدة، وتهلك، وتقرر هل الصفقة المُعاد التفاوض عليها تعديل عقد أم إعادة قياس، وتحرر القيود. الأرقام أدناه كلها من حالة واحدة ممتدة حتى يتتبع المحرك كله من أوله لآخره، تمامًا كما يُبنى جواب DipIFR الكامل.",
+      },
+    },
+    {
+      kind: "tip",
+      text: {
+        en: "DipIFR loves three numbers off this standard: the day-one ROU (do you add IDC and restoration?), the year-one interest (opening liability × rate — never the payment × rate), and the depreciation period (shorter of term and life UNLESS ownership transfers). Drill those three and half the IFRS 16 marks are banked.",
+        ar: "يعشق DipIFR ثلاثة أرقام من هذا المعيار: أصل الحق في اليوم الأول (هل تضيف التكاليف المباشرة والمخصص؟)، وفائدة السنة الأولى (الالتزام الافتتاحي × المعدل — لا القسط × المعدل أبدًا)، وفترة الإهلاك (الأقصر من الأجل والعمر إلا إذا انتقلت الملكية). أتقن الثلاثة تضمن نصف درجات IFRS 16.",
+      },
+    },
     { kind: "h", text: { en: "Scope & exclusions", ar: "النطاق والاستثناءات" } },
     {
       kind: "list",
@@ -34,6 +57,13 @@ export const IFRS_16: Standard = {
         { en: "Lessee leases of OTHER intangibles (e.g. software): IAS 38 applies — IFRS 16 is optional, not required", ar: "إيجارات الأصول غير الملموسة الأخرى للمستأجر (كالبرمجيات): يطبق IAS 38 — وتطبيق IFRS 16 اختياري لا إلزامي" },
         { en: "The two EXEMPTIONS every lessee may elect: short-term and low-value leases (see below)", ar: "الإعفاءان اللذان قد ينتخبهما كل مستأجر: الإيجار قصير الأجل والإيجار منخفض القيمة (انظر أدناه)" },
       ],
+    },
+    {
+      kind: "tip",
+      text: {
+        en: "Software and other intangibles: the lessee MAY apply IFRS 16 to them — it is an option, not a command. Almost nobody elects it in practice; say 'optional under IAS 38' and move on — it is a one-mark sentence, never a computation.",
+        ar: "البرمجيات وغيرها من غير الملموسة: يجوز للمستأجر تطبيق IFRS 16 عليها — خيار لا أمر. ولا ينتخبه أحد عمليًا؛ فاكتب «اختياري وفق IAS 38» وامضِ — جملة بدرجة واحدة ولا حساب فيها أبدًا.",
+      },
     },
     { kind: "h", text: { en: "Key definitions — the vocabulary sheet", ar: "التعريفات الأساسية — ورطة المصطلحات" } },
     {
@@ -49,7 +79,21 @@ export const IFRS_16: Standard = {
         { en: "SALE AND LEASEBACK — the seller-lessee transfers the asset to a buyer-lessor and leases it back for the right of use it retains", ar: "البيع وإعادة الإيجار — ينقل البائع المستأجر الأصل إلى مشترٍ مؤجر ثم يستأجره من جديد مقابل الحق الذي احتفظ به" },
       ],
     },
+    {
+      kind: "tip",
+      text: {
+        en: "'REASONABLY CERTAIN' is a HIGH hurdle — economic incentive, not a wish: a bargain renewal rate, significant leasehold improvements, relocation costs, the asset's importance to operations. Under 12-month thinking this is the one judgement the examiner keeps testing.",
+        ar: "«المرجّح» عتبة عالية — حافز اقتصادي لا أمنية: معدل تجديد مغريٍ، تحسينات جوهرية على العقار، تكاليف انتقال، أو أهمية الأصل للتشغيل. وفي تفكير الـ١٢ شهرًا هذا هو الحكم الوحيد الذي يواصل الممتحن اختباره.",
+      },
+    },
     { kind: "h", text: { en: "Step 1 — Is it a lease at all?", ar: "الخطوة ١ — هل ثمّة إيجار أصلًا؟" } },
+    {
+      kind: "note",
+      text: {
+        en: "INCEPTION vs COMMENCEMENT — two dates, two jobs: inception is when the parties agree the terms (the date you ASSESS whether it's a lease); commencement is when the asset is made AVAILABLE for use (the date you MEASURE the liability and ROU). Book a lease payment made BEFORE commencement as prepaid rent — never as day-one expense.",
+        ar: "النشأة مقابل البدء — تاريخان ومهمتان: النشأة حين يتفق الطرفان على الشروط (وهنا تُقيّم هل ثمّة إيجار)؛ والبدء حين يصبح الأصل متاحًا للاستخدام (وهنا تقيس الالتزام والأصل). والدفعة قبل البدء إيجار مقدم — لا مصروف يوم أول أبدًا.",
+      },
+    },
     {
       kind: "tree",
       root: { en: "A contract conveys the right to CONTROL the use of an identified asset for a period in exchange for consideration", ar: "عقد يمنح حق السيطرة على استخدام أصل محدد لفترة مقابل عوض" },
@@ -86,6 +130,15 @@ export const IFRS_16: Standard = {
         ar: "لاختبار حق الإحلال شرطان يجب تحققهما معًا ليكون الحق جوهريًا: أن يمتلك المورد القدرة العملية على الإحلال طوال الفترة (أصول بديلة متاحة، والاستبدال سريع ميسور)، وأن ينتفع المورد اقتصاديًا من ممارسته (بديل أرخص أو أنسب أو درء خسائر بطالة). أما الحقوق الحامية — كحق استرداد الأصل عند إخلال العميل بشرط، أو حق الاعتراض على تغيير الاستخدام — فلا تعد إحلالًا ولا تهزم تحديد الأصل. ويجري التقييم عند نشأة العقد ولا يعاد إلا إذا تغيرت الشروط.",
       },
     },
+    {
+      kind: "example",
+      title: { en: "Embedded lease — the outsourced data centre", ar: "إيجار مضمن — مركز البيانات المُسنَد" },
+      lines: [
+        { en: "A 3-year contract: 'dedicated Hall B, 200 racks, we run it for you' for a fixed 40,000/month + usage charges", ar: "عقد ٣ سنوات: «قاعة B مخصصة بـ٢٠٠ خادم ونشغلها لك» مقابل ٤٠٬٠٠٠ شهريًا ثابتة + رسوم استخدام" },
+        { en: "Hall B is an IDENTIFIED asset; the supplier cannot swap it without approval and gains nothing from swapping — the substitution right is NOT substantive", ar: "القاعة B أصل محدد؛ ولا يستطيع المورد تبديلها دون موافقة ولا ينتفع بالتبديل — فحق الإحلال ليس جوهريًا" },
+        { en: "Verdict: the fixed 40,000 contains a LEASE (capitalise the hall slice); the management/usage slice stays a service expense — split on relative stand-alone prices", ar: "الحكم: الـ٤٠٬٠٠٠ الثابتة تتضمن إيجارًا (يرسمل جزء القاعة)؛ وجزء التشغيل والاستخدام يبقى مصروف خدمة — بالفصل على الأسعار المستقلة النسبية" },
+      ],
+    },
     { kind: "h", text: { en: "Separating lease & non-lease components", ar: "فصل مكونات الإيجار عن غير الإيجارية" } },
     {
       kind: "p",
@@ -113,7 +166,38 @@ export const IFRS_16: Standard = {
         },
       ],
     },
+    {
+      kind: "example",
+      title: { en: "Worked allocation — floor + cleaning bundled at 60,000", ar: "توزيع محسوب — طابق + تنظيف بحزمة ٦٠٬٠٠٠" },
+      lines: [
+        { en: "Bundle: one floor + daily cleaning, single annual charge 60,000 · SSPs observable: floor 52,000 · cleaning 13,000 (total 65,000)", ar: "الحزمة: طابق واحد + تنظيف يومي برسم سنوي واحد ٦٠٬٠٠٠ · والأسعار المستقلة ملحوظة: الطابق ٥٢٬٠٠٠ · التنظيف ١٣٬٠٠٠ (الإجمالي ٦٥٬٠٠٠)" },
+        { en: "Lease slice = 60,000 × 52,000/65,000 = 48,000 → ROU + liability · Service slice = 12,000 → operating expense as received", ar: "الجزء الإيجاري = ٦٠٬٠٠٠ × ٥٢٬٠٠٠/٦٥٬٠٠٠ = ٤٨٬٠٠٠ ← أصل حق والتزام · وجزء الخدمة = ١٢٬٠٠٠ ← مصروف تشغيلي عند التلقي" },
+        { en: "Had the lessee elected the no-separation expedient (by class): ALL 60,000 into the liability — bigger balance sheet, flattered EBITDA, no service line", ar: "لو انتخب المستأجر عدم الفصل (بفئة الأصل): تدخل الـ٦٠٬٠٠٠ كلها في الالتزام — ميزانية أكبر وأرباح قبل الفوائد والإهلاك أفضل ولا سطر خدمة" },
+      ],
+    },
+    {
+      kind: "journal",
+      title: { en: "The allocation entries — year 1 of the bundle", ar: "قيود التوزيع — السنة الأولى من الحزمة" },
+      rows: [
+        { dr: { en: "Right-of-use asset 48,000", ar: "أصل حق استخدام ٤٨٬٠٠٠" }, cr: { en: "Lease liability 48,000 (the allocated lease slice only)", ar: "التزام إيجار ٤٨٬٠٠٠ (الجزء الإيجاري الموزع فقط)" }, red: true },
+        { dr: { en: "Cleaning expense (service) 12,000", ar: "مصروف تنظيف (خدمة) ١٢٬٠٠٠" }, cr: { en: "Cash 12,000", ar: "نقد ١٢٬٠٠٠" } },
+      ],
+    },
+    {
+      kind: "tip",
+      text: {
+        en: "When SSPs are NOT observable, estimate them (cost-plus, market price of a standalone ticket, residual technique) — the exam will hand you the SSPs; the skill it wants is the RELATIVE allocation, never a guess-and-hope split.",
+        ar: "حين لا تكون الأسعار المستقلة ملحوظة فقدّرها (التكلفة بهامش، أو سعر السوق لتذكرة مستقلة، أو الأسلوب المتبقي) — الامتحان يعطيك الأسعار؛ والمهارة المطلوبة هي التوزيع النسبي لا تجزئة بالتخمين.",
+      },
+    },
     { kind: "h", text: { en: "Step 2 — Initial measurement: the lessee engine", ar: "الخطوة ٢ — القياس الأولي: محرك المستأجر" } },
+    {
+      kind: "p",
+      text: {
+        en: "THE RUNNING CASE — Delta Co leases the fourth floor of an office tower for FOUR years, annual rent 50,000 payable in ARREARS, incremental borrowing rate 6% (the implicit rate is buried in the lessor's residual-value estimate and not readily determinable). Delta pays the broker 2,000 to obtain the lease, and the lease obliges it to restore the floor to its original layout at the end of the term — the present value of that restoration cost, per IAS 37, is 4,000. Every lessee number in this summary — the unwinding schedule, the depreciation, the remeasurement, the modification, the impairment — is computed from this one case.",
+        ar: "الحالة الممتدة — تستأجر شركة دلتا الطابق الرابع من برج مكاتب لأربع سنوات، بإيجار سنوي ٥٠٬٠٠٠ يُدفع بأثر لاحق، وبمعدل اقتراض حدي ٦٪ (فالمعدل الضمني مدفون في تقدير المؤجر للقيمة المتبقية ويتعذر تعيينه). وتدفع دلتا للوسيط ٢٬٠٠٠ للحصول على العقد، ويلزمها العقد بإعادة الطابق لوضعه الأصلي في نهاية الأجل — والقيمة الحالية لتكلفة ذلك وفق IAS 37 هي ٤٬٠٠٠. وكل رقم للمستأجر في هذا الملخص — جدول فك الخصم والإهلاك وإعادة القياس والتعديل والانخفاض — محسوب من هذه الحالة وحدها.",
+      },
+    },
     {
       kind: "steps",
       items: [
@@ -131,6 +215,13 @@ export const IFRS_16: Standard = {
         { en: "Lease liability = PV of UNPAID lease payments, discounted at the RATE IMPLICIT IN THE LEASE (or the lessee's INCREMENTAL BORROWING RATE when the implicit rate is not readily determinable)", ar: "التزام الإيجار = القيمة الحالية لمدفوعات الإيجار غير المسددة مخصومة بمعدل الفائدة الضمني في العقد (أو معدل الاقتراض الحدي للمستأجر عند تعذر تعيين الضمني بسهولة)" },
         { en: "Lease payments = fixed payments (incl. in-substance fixed) − lease incentives receivable + purchase-option price (if reasonably certain) + termination penalties (if term reflects exercise) + EXPECTED payments under residual-value guarantees", ar: "مدفوعات الإيجار = الثابتة (ومنها الثابتة في الجوهر) − حوافز الإيجار المستحقة + ثمن خيار الشراء (إن رجح) + غرامات الإنهاء (إذا انعكس الأجل على ممارستها) + المدفوعات المتوقعة بموجب ضمانات القيمة المتبقية" },
         { en: "ROU asset = liability + prepaid lease payments + initial DIRECT costs + restoration/dismantling estimate (IAS 37) − incentives received", ar: "أصل حق الاستخدام = الالتزام + مدفوعات إيجار مقدمة + تكاليف مباشرة أولية + تقدير الفك والتفكيك وإعادة الحال (IAS 37) − الحوافز المقبوضة" },
+      ],
+    },
+    {
+      kind: "list",
+      items: [
+        { en: "IN the liability: fixed payments (incl. IN-SUBSTANCE fixed — 'the same amount whatever happens') · index-linked at TODAY'S rate · expected residual-value-guarantee amounts · purchase-option price when reasonably certain · termination penalties the term already reflects", ar: "داخل الالتزام: المدفوعات الثابتة (ومنها الثابتة في الجوهر — «المبلغ نفسه أيًّا حدث») · والمرتبطة بمؤشر بسعر اليوم · والمبالغ المتوقعة لضمان القيمة المتبقية · وثمن خيار الشراء المرجح · وغرامات الإنهاء التي انعكس عليها الأجل" },
+        { en: "OUT of the liability: usage/sales-based variable payments (expense as incurred) · optional services not separated (cleaning, maintenance) · payments in periods AFTER a purchase-option exercise date", ar: "خارج الالتزام: المدفوعات المتغيرة المبنية على الاستخدام أو المبيعات (تصرف عند حدوثها) · والخدمات الاختيارية غير المفصولة (تنظيف وصيانة) · والمدفوعات عن فترات تالية لتاريخ ممارسة خيار الشراء" },
       ],
     },
     {
@@ -198,6 +289,13 @@ export const IFRS_16: Standard = {
       ],
     },
     {
+      kind: "tip",
+      text: {
+        en: "The depreciation period flips on ONE fact: ownership TRANSFERRING (or a purchase option the lessee is reasonably certain to exercise) → depreciate over the USEFUL LIFE, because the lessee keeps the asset after the lease ends. Everything else → the shorter of term and life.",
+        ar: "فترة الإهلاك تنقلب على حقيقة واحدة: انتقال الملكية (أو خيار شراء مرجّح التمديد) ← أهلك على العمر الإنتاجي، لأن المستأجر يبقي الأصل بعد انتهاء الإيجار. وما عدا ذلك ← الأقصر من الأجل والعمر.",
+      },
+    },
+    {
       kind: "journal",
       title: { en: "Year-1 entries — the numbers from the worked example", ar: "قيود السنة الأولى — بأرقام المثال المحسوب" },
       rows: [
@@ -206,6 +304,31 @@ export const IFRS_16: Standard = {
         { dr: { en: "Depreciation expense 44,814", ar: "مصروف إهلاك ٤٤٬٨١٤" }, cr: { en: "Accumulated depreciation — ROU 44,814", ar: "مجمع إهلاك أصل الحق ٤٤٬٨١٤" } },
         { cr: { en: "P&L geography forever after: DEPRECIATION (operating) + INTEREST (finance) — NOT one operating rent line", ar: "خريطة الأرباح بعدها دائمًا: إهلاك (تشغيلي) + فائدة (تمويلي) — لا سطر إيجار تشغيلي واحد" }, red: true },
       ],
+    },
+    {
+      kind: "journal",
+      title: { en: "Year-2 entries — the interest is now smaller (the engine decays)", ar: "قيود السنة الثانية — الفائدة الآن أصغر (المحرك يتناقص)" },
+      rows: [
+        { dr: { en: "Interest expense (finance costs) 8,019", ar: "مصروف فوائد (تكاليف تمويلية) ٨٬٠١٩" }, cr: { en: "Lease liability 8,019 (133,650 × 6%)", ar: "التزام إيجار ٨٬٠١٩ (١٣٣٬٦٥٠ × ٦٪)" }, red: true },
+        { dr: { en: "Lease liability 50,000", ar: "التزام إيجار ٥٠٬٠٠٠" }, cr: { en: "Cash 50,000", ar: "نقد ٥٠٬٠٠٠" } },
+        { dr: { en: "Depreciation expense 44,814", ar: "مصروف إهلاك ٤٤٬٨١٤" }, cr: { en: "Accumulated depreciation — ROU 44,814 (still level)", ar: "مجمع إهلاك أصل الحق ٤٤٬٨١٤ (ثابت كما هو)" } },
+      ],
+    },
+    {
+      kind: "example",
+      title: { en: "Statement of financial position — end of years 1 and 2", ar: "قائمة المركز المالي — نهايتا السنتين الأولى والثانية" },
+      lines: [
+        { en: "End Y1: ROU 179,255 − 44,814 = 134,441 · Lease liability 133,650 · (equity-neutral: the two tracks diverge slowly)", ar: "نهاية س١: أصل الحق ١٧٩٬٢٥٥ − ٤٤٬٨١٤ = ١٣٤٬٤٤١ · والتزام الإيجار ١٣٣٬٦٥٠ · (أثر على حقوق الملكية محايد: المساران يفترقان ببطء)" },
+        { en: "End Y2: ROU 89,627 · Lease liability 91,669 — the liability overtakes the asset from year 2 (interest outran depreciation)", ar: "نهاية س٢: أصل الحق ٨٩٬٦٢٧ · والتزام الإيجار ٩١٬٦٦٩ — التزام يتجاوز الأصل من السنة الثانية (الفائدة سبقت الإهلاك)" },
+        { en: "Current / non-current split at end Y1: current liability = next year's PRINCIPAL 41,981 (payment 50,000 − interest 8,019); the rest 91,669 non-current", ar: "التقسيم الجاري/غير الجاري نهاية س١: الجاري = أصل القسط المقبل ٤١٬٩٨١ (القسط ٥٠٬٠٠٠ − الفائدة ٨٬٠١٩)؛ والباقي ٩١٬٦٦٩ غير جارٍ" },
+      ],
+    },
+    {
+      kind: "tip",
+      text: {
+        en: "The TOTAL P&L over the whole lease never changes — only its SHAPE: depreciation runs level while interest decays, so the combined charge is front-loaded (Y1 55,209 → Y4 47,644 in the running case). State that sentence in a discussion question and collect the easy mark.",
+        ar: "إجمالي الأرباح عبر الإيجار كله لا يتغير أبدًا — يتغير شكله فقط: الإهلاك ثابت والفائدة تتناقص، فالمحمول مجملًا مقدم التحميل (س١ ٥٥٬٢٠٩ ← س٤ ٤٧٬٦٤٤ في الحالة الممتدة). اكتب هذه الجملة في سؤال النقاش واحصد الدرجة السهلة.",
+      },
     },
     { kind: "h", text: { en: "Reassessment & remeasurement", ar: "إعادة التقييم وإعادة القياس" } },
     {
@@ -232,6 +355,15 @@ export const IFRS_16: Standard = {
         { cr: { en: "Usage- and performance-based payments NEVER enter the liability — expensed as incurred", ar: "المدفوعات المبنية على الاستخدام أو الأداء لا تدخل الالتزام أبدًا — تصرف عند حدوثها" }, red: true },
       ],
     },
+    {
+      kind: "example",
+      title: { en: "Residual-value guarantee — the third trigger, with numbers", ar: "ضمان القيمة المتبقية — المحفز الثالث بالأرقام" },
+      lines: [
+        { en: "End Y1: Delta guarantees the tower's floor fittings will be worth 3,000; the liability carrying is 133,650", ar: "نهاية س١: تضمن دلتا أن تجهيزات الطابق ستساوي ٣٬٠٠٠؛ والرصيد الدفتري للالتزام ١٣٣٬٦٥٠" },
+        { en: "A inspection predicts the fittings will fetch only 1,000 → EXPECTED payment under the RVG rises from 0 to 2,000", ar: "توقع المعاينة أن تدرّ التجهيزات ١٬٠٠٠ فقط ← يرتفع المدفوع المتوقع بموجب الضمان من صفر إلى ٢٬٠٠٠" },
+        { en: "Remeasure: add PV(2,000 at end of term) to the liability at the UNCHANGED 6% — against the ROU, no P&L", ar: "أعِد القياس: أضف القيمة الحالية لـ٢٬٠٠٠ في نهاية الأجل إلى الالتزام بالمعدل الثابت ٦٪ — مقابل الأصل ولا أرباح" },
+      ],
+    },
     { kind: "h", text: { en: "Modifications", ar: "تعديلات العقد" } },
     {
       kind: "tree",
@@ -256,6 +388,13 @@ export const IFRS_16: Standard = {
       ],
     },
     {
+      kind: "note",
+      text: {
+        en: "The separate-lease test has TWO prongs and BOTH must hold: the modification ADDS the right to use one or more underlying assets, AND the consideration rises by an amount commensurate with that increase's STAND-ALONE price (adjusted for contract circumstances). Fail either prong and you are in remeasurement land — revised rate, adjust the ROU.",
+        ar: "لاختبار الإيجار المستقل شرطان يجب اجتماعهما: أن يضيف التعديل حق استخدام أصلًا أو أكثر، وأن يرتفع المقابل بمقدار يوازي السعر المستقل للزيادة (معدولًا بظروف العقد). فإذا سقط أحدهما كنت في أرض إعادة القياس — معدل منقح وتعديل للأصل.",
+      },
+    },
+    {
       kind: "journal",
       title: { en: "Modification entries — three directions", ar: "قيود التعديل — ثلاثة اتجاهات" },
       rows: [
@@ -264,6 +403,30 @@ export const IFRS_16: Standard = {
         { cr: { en: "Gain on partial termination 6,000 = 30,000 liability released − 24,000 ROU released", ar: "ربح الإنهاء الجزئي ٦٬٠٠٠ = ٣٠٬٠٠٠ التزامًا محلولًا − ٢٤٬٠٠٠ أصلًا محلولًا" }, red: true },
         { cr: { en: "Any OTHER modification (e.g. rent increase): remeasure at the REVISED rate against the ROU — no P&L", ar: "أي تعديل آخر (كرفع الإيجار): يعاد القياس بمعدل منقح مقابل الأصل — ولا أرباح" } },
       ],
+    },
+    {
+      kind: "example",
+      title: { en: "Worked term extension — the running case, revised rate 7%", ar: "تمديد محسوب — الحالة الممتدة بمعدل منقح ٧٪" },
+      lines: [
+        { en: "At end Y2 Delta extends the lease by 2 years: 4 payments of 50,000 remain, revised IBR 7% (rates moved since commencement)", ar: "في نهاية س٢ تمدد دلتا الإيجار سنتين: تبقى ٤ أقساط من ٥٠٬٠٠٠، بمعدل حدي منقح ٧٪ (المعدلات تحركت منذ البدء)" },
+        { en: "New liability = 50,000 × 3.3872 = 169,360 · Remeasurement gain to liability = 169,360 − 91,669 = 77,691", ar: "الالتزام الجديد = ٥٠٬٠٠٠ × ٣٫٣٨٧٢ = ١٦٩٬٣٦٠ · وزيادة إعادة القياس = ١٦٩٬٣٦٠ − ٩١٬٦٦٩ = ٧٧٬٦٩١" },
+        { en: "New ROU = 89,627 + 77,691 = 167,318 · depreciation recalculated = 167,318 ÷ 4 remaining years = 41,830/yr", ar: "الأصل الجديد = ٨٩٬٦٢٧ + ٧٧٬٦٩١ = ١٦٧٬٣١٨ · والإهلاك المعاد حسابه = ١٦٧٬٣١٨ ÷ ٤ سنوات متبقية = ٤١٬٨٣٠ سنويًا" },
+      ],
+    },
+    {
+      kind: "journal",
+      title: { en: "The extension entry (running-case numbers)", ar: "قيد التمديد (بأرقام الحالة الممتدة)" },
+      rows: [
+        { dr: { en: "Right-of-use asset 77,691", ar: "أصل حق استخدام ٧٧٬٦٩١" }, cr: { en: "Lease liability 77,691 (remeasured at the REVISED 7%)", ar: "التزام إيجار ٧٧٬٦٩١ (أعيد قياسه بالمعدل المنقح ٧٪)" }, red: true },
+        { cr: { en: "No P&L on a straight modification — the ROU absorbs it, and future depreciation spreads it", ar: "لا أرباح في تعديل مستقيم — الأصل يستوعبه والإهلاك المقبل يوزعه" }, red: true },
+      ],
+    },
+    {
+      kind: "tip",
+      text: {
+        en: "Rate rule in one breath: TERM or PURCHASE-OPTION or MODIFICATION changes → REVISED rate; INDEX or RESIDUAL GUARANTEE changes → ORIGINAL rate (locked). Write the two-line table before touching the numbers and the arithmetic always falls out right.",
+        ar: "قاعدة المعدل في نفس واحد: تغيّر الأجل أو خيار الشراء أو التعديل ← معدل منقح؛ وتغيّر المؤشر أو ضمان القيمة المتبقية ← المعدل الأصلي مقفولًا. اكتب الجدول ذي السطرين قبل الأرقام تخرج الحسبة صحيحة دائمًا.",
+      },
     },
     { kind: "h", text: { en: "Impairment of the ROU asset", ar: "انخفاض قيمة أصل الحق" } },
     {
@@ -297,6 +460,22 @@ export const IFRS_16: Standard = {
         { dr: { en: "Office expense — low-value laptops 60/month", ar: "مصروف مكتبي — حواسيب منخفضة القيمة ٦٠ شهريًا" }, cr: { en: "Cash 60", ar: "نقد ٦٠" } },
         { cr: { en: "Straight-line or another systematic basis over the term — and disclose the expense amount", ar: "بالقسط الثابت أو أساس منتظم آخر عبر الأجل — مع الإفصاح عن المصروف" } },
       ],
+    },
+    {
+      kind: "example",
+      title: { en: "The two elections side by side", ar: "الانتخابان جنبًا إلى جنب" },
+      lines: [
+        { en: "Short-term: 11-month warehouse at 2,000/month → rent expense 2,000 each month; total 22,000, ZERO day-one balance sheet", ar: "قصير الأجل: مستودع ١١ شهرًا بـ٢٬٠٠٠ شهريًا ← مصروف إيجار ٢٬٠٠٠ كل شهر؛ والإجمالي ٢٢٬٠٠٠ وصفر ميزانية في اليوم الأول" },
+        { en: "Low-value: a fleet of 40 laptops at 60/month each → 2,400/month operating expense; the election is per CLASS (all laptops), never per machine", ar: "منخفض القيمة: أسطول ٤٠ حاسوبًا بـ٦٠ شهريًا للواحد ← ٢٬٤٠٠ مصروفًا تشغيليًا شهريًا؛ والانتخاب بفئة الأصل (كل الحواسيب) لا جهازًا جهازًا" },
+        { en: "Total expense over the term is IDENTICAL with or without the election — what changes is the balance sheet and the timing", ar: "إجمالي المصروف عبر الأجل متطابق مع الانتخاب أو بدونه — ما يتغير هو الميزانية والتوقيت" },
+      ],
+    },
+    {
+      kind: "tip",
+      text: {
+        en: "The 12-month test runs on the LEASE TERM at commencement (non-cancellable + reasonably-certain renewals) — a 12-month lease WITH a renewal the lessee is reasonably certain to exercise is NOT short-term. And a 13-month lease never becomes short-term by being shortened later.",
+        ar: "اختبار الـ١٢ شهرًا يجري على أجل الإيجار عند البدء (غير القابل للإلغاء + التجديدات المرجحة) — فإيجار ١٢ شهرًا مع تجديد مرجح التمديد ليس قصير الأجل. وإيجار ١٣ شهرًا لا يصبح قصير الأجل لأنه قُصّر لاحقًا.",
+      },
     },
     { kind: "h", text: { en: "Lessor accounting — the retained two-way", ar: "محاسبة المؤجر — الثنائية الباقية" } },
     {
@@ -334,6 +513,15 @@ export const IFRS_16: Standard = {
       ],
     },
     {
+      kind: "example",
+      title: { en: "The net-investment schedule (dealer numbers)", ar: "جدول صافي الاستثمار (بأرقام التاجر)" },
+      lines: [
+        { en: "Net investment 100,000 · implicit rate 8% · 4 annual receipts of 30,192 (100,000 ÷ 3.3127)", ar: "صافي الاستثمار ١٠٠٬٠٠٠ · معدل ضمني ٨٪ · ٤ مقبوضات سنوية من ٣٠٬١٩٢ (١٠٠٬٠٠٠ ÷ ٣٫٣١٢٧)" },
+        { en: "Y1: 100,000 + 8,000 − 30,192 = 77,808 · Y2: + 6,225 = 53,841 · Y3: + 4,307 = 27,956 · Y4: + 2,236 = 0 (receipt clears the balance)", ar: "س١: ١٠٠٬٠٠٠ + ٨٬٠٠٠ − ٣٠٬١٩٢ = ٧٧٬٨٠٨ · س٢ + ٦٬٢٢٥ = ٥٣٬٨٤١ · س٣ + ٤٬٣٠٧ = ٢٧٬٩٥٦ · س٤ + ٢٬٢٣٦ = صفر (المقبوض يمسح الرصيد)" },
+        { en: "Interest income DECLINES as the net investment collects — the mirror image of the lessee's unwinding liability", ar: "إيراد الفائدة يتراجع مع تحصيل الاستثمار الصافي — صورة معكوسة لالتزام المستأجر المتناقص" },
+      ],
+    },
+    {
       kind: "journal",
       title: { en: "Lessor — operating lease (asset 100,000, 10-year life, rent 30,000/yr)", ar: "المؤجر — إيجار تشغيلي (أصل ١٠٠٬٠٠٠ وعمر ١٠ سنوات وإيجار ٣٠٬٠٠٠ سنويًا)" },
       rows: [
@@ -343,10 +531,26 @@ export const IFRS_16: Standard = {
       ],
     },
     {
+      kind: "example",
+      title: { en: "The other side of the running case — Delta's landlord", ar: "الوجه الآخر للحالة الممتدة — مالك دلتا" },
+      lines: [
+        { en: "The tower's owner leases one floor of a 40-year building for 4 years — no ownership transfer, no bargain option: risks & rewards stay with it → OPERATING", ar: "مالك البرج يؤجر طابقًا واحدًا من مبنى عمره ٤٠ سنة لأربع سنوات — لا انتقال ملكية ولا خيار مغرٍ: المخاطر والمنافع تبقى لديه ← تشغيلي" },
+        { en: "It keeps the floor on its books (IAS 40 investment property / IAS 16 PPE) and takes 50,000 income straight-line — the mirror of Delta's split charge, in ONE line", ar: "يبقي الطابق في دفاتره (عقار استثماري IAS 40 / ممتلكات IAS 16) ويأخذ ٥٠٬٠٠٠ دخلًا ثابتًا — المرآة المعاكسة لتحميل دلتا المقسم، في سطر واحد" },
+        { en: "Same lease, two worlds: the lessee's balance sheet GROWS (ROU + liability) while the lessor's barely moves — the asymmetry examiners love to ask about", ar: "الإيجار ذاته وعالمان: ميزانية المستأجر تنفش (أصل والتزام) وميزانية المؤجر بالكاد تتحرك — وهذا التباين هو ما يعشق الممتحنون سؤاله" },
+      ],
+    },
+    {
       kind: "p",
       text: {
         en: "SUBLEASES & embedded leases: an intermediate lessor (the head-lease lessee) classifies the sublease with reference to the ROU ASSET it gets from the head lease — not the underlying asset — because that is the asset it controls and passes on. If the head lease is an 8-year ROU and the sublease runs 3 years, the sublease is probably OPERATING even though the underlying building has a 40-year life. Embedded leases hide inside service contracts: an outsourced data centre, dedicated transport fleet, or warehouse capacity arrangement must be tested for an identified asset and control — the lease inside the service is split out and capitalised while the pure service stays in operating expense.",
         ar: "الإيجار الباطن والإيجارات المضمنة: يصنف المؤجر الوسيط (مستأجر العقد الرئيسي) الإيجار الباطن بالإشارة إلى أصل حق الاستخدام الذي يكسبه من العقد الرئيسي — لا إلى الأصل ذاته — لأنه هو الأصل الذي يسيطر عليه ويمرره. فإذا كان العقد الرئيسي أصل حق لـ٨ سنوات والإيجار الباطن ٣ سنوات، فالباطن غالبًا تشغيلي وإن كان المبنى عمره ٤٠ سنة. وتختبئ الإيجارات المضمنة داخل عقود الخدمة: مركز بيانات مُسنَد، أسطول نقل مخصص، أو ترتيب سعة مستودع — كلها تختبر لأصل محدد وسيطرة؛ فيقتطع الإيجار داخل الخدمة ويرسل بينما تبقى الخدمة الصرفة ضمن المصروف التشغيلي.",
+      },
+    },
+    {
+      kind: "tip",
+      text: {
+        en: "Why the sublease test uses the ROU: the intermediate lessor does not control the BUILDING — only its right of use. A 3-year sublease inside an 8-year ROU has consumed a small slice of an already-narrow asset, so 'major part of life' fails and the sublease is operating. Say it exactly that way.",
+        ar: "لماذا يختبر الباطن على أصل الحق: المؤجر الوسيط لا يسيطر على المبنى — بل على حق استخدامه فقط. فإيجار باطن ٣ سنوات داخل أصل حق ٨ سنوات استهلك شريحة صغيرة من أصل ضيق أصلًا، فيفشل اختبار «الجزء الأكبر من العمر» ويكون التشغيلي. قلها بهذه العبارة بعينها.",
       },
     },
     { kind: "h", text: { en: "Sale and leaseback", ar: "البيع وإعادة الإيجار" } },
@@ -381,6 +585,15 @@ export const IFRS_16: Standard = {
     },
     {
       kind: "example",
+      title: { en: "Failed sale — the repurchase trap, with numbers", ar: "بيع فاشل — فخ إعادة الشراء بالأرقام" },
+      lines: [
+        { en: "Building carrying 800 · 'sold' for 1,000 · but the seller-lessee holds an option to repurchase for 1,100 in 3 years", ar: "مبنى دفتريته ٨٠٠ · «بيع» بـ١٬٠٠٠ · لكن البائع المستأجر يحتفظ بخيار إعادة شراء بـ١٬١٠٠ خلال ٣ سنوات" },
+        { en: "The option is a genuine repurchase right (spot price + financing) → the buyer never obtained control → NOT a sale", ar: "الخيار حق إعادة شراء حقيقي (سعر نقدٍ + تمويل) ← المشتري لم يكتسب السيطرة ← ليس بيعًا" },
+        { en: "Entry: Dr Cash 1,000 / Cr Financial liability 1,000 — the 'price' is a loan that accretes toward 1,100; the building stays on the seller's books, depreciating as before", ar: "القيد: مدين نقد ١٬٠٠٠ / دائن التزام مالي ١٬٠٠٠ — فالـ«سعر» قرض ينمو نحو ١٬١٠٠؛ والمبنى يبقى في دفاتر البائع ويهلك كالسابق" },
+      ],
+    },
+    {
+      kind: "example",
       title: { en: "Sale & leaseback numbers", ar: "أرقام البيع وإعادة الإيجار" },
       lines: [
         { en: "Building carrying 800 · FV 1,000 · sold for 1,000 · leased back with a market lease whose PV is 900 (18 of the 20 remaining years = 90% retained)", ar: "مبنى دفتريته ٨٠٠ وقيمته العادلة ١٬٠٠٠ · بيع بـ١٬٠٠٠ · وأعيد تأجيره بعقد سوق قيمته الحالية ٩٠٠ (١٨ من ٢٠ سنة متبقية = ٩٠٪ محتفظ بها)" },
@@ -398,6 +611,13 @@ export const IFRS_16: Standard = {
         { cr: { en: "Gain on rights transferred 20 — only this slice hits P&L (Dr 1,720 = Cr 820 + 900 + 20)", ar: "ربح الحقوق المنتقلة ٢٠ — هذا الجزء وحده يظهر بالأرباح (مدين ١٬٧٢٠ = دائن ٨٢٠ + ٩٠٠ + ٢٠)" }, red: true },
       ],
     },
+    {
+      kind: "tip",
+      text: {
+        en: "The BUYER-LESSOR is the quiet half of the question: it books the building at cost, applies IFRS 16's LESSOR model to the leaseback (usually operating → straight-line income), and true-ups any off-market price with additional financing/prepaid rent. One mark for one sentence.",
+        ar: "المشتري المؤجر هو النصف الصامت من السؤال: يثبّت المبنى بالتكلفة، ويطبق نموذج المؤجر في IFRS 16 على الإيجار الراجع (غالبًا تشغيلي ← دخل ثابت)، وعدل أي سعر خارج السوق بتمويل إضافي أو إيجار مقدم. درجة واحدة لجملة واحدة.",
+      },
+    },
     { kind: "h", text: { en: "Presentation in the primary statements", ar: "العرض في القوائم الأساسية" } },
     {
       kind: "list",
@@ -406,6 +626,30 @@ export const IFRS_16: Standard = {
         { en: "Cash flow: PRINCIPAL repayments → financing; INTEREST → operating or financing per the IAS 7 policy; short-term, low-value & variable payments → OPERATING", ar: "التدفقات النقدية: تسديد الأصل ← تمويلية؛ والفائدة ← تشغيلية أو تمويلية وفق سياسة IAS 7؛ ومدفوعات القصير ومنخفض القيمة والمتغيرة ← تشغيلية" },
         { en: "Lessor: finance-lease receipts split principal/interest (the net investment unwinds); operating-lease income straight-line", ar: "المؤجر: مقبوضات التمويلي تنقسم أصلًا وفائدة (يفك صافي الاستثمار)؛ ودخل التشغيلي بالقسط الثابت" },
       ],
+    },
+    {
+      kind: "example",
+      title: { en: "Where each year-1 number lands (running case)", ar: "أين يقع كل رقم من السنة الأولى (الحالة الممتدة)" },
+      lines: [
+        { en: "P&L: depreciation 44,814 inside OPERATING profit + interest 10,395 in FINANCE costs (below operating profit)", ar: "الأرباح: إهلاك ٤٤٬٨١٤ داخل الربح التشغيلي + فائدة ١٠٬٣٩٥ ضمن التكاليف التمويلية (تحت الربح التشغيلي)" },
+        { en: "Cash flow: the 50,000 payment splits — principal 39,605 → FINANCING; interest 10,395 → per the IAS 7 policy choice", ar: "التدفقات: القسط ٥٠٬٠٠٠ ينقسم — أصل ٣٩٬٦٠٥ ← تمويلية؛ وفائدة ١٠٬٣٩٥ ← وفق خيار سياسة IAS 7" },
+        { en: "EBITDA effect: under IAS 17 the 50,000 rent sat INSIDE EBITDA; under IFRS 16 neither line touches it → EBITDA is 50,000 HIGHER for this lease in year 1", ar: "أثر الأرباح قبل الفوائد والإهلاك: في IAS 17 كان إيجار ٥٠٬٠٠٠ داخلها؛ وفي IFRS 16 لا يلمسها أي من السطرين ← فهي أعلى بـ٥٠٬٠٠٠ لهذا الإيجار في السنة الأولى" },
+      ],
+    },
+    {
+      kind: "journal",
+      title: { en: "The cash-flow split — year-1 payment of 50,000", ar: "تقسيم التدفق النقدي — قسط السنة الأولى ٥٠٬٠٠٠" },
+      rows: [
+        { dr: { en: "Lease liability (principal) 39,605", ar: "التزام إيجار (أصل القسط) ٣٩٬٦٠٥" }, cr: { en: "Cash — financing activity 39,605", ar: "نقد — نشاط تمويلي ٣٩٬٦٠٥" }, red: true },
+        { dr: { en: "Interest paid 10,395", ar: "فوائد مدفوعة ١٠٬٣٩٥" }, cr: { en: "Cash — operating or financing per IAS 7 policy", ar: "نقد — تشغيلي أو تمويلي وفق سياسة IAS 7" } },
+      ],
+    },
+    {
+      kind: "note",
+      text: {
+        en: "Ratio homework for the analyst inside you: EBITDA up (rent left the operating lines), operating profit up (interest sits below it), net debt up (lease liability), asset turnover down (ROU), interest cover mixed (interest added, EBIT up too). Debt covenants drafted on 'net debt excl. leases' suddenly look different — flag it in the audit committee memo, not just the notes.",
+        ar: "واجب النسب لمحللك الداخلي: الأرباح قبل الفوائد والإهلاك ترتفع (خرج الإيجار من السطور التشغيلية)، والربح التشغيلي يرتفع (الفائدة تحته)، وصافي الدين يرتفع (التزام الإيجار)، ومعدل دوران الأصول ينخفض (أصل الحق)، وتغطية الفوائد مختلطة (فائدة زادت وأرباح قبل الفوائد زادت). فالتعهدات المرتبة على «صافي دين دون الإيجارات» تبدو فجأة مختلفة — أشر لذلك في مذكرة لجنة المراجعة لا في الإيضاحات وحدها.",
+      },
     },
     { kind: "h", text: { en: "Disclosure essentials", ar: "جوهر الإفصاح" } },
     {
@@ -448,6 +692,46 @@ export const IFRS_16: Standard = {
       text: {
         en: "The remeasurement-rate table is pure exam currency: TERM or PURCHASE-OPTION change → REVISED rate; INDEX or RVG change → UNCHANGED rate (floating-rate payments the only exception); a modification that is not a separate lease → REVISED rate. Write the trigger, then the rate, in that order.",
         ar: "جدول معدلات إعادة القياس عملة امتحانية خالصة: تغير الأجل أو خيار الشراء ← معدل منقح؛ وتغير المؤشر أو ضمان المتبقي ← معدل دون تغيير (والمدفوعات العائمة الاستثناء الوحيد)؛ وتعديل ليس إيجارًا مستقلًا ← معدل منقح. اكتب المحفز ثم المعدل بهذا الترتيب.",
+      },
+    },
+    {
+      kind: "h", text: { en: "IFRS 16 vs IAS 17 — the before/after", ar: "IFRS 16 مقابل IAS 17 — قبل وبعد" },
+    },
+    {
+      kind: "list",
+      items: [
+        { en: "LESSEE under IAS 17: finance leases capitalised; operating leases OFF balance sheet — one straight-line rent inside operating costs", ar: "المستأجر في IAS 17: الإيجارات التمويلية مرسملة؛ والتشغيلية خارج الميزانية — بإيجار ثابت واحد داخل التكاليف التشغيلية" },
+        { en: "LESSEE under IFRS 16: ONE model — every lease capitalised (bar the two elections); P&L splits into depreciation + interest; EBITDA and operating profit RISE, leverage RISES, the expense is front-loaded", ar: "المستأجر في IFRS 16: نموذج واحد — كل إيجار مرسمل (عدا الانتخابين)؛ والأرباح تنقسم إهلاكًا وفائدة؛ فترتفع الأرباح قبل الفوائد والإهلاك والرفع المالي، ويتقدم تحميل المصروف" },
+        { en: "LESSOR: essentially UNCHANGED (finance vs operating, IAS 17's test) — one real change: subleases classified against the head-lease ROU", ar: "المؤجر: بلا تغيير جوهري (تمويلي مقابل تشغيلي باختبار IAS 17) — تغيير واحد حقيقي: الإيجار الباطن يصنف بمقارنة أصل الحق للعقد الرئيسي" },
+        { en: "Sale & leaseback: under IAS 17 the whole gain hit P&L; under IFRS 16 only the TRANSFERRED slice does — the retained right is an ROU", ar: "البيع وإعادة الإيجار: في IAS 17 يظهر الربح كله بالأرباح؛ وفي IFRS 16 الجزء المنتقل وحده — والحق المحتفظ به أصل استخدام" },
+      ],
+    },
+    {
+      kind: "formula",
+      title: { en: "The lessee engine in four lines — the whole standard", ar: "محرك المستأجر في أربعة أسطر — المعيار كله" },
+      lines: [
+        { en: "Day one: Liability = PV(payments) at IBR/implicit · ROU = liability + IDC + restoration − incentives", ar: "اليوم الأول: الالتزام = القيمة الحالية للمدفوعات بالمعدل الحدي/الضمني · والأصل = الالتزام + التكاليف المباشرة + المخصص − الحوافز" },
+        { en: "Every year after: Interest = opening liability × rate · Closing = opening + interest − payment", ar: "كل سنة بعدها: الفائدة = الالتزام الافتتاحي × المعدل · والختامي = الافتتاحي + الفائدة − القسط" },
+        { en: "Depreciation = ROU ÷ shorter of (term, life) — the LIFE alone when ownership transfers / option reasonably certain", ar: "الإهلاك = الأصل ÷ الأقرب من (الأجل، العمر) — والعمر وحده عند انتقال الملكية أو ترجيح الخيار" },
+        { en: "On a trigger: remeasure (revised rate for term/option/modification; original rate for index/RVG) against the ROU — P&L only on scope DECREASES", ar: "عند المحفز: أعِد القياس (معدل منقح للأجل/الخيار/التعديل؛ وأصلي للمؤشر/الضمان) مقابل الأصل — ولا أرباح إلا في تقليص النطاق" },
+      ],
+    },
+    {
+      kind: "steps",
+      title: { en: "How to answer any lessee question in five moves", ar: "كيف تجيب أي سؤال مستأجر بخمس حركات" },
+      items: [
+        { en: "1 · Scope & exemptions — short-term? low-value? then expense straight-line and STOP", ar: "١ · النطاق والإعفاءات — قصير الأجل؟ منخفض القيمة؟ إذاك مصروف ثابت وتوقف" },
+        { en: "2 · Day one — lease term (reasonably certain), payments (index at TODAY's rate), IBR, then PV: liability + ROU build-up", ar: "٢ · اليوم الأول — الأجل (بالترجيح)، والمدفوعات (المؤشر بسعر اليوم)، والمعدل الحدي، ثم القيمة الحالية: الالتزام وتكوين الأصل" },
+        { en: "3 · The schedule — interest on the OPENING balance, payment splits principal, depreciation level over the shorter period", ar: "٣ · الجدول — الفائدة على الرصيد الافتتاحي، والقسط يقتطع أصلًا، والإهلاك ثابت على الفترة الأقرب" },
+        { en: "4 · Triggers & modifications — name the trigger, then the RATE rule, then remeasure against the ROU; gain/loss only on scope decreases", ar: "٤ · المحفزات والتعديلات — سمِّ المحفز ثم قاعدة المعدل ثم أعد القياس مقابل الأصل؛ والربح/الخسارة في التقليص فقط" },
+        { en: "5 · Presentation — depreciation operating, interest finance, principal financing in cash flow; say the EBITDA effect in one clause", ar: "٥ · العرض — إهلاك تشغيلي وفائدة تمويلية وأصل تمويلي في التدفقات؛ واذكر أثر الأرباح قبل الفوائد والإهلاك بعبارة واحدة" },
+      ],
+    },
+    {
+      kind: "tip",
+      text: {
+        en: "Time discipline: the day-one computation and the year-1 schedule are the two scoring anchors of every lessee question — set them out as labelled workings (W1 term, W2 payments, W3 PV, W4 schedule) and the marker can award even when the last figure slips.",
+        ar: "إدارة الوقت: حساب اليوم الأول وجدول السنة الأولى هما مرساة الدرجتين في كل سؤال مستأجر — أخرجهما كحسابات موسومة (ح١ الأجل، ح٢ المدفوعات، ح٣ القيمة الحالية، ح٤ الجدول) يستطع المصحح أن يمنح الدرجات ولو زلّ الرقم الأخير.",
       },
     },
     { kind: "h", text: { en: "Transition & amendments", ar: "الانتقال والتعديلات" } },

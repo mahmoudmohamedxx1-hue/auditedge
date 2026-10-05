@@ -286,7 +286,7 @@ async function main() {
   const sw = readFileSync(join(ROOT, "public/sw.js"), "utf-8")
   const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf-8"))
   const major = Number(pkg.version.split(".")[0])
-  check("package.json is 37.0.0", pkg.version === "37.0.0", pkg.version)
+  check("package.json: major ≥ 37 (this suite pins a floor, not a release)", major >= 37, pkg.version)
   check("sw: cache stamp tracks the app version (auditedge-v37)", sw.includes(`VERSION = "auditedge-v${major}"`), `v${major}`)
   check("test-v37 wired into the test chain", (pkg.scripts?.test ?? "").includes("test-v37"))
   const changelog = readFileSync(join(ROOT, "CHANGELOG.md"), "utf-8")

@@ -1,5 +1,6 @@
 import ZAI from "z-ai-web-dev-sdk"
 import { db } from "@/lib/db"
+import { computeBackoffMs } from "@/lib/backoff"
 
 /* ---------------- ZAI singleton (backend only) ---------------- */
 
@@ -486,6 +487,13 @@ type EngineOutcome =
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/** v38 — Retry-After-aware backoff for the user-key engine: exponential
+ *  schedule with ±30% jitter, overridden by the server's own Retry-After
+ *  header when stated (replaces the old fixed 2.5s sleep). */
+function keyBackoffMs(attempt: number, retryAfter: string | null): number {
+  return computeBackoffMs(attempt, retryAfter)
+}
+
 async function callUserKey(opts: {
   model: AiModelId
   messages: EngineMessage[]
@@ -532,7 +540,7 @@ async function callUserKey(opts: {
         body.includes("1305") ||
         body.includes("overloaded")
       if (transient && retries > 0) {
-        await sleep(2500)
+        await sleep(keyBackoffMs(3 - retries, res.headers.get("retry-after")))
         return callUserKey({ ...opts, retries: retries - 1 })
       }
       console.error(`user-key engine ${opts.model} HTTP ${res.status}:`, body.slice(0, 300))
@@ -552,7 +560,7 @@ async function callUserKey(opts: {
   } catch (e) {
     // network errors can also be transient — one retry for those
     if (retries > 0) {
-      await sleep(2000)
+      await sleep(keyBackoffMs(3 - retries, null))
       return callUserKey({ ...opts, retries: retries - 1 })
     }
     console.error("user-key engine call failed:", e instanceof Error ? e.message : e)

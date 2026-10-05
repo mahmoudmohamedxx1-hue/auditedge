@@ -15,7 +15,8 @@ import {
   tocSearch,
   tocSectorName,
 } from "@/lib/toc/library"
-import type { TocAiQuestionnaire, TocAnswer, TocAnswerMap } from "@/lib/toc/types"
+import type { TocAiQuestionnaire, TocAnswer, TocAnswerMap, TocQuestion } from "@/lib/toc/types"
+import { evaluateToc } from "@/lib/toc/scoring"
 import { TocRunner, tocDomainLabel, type TocProcedureView } from "./toc-runner"
 import { PageHeader } from "./shared"
 import { Button } from "@/components/ui/button"
@@ -201,6 +202,8 @@ function IndustryCard({
 
 export function TocHub() {
   const lang = useAppStore((s) => s.lang)
+  const navigate = useAppStore((s) => s.navigate)
+  const setProgramTailorPrefill = useAppStore((s) => s.setProgramTailorPrefill)
   const [tab, setTab] = useState<"library" | "ai">("library")
   const [query, setQuery] = useState("")
   const [sector, setSector] = useState<string>("all")
@@ -345,6 +348,31 @@ export function TocHub() {
     })
   }
 
+  /* ---------- v38 — the ToC → audit-program bridge ----------
+   * Carries the entity (industry), its case and the LIVE control verdict —
+   * including the gaps management admitted — into the AI program customizer
+   * on the Audit Program view, so the tailored program lands grounded in
+   * what the ICQ just found. */
+  const tailorProgram = (industryName: string, caseContext: string, questions: TocQuestion[]) => {
+    const evaluation = evaluateToc(questions, scopedAnswers)
+    const gaps = evaluation.gaps
+      .slice(0, 5)
+      .map((g) => g.q)
+      .join("; ")
+    const concerns = [
+      `Test of Control ICQ verdict: ${evaluation.verdict} control environment (${evaluation.pct}% weighted score, ${evaluation.failedCriticals.length} critical control failures).`,
+      gaps ? `Control gaps admitted by management: ${gaps}.` : "",
+      caseContext,
+    ]
+      .filter(Boolean)
+      .join(" ")
+    setProgramTailorPrefill({
+      sectorFree: industryName.trim().slice(0, 110),
+      concerns: concerns.slice(0, 580),
+    })
+    navigate("program")
+  }
+
   /* ---------- the hub's filtered list (before early returns: hooks order) ---------- */
   const filtered = useMemo(() => {
     let list = tocSearch(TOC_INDUSTRIES, query)
@@ -370,6 +398,7 @@ export function TocHub() {
           onAnswer={setAnswer}
           onReset={resetActive}
           onBack={backToHub}
+          onTailorProgram={() => tailorProgram(ind.name, ind.blurb, questions)}
         />
       )
     }
@@ -387,6 +416,7 @@ export function TocHub() {
         onAnswer={setAnswer}
         onReset={resetActive}
         onBack={backToHub}
+        onTailorProgram={() => tailorProgram(q.input.industry || q.title, `${q.scope} ${q.input.caseContext}`.trim(), q.questions)}
         onRegenerate={
           q.input.industry
             ? () => {

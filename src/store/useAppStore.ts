@@ -196,6 +196,14 @@ interface AppState {
   examTagPrefill: string | null
   setExamTagPrefill: (tag: string | null) => void
   clearExamTagPrefill: () => void
+  /** v38: one-shot ToC → audit-program bridge — the Test of Control results
+   *  view sets it (industry + verdict context), the Audit Program view opens
+   *  the AI customizer pre-filled and clears it. Transient, never persisted. */
+  programTailorPrefill: { sectorFree: string; concerns: string } | null
+  setProgramTailorPrefill: (
+    prefill: { sectorFree: string; concerns: string } | null
+  ) => void
+  clearProgramTailorPrefill: () => void
 
   enroll: (courseId: string) => Promise<void>
   completeLesson: (lessonId: string) => Promise<void>
@@ -246,6 +254,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   aiPresetQuestion: null,
   libraryPresetQuery: null,
   examTagPrefill: null,
+  programTailorPrefill: null,
   bookmarks: [],
   studiedMaterials: [],
 
@@ -512,6 +521,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setExamTagPrefill: (tag) => set({ examTagPrefill: tag }),
   clearExamTagPrefill: () => set({ examTagPrefill: null }),
+
+  setProgramTailorPrefill: (prefill) => set({ programTailorPrefill: prefill }),
+  clearProgramTailorPrefill: () => set({ programTailorPrefill: null }),
 
   enroll: async (courseId) => {
     const { data } = get()

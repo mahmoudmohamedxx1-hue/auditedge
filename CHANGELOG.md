@@ -4,6 +4,91 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 38.0.0 — the resilience + depth release (all five v38 recommendations)
+
+The state-of-project audit (v37) recommended five moves; this release ships
+all five.
+
+### 1. Auto-restore DB guard — no clone ever serves a silent empty app
+
+`scripts/ensure-db.ts` — a fresh sandbox or clone boots with `db/custom.db`
+as a ~274 KB empty skeleton while the real content ships inside
+`prisma/auditedge-demo.db.gz` (19.6 MB — 2,685 questions, 41 courses, 990
+lessons). Until now the restore was a manual step the audit itself tripped
+over. The guard probes the DB (size fast-path, then bank/course counts),
+restores the snapshot when thin, verifies the restore, and never touches a
+Vercel deployment or a managed Postgres. Wired as `predev` (so
+`bun run dev` self-heals), as `ensure:db`, and directly inside
+`scripts/dev-clean.sh` for direct boots.
+
+### 2. ICQ PDF export — the questionnaire goes to the field
+
+The Test of Control runner gains two print actions (hidden-iframe print
+engine, popup-blocker safe, zero new dependencies):
+
+- **Print blank ICQ (PDF)** — from the run stage: an A4 fieldwork copy with
+  Yes/No/N.A. tick-boxes, a notes column, entity/auditor/respondent/date
+  signature strip, to be completed by hand during the management interview.
+- **Print report (PDF)** — from the results stage: answers marked, verdict
+  banner + weighted score, component scores, critical failures, gaps and the
+  corroborating procedures.
+
+Fully bilingual: the Arabic questionnaire renders complete RTL
+(`dir="rtl"` + Arabic labels). All questionnaire text — including
+AI-generated content — is HTML-escaped.
+
+### 3. AI retry/backoff — 429 rate-limits no longer eat requests
+
+The audit observed the live keyless pool eating 429s. Three layers now
+protect every engine (new `src/lib/backoff.ts`, pure and unit-tested):
+
+- **Per-engine cooldown** — an engine that just rate-limited is parked
+  (default 60 s, or its own `Retry-After`), and the chain fails over to the
+  next engine instead of hammering it.
+- **Retry-After awareness** — seconds and HTTP-date forms both parsed, and
+  the server's own number always overrides our schedule.
+- **Exponential backoff with jitter** — 900 ms → 1.8 s → 3.6 s ± 30%, so
+  concurrent requests never retry in lockstep; in-request waits are capped at
+  4 s, longer waits become cooldowns.
+
+Both pool call paths (streaming + once) and the user-key engine
+(`callUserKey`) now share the same math.
+
+### 4. IFRS 16 rewritten to the flagship depth — the second flagship
+
+`IFRS 16 Leases` rebuilt to the depth bar the IFRS 15 notes PDF set:
+**98 blocks** (63 → 98), 5,859 English words with 87% Arabic parity, 460
+figures, 13 journal sets with 87% of rows carrying amounts, 12 worked
+numeric examples, 14 exam tips. One running case (Delta Co — 4-year
+office-floor lease, 50,000 in arrears, IBR 6%) now flows through the whole
+lessee engine: day-one measurement → unwinding schedule → SFP extracts with
+the current/non-current split → CPI remeasurement → term extension at a
+revised rate → scope-decrease gain → impairment → the EBITDA / cash-flow
+split. The lessor side gets its own net-investment schedule and the running
+case's mirror (the landlord's books). New sections: embedded leases, the
+in/out lease-payments list, inception vs commencement, IFRS 16 vs IAS 17
+before/after, the four-line engine quick reference, and the five-move exam
+method. Flagship badge lit, sorted beside IFRS 15.
+
+### 5. ToC → audit-program bridge + Arabic course verification
+
+- **Bridge**: the ToC results view gains *Tailor the audit program* — it
+  carries the entity, its case, and the live control verdict (including the
+  gaps management admitted) into the AI program customizer, which opens
+  pre-filled. One flow: interview → verdict → tailored program.
+- **Arabic Academy verified**: 22 courses, distinct order values, every
+  course carrying its icon/accent cover and published — plus a live
+  production browser pass in `e2e-v38.sh`.
+
+### Battery
+
+`scripts/test-v38.ts` (85 checks) joins the chain: guard wiring + live run,
+backoff unit tests, cooldown lifecycle, ICQ print builder (escaping, RTL,
+verdict), 17 new i18n keys EN+AR, bridge wiring, the IFRS 16 depth bar,
+Arabic course checks, version lockstep. `scripts/e2e-v38.sh` adds the
+browser pass: blank print dialog, results print, the bridge navigation, and
+the Arabic courses page.
+
 ## 37.0.0 — Test of Control: interview any industry's managers, get the verdict
 
 ### The new section

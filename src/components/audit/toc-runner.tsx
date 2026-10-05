@@ -5,6 +5,7 @@ import { useAppStore } from "@/store/useAppStore"
 import { tt } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { evaluateToc, tocVerdictExplanation, type TocVerdict } from "@/lib/toc/scoring"
+import { printIcq } from "@/lib/toc/icq-print"
 import { TOC_DOMAINS, type TocAnswerMap, type TocAnswer, type TocQuestion } from "@/lib/toc/types"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -13,10 +14,12 @@ import {
   Check,
   Download,
   Minus,
+  Printer,
   RotateCcw,
   ShieldCheck,
   Sparkles,
   TriangleAlert,
+  Wand2,
   X,
   type LucideIcon,
 } from "lucide-react"
@@ -187,6 +190,7 @@ export function TocRunner({
   onReset,
   onBack,
   onRegenerate,
+  onTailorProgram,
 }: {
   title: string
   subtitle: string
@@ -200,6 +204,8 @@ export function TocRunner({
   onReset: () => void
   onBack: () => void
   onRegenerate?: () => void
+  /** v38 — carry this entity + verdict into the AI audit-program customizer */
+  onTailorProgram?: () => void
 }) {
   const lang = useAppStore((s) => s.lang)
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
@@ -268,6 +274,34 @@ export function TocRunner({
     a.click()
     URL.revokeObjectURL(url)
   }
+
+  /** v38 — blank fieldwork copy: print before the interview, tick by hand. */
+  const printBlank = () =>
+    printIcq({
+      title,
+      subtitle,
+      risks,
+      procedures: procedures.map((p) => ({ title: p.title, detail: p.detail, type: p.type })),
+      questions,
+      answers,
+      coreIds,
+      evaluation: null,
+      lang,
+    })
+
+  /** v38 — completed assessment: answers marked + verdict + scores. */
+  const printReport = () =>
+    printIcq({
+      title,
+      subtitle,
+      risks,
+      procedures: procedures.map((p) => ({ title: p.title, detail: p.detail, type: p.type })),
+      questions,
+      answers,
+      coreIds,
+      evaluation,
+      lang,
+    })
 
   /* ------------------------------ results ------------------------------ */
   if (stage === "results" && complete) {
@@ -393,6 +427,14 @@ export function TocRunner({
           <Button onClick={exportMarkdown}>
             <Download className="h-4 w-4" /> {tt("toc37.exportMd", lang)}
           </Button>
+          <Button variant="outline" onClick={printReport}>
+            <Printer className="h-4 w-4" /> {tt("toc37.printFilled", lang)}
+          </Button>
+          {onTailorProgram && (
+            <Button variant="outline" title={tt("toc37.toProgramHint", lang)} onClick={onTailorProgram}>
+              <Wand2 className="h-4 w-4" /> {tt("toc37.toProgram", lang)}
+            </Button>
+          )}
           {onRegenerate && (
             <Button variant="outline" onClick={onRegenerate}>
               <Sparkles className="h-4 w-4" /> {tt("toc37.aiRegenerate", lang)}
@@ -429,12 +471,18 @@ export function TocRunner({
             )}
             <h1 className="font-serif text-2xl font-semibold leading-tight tracking-tight text-foreground">{title}</h1>
             <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">{subtitle}</p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {risks.slice(0, 6).map((r) => (
                 <span key={r} className="rounded-full bg-secondary px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground">
                   {r}
                 </span>
               ))}
+              <button
+                onClick={printBlank}
+                className="ms-auto flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground focus-ring"
+              >
+                <Printer className="h-3.5 w-3.5" /> {tt("toc37.printBlank", lang)}
+              </button>
             </div>
           </div>
         </div>
