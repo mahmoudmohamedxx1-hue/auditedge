@@ -4,6 +4,86 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 39.0.0 — Due Diligence: the Big-4 playbook, per account
+
+A whole new section (`#/dd` in the sidebar, badge: 25) answering the deal
+question: *before we buy, invest, lend, or partner — what must we examine,
+and what could kill or reprice the deal?* Three scopes, one professional
+structure, and the financial side built the way a DD team actually works —
+**per account**.
+
+### The playbook — 25 workstreams, 3 scopes
+
+- **Legal (7)** — corporate standing & structure, material contracts,
+  litigation & disputes, intellectual property, regulatory & licenses,
+  employment & labor, real estate & title. Grounded in Egyptian law
+  (Companies Law 159/1981, Civil Code 131/1948, IP Law 82/2002, Labor Law
+  14/2025, Data Protection Law 151/2020) with IFRS/FRA touchpoints where a
+  legal finding becomes a balance-sheet item.
+- **Operational (6)** — organization & key people (the bus-factor test),
+  operations & processes, IT systems & cybersecurity, supply chain &
+  customers, QHSE, business continuity & risk.
+- **Financial (12) — PER ACCOUNT.** One card per account workstream, every
+  instruction for that account in one place, exactly how a diligence team
+  staffs and reports: Revenue & Quality of Earnings (the QoE bridge),
+  Customers & Trade Receivables (the clients example), Inventory, Cash &
+  Bank, PP&E, Goodwill & Intangibles, Investments & Group, Suppliers &
+  Payables, Borrowings & Debt-Like Items (the net-debt bridge), Equity &
+  Related Parties, Payroll, Taxes.
+
+Every workstream follows the same Big-4 structure: **why it matters on the
+deal → analytics & ratios to run (financial accounts) → the information
+request list → the step-by-step instructions → red flags** — with the
+observations that can kill or reprice the deal flagged as **deal breakers**
+(23 across the playbook). 212 field-ready instructions, 156 document
+requests, 100 red flags, all bilingual EN/AR with real-framework references
+only (no invented clause numbers — enforced by the test suite).
+
+### The working tool
+
+- **Tick your way through a real deal** — every instruction is a checklist
+  item; progress persists per workstream (localStorage) with progress bars
+  on every card; reset per section.
+- **Markdown working-paper export** — one workstream or the whole scope,
+  ticks included, ready for the deal file.
+- **Search across both languages** — "litigation", "QoE", "الذمم" all land
+  on the right workstream.
+- **Deep links** — `#/dd?scope=financial`, `#/dd?section=receivables`,
+  `#/dd?ai=1` (shareable, back/forward works).
+
+### The AI customizer — any target, any deal
+
+Describe the target and the deal — buy-side acquisition, minority
+investment, lending, or partnership — plus what worries you.
+`/api/ai/dd-generate` (rate-limited under the draft policy, session-gated)
+has the AI write the **deal memo**, the focus areas, **extra field-ready
+instructions dropped into the right playbook sections** (validated against
+the real library, capped, bilingual) and extra information requests. Apply
+a result and it **lives inside its workstreams**, marked as an AI
+supplement — one playbook, tailored to the target. Saved customizations
+(capped at 12) re-open, delete, and re-apply like the ToC AI generator.
+
+### The strong base
+
+The whole section is data-driven through one typed registry
+(`src/lib/dd/`): scopes, sections, counts, and the search index all derive
+from the data files — adding a workstream (or a whole scope) is a data-only
+change; the view, the search, the AI validation and the test suite pick it
+up automatically.
+
+### Verification
+
+- New suite `scripts/test-v39.ts` (60+ checks): library integrity (ids,
+  codes, scope sizes), the content-depth bar (bilingual substance, ≥ 7
+  instructions / ≥ 4 requests / ≥ 3 red flags per section, ≥ 70% refs,
+  real-framework-only refs), the per-account financial shape (12 accounts,
+  analytics on each), registry behavior (lookup + bilingual search), full
+  wiring (view, deep links, sidebar, palette, i18n), the AI route's
+  validation and caps, version lockstep.
+- Repair pass: the previous session's release hygiene re-verified green
+  (eslint, tsc, all 22 suites, DB health) and the junk-message local commit
+  reworded; `e2e-v39.sh` adds the live browser pass.
+
 ## 38.0.0 — the resilience + depth release (all five v38 recommendations)
 
 The state-of-project audit (v37) recommended five moves; this release ships

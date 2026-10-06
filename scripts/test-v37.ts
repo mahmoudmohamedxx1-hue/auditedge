@@ -225,7 +225,7 @@ async function main() {
   const deeplinkSrc = readFileSync(join(ROOT, "src/lib/deeplink.ts"), "utf-8")
   check("deep link route #/toc registered", deeplinkSrc.includes('toc: "toc"'))
   check("hash parser recognizes #/toc", deeplinkSrc.includes('case "toc":'))
-  check("?ind and ?ai params owned by the toc view", deeplinkSrc.includes('ind: ["toc"]') && deeplinkSrc.includes('ai: ["toc"]'))
+  check("?ind and ?ai params owned by the toc view", deeplinkSrc.includes('ind: ["toc"]') && deeplinkSrc.includes('ai: ["toc"')) // v39 widened ?ai to ["toc","dd"] — the toc view still owns it
   const pageSrc = readFileSync(join(ROOT, "src/app/page.tsx"), "utf-8")
   check("page lazy-loads TocHub with a skeleton", pageSrc.includes("dynamic(() => import(\"@/components/audit/toc-hub\")"))
   check("page renders the toc view", pageSrc.includes('{view === "toc" && <TocHub />}'))

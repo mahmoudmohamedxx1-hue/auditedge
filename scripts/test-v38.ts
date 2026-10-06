@@ -276,7 +276,7 @@ async function main() {
   /* ---------------- 9. version lockstep ---------------- */
   console.log("\n── 9. Version lockstep ──")
   const major = Number(pkg.version.split(".")[0])
-  check("package.json at 38.0.0", pkg.version === "38.0.0", pkg.version)
+  check("package.json: major ≥ 38 (v39+ releases carry the resilience work forward)", major >= 38, pkg.version)
   const sw = read("public/sw.js")
   check("sw: cache stamp tracks the app version", sw.includes(`VERSION = "auditedge-v${major}"`), `v${major}`)
   check("test-v38 wired into the test chain", (pkg.scripts.test ?? "").includes("test-v38"))

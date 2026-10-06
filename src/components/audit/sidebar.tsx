@@ -4,6 +4,7 @@ import { useAppStore } from "@/store/useAppStore"
 import { cn } from "@/lib/utils"
 import { APP_MAJOR } from "@/lib/app-version"
 import { TOC_INDUSTRIES_COUNT } from "@/lib/toc/library"
+import { DD_SECTION_COUNT } from "@/lib/dd"
 import { Wordmark } from "./shared"
 import { LangToggle } from "./lang-toggle"
 import { ThemeToggle } from "./theme-toggle"
@@ -28,6 +29,7 @@ import {
   PanelLeftOpen,
   PenSquare,
   ShieldCheck,
+  Scale,
   Sparkles,
   Home,
   Languages,
@@ -265,6 +267,14 @@ function SidebarContent({
           onClick={() => go("toc")}
         />
         <NavItem collapsed={collapsed} icon={Factory} label={tt("nav.sectors", lang)} active={view === "sectors"} onClick={() => go("sectors")} />
+        <NavItem
+          collapsed={collapsed}
+          icon={Scale}
+          label={tt("nav39.dd", lang)}
+          active={view === "dd"}
+          badge={String(DD_SECTION_COUNT)}
+          onClick={() => go("dd")}
+        />
         <NavItem collapsed={collapsed} icon={BarChart3} label={tt("nav20.analytics", lang)} active={view === "team"} onClick={() => go("team")} />
         <NavItem collapsed={collapsed} icon={Headphones} label={tt("nav20.podcast", lang)} active={view === "podcast"} onClick={() => go("podcast")} />
         <NavItem

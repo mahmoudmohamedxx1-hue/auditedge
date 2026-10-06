@@ -49,6 +49,7 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 ### AI suite
 - **AI Tutor** — full page and floating popup, streaming answers, RAG over your library with cited excerpts, persistent conversations, and a tutor persona that encodes the full IFAC / IAASB / IESBA architecture plus the Egyptian regulatory map
 - **AI program customizer** — describe the client (industry, size, listed status, systems, concerns) and the AI tailors the Audit Program: an engagement memo, focus areas, 10-16 extra tickable procedures dropped into the right sections, and extra PBC requests — bilingual, grounded in the ISAs / Egyptian standards / IFRS-EAS, re-tailorable and individually removable
+- **AI due-diligence customizer** — describe the TARGET and the deal (buy-side acquisition / minority investment / lending / partnership) plus what worries you; the AI writes the deal memo, focus areas, extra field-ready instructions dropped into the right playbook workstreams (validated against the real library, capped, bilingual) and extra information requests — applied results live inside their workstreams as AI supplements
 - **AI Industry Risk Analyst** — streaming risk profiles for 20 sectors, with deep-dive presets
 - **KAM drafter** — drafts Key Audit Matters from your program findings
 - **TB & JE analyzer** — trial balance and journal-entry analysis (Benford's law, JE testing)
@@ -66,6 +67,7 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 - **Hands-free voice conversation** — after each spoken answer the mic opens, transcribes your next question and sends it: a zero-click speak/listen loop
 
 ### Engagement workspace
+- **Due Diligence — the Big-4 style playbook for any deal** — 25 workstreams across three scopes: **Legal** (corporate standing, material contracts, litigation, IP, regulatory, employment, real estate), **Operational** (key people & the bus-factor test, processes, IT & cyber, supply chain, QHSE, continuity) and **Financial — per account**: 12 account workstreams (Revenue & Quality of Earnings, Clients/Trade Receivables, Inventory, Cash, PP&E, Goodwill & Intangibles, Investments, Payables, Borrowings & net-debt debt-like items, Equity & related parties, Payroll, Taxes) with every instruction for that account in one place. Each workstream carries the same professional structure — why it matters on the deal, analytics & ratios (financial), the information request list, step-by-step instructions, and red flags with the deal breakers flagged — 212 instructions / 156 requests / 100 red flags, all bilingual EN/AR with real-framework references only. A working tool: tick instructions with per-workstream progress, Markdown working-paper export, bilingual search, deep links (#/dd?scope=financial&section=receivables), and the AI customizer on top
 - **Audit Program** — the full external audit cycle as a working tool: risk core, materiality calculator, PBC lists, findings, signoffs — now AI-customizable per client (memo + tailored procedures + PBC additions that count in every progress bar)
 - **Sector Risks** — the 20-industry risk library feeds the engagement: one click links a sector to the active engagement (risk view, KAM seeds and the AI customizer prefill all read it), and every profile carries a risk-heat chip row
 - Fully bilingual program — every section in English and Arabic
@@ -200,6 +202,7 @@ The repo ships with the verification suites used during development:
 | `bun scripts/test-v26.ts` | 66 | Bilingual findable podcasts, the AI podcast studio (routes/player/guard), full playlist courses, CPA/CFA/CMA track papers + seeded bank |
 | `bun scripts/test-v25.ts` | 51 | Five sittings per exam family, the IFRS diploma family, generator determinism/uniqueness, Arabic track courses, real conversation podcasts |
 | `bun scripts/test-sectors-v15.ts` | 515 | 20 sector risk profiles — risk matrices, assertions, deep-dive presets |
+| `bun scripts/test-v39.ts` | 69 | The Due Diligence playbook — library integrity, the Big-4 content bar, per-account financial scope, registry/search, wiring, the AI customizer route |
 | `bun scripts/test-sectors-v13.ts` | 351 | Sector library structural integrity |
 | `bun scripts/test-engagement-v12.ts` | 28 | Audit-program engagement objects |
 | `bun scripts/test-models-v15.ts` | 14 | Live GLM streaming for all three models (needs `ZAI_OPEN_API_KEY`) |
@@ -235,6 +238,8 @@ auditedge/
     │   ├── edge-tts.ts          # Microsoft Edge neural TTS client (WSS + SSML)
     │   ├── voices.ts            # 23-voice catalog + language routing
     │   ├── program/             # audit program + 20 sector risk profiles
+    │   ├── dd/                  # due diligence playbook — 3 scopes, 25
+    │   │                        #   workstreams, per-account financial
     │   └── i18n.ts              # EN/AR dictionaries
     └── store/useAppStore.ts     # Zustand state + localStorage persistence
 ```

@@ -59,6 +59,7 @@ const Discover = dynamic(() => import("@/components/audit/discover").then((m) =>
 const ExamCenter = dynamic(() => import("@/components/audit/exam-center").then((m) => ({ default: m.ExamCenter })), { loading: ViewSkeleton })
 const IfrsSummaries = dynamic(() => import("@/components/audit/ifrs-summaries").then((m) => ({ default: m.IfrsSummaries })), { loading: ViewSkeleton })
 const TocHub = dynamic(() => import("@/components/audit/toc-hub").then((m) => ({ default: m.TocHub })), { loading: ViewSkeleton })
+const DueDiligence = dynamic(() => import("@/components/audit/due-diligence").then((m) => ({ default: m.DueDiligence })), { loading: ViewSkeleton })
 const ReviewSession = dynamic(() => import("@/components/audit/review").then((m) => ({ default: m.ReviewSession })), { loading: ViewSkeleton })
 const Simulation = dynamic(() => import("@/components/audit/simulation").then((m) => ({ default: m.Simulation })), { loading: ViewSkeleton })
 const Podcast = dynamic(() => import("@/components/audit/podcast").then((m) => ({ default: m.Podcast })), { loading: ViewSkeleton })
@@ -132,6 +133,8 @@ function viewTitleOf(view: string, lang: "en" | "ar"): string {
       return tt("nav30.ifrs", lang)
     case "toc":
       return tt("nav37.toc", lang)
+    case "dd":
+      return tt("nav39.dd", lang)
     case "program":
       return tt("nav.program", lang)
     case "sectors":
@@ -356,6 +359,7 @@ export default function Home() {
                 {view === "podcast" && <Podcast />}
                 {view === "ifrs" && <IfrsSummaries />}
                 {view === "toc" && <TocHub />}
+                {view === "dd" && <DueDiligence />}
                 {view === "achievements" && <Achievements />}
                 {view === "certificate" && <CertificateView />}
                 {view === "studio" && <Studio />}
