@@ -146,23 +146,34 @@ export async function POST(req: NextRequest) {
   if (isAiModelId(body.model)) model = body.model
   model = resolveModel(model, false)
 
-  const result = await generateOnce({
-    model,
-    thinking: true,
-    messages: [
-      { role: "system", content: tailorPrompt({ deal, size, target, concerns }) },
-      {
-        role: "user",
-        content: `Tailor the due diligence playbook for this target and deal now. Return the JSON object only.`,
-      },
-    ],
-  })
+  // v39.0.2 — small keyless engines (community pool on zero-config deploys)
+  // sometimes wrap the JSON in prose or return a thin answer. One automatic
+  // retry with a firmer instruction recovers most of those instead of
+  // surfacing a 502 to the user.
+  let result: Awaited<ReturnType<typeof generateOnce>> = null
+  let parsed: RawTailor | null = null
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const reminder =
+      attempt === 0
+        ? "Tailor the due diligence playbook for this target and deal now. Return the JSON object only."
+        : "Your previous answer was NOT valid strict JSON (or was too thin). Answer AGAIN with the complete JSON object ONLY — no prose before or after, no markdown fences, 8-16 procedures, double quotes, no trailing commas."
+    result = await generateOnce({
+      model,
+      thinking: true,
+      messages: [
+        { role: "system", content: tailorPrompt({ deal, size, target, concerns }) },
+        { role: "user", content: reminder },
+      ],
+    })
+    if (!result || !result.text.trim()) continue
+    parsed = extractJson(result.text) as unknown as RawTailor | null
+    if (parsed) break
+  }
 
   if (!result || !result.text.trim()) {
     return Response.json({ error: "The AI could not tailor the playbook — please try again." }, { status: 502 })
   }
 
-  const parsed = extractJson(result.text) as unknown as RawTailor | null
   if (!parsed) {
     return Response.json({ error: "The AI answer was unreadable — please try again." }, { status: 502 })
   }

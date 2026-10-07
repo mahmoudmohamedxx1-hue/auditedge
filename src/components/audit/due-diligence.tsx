@@ -533,6 +533,23 @@ function AiPanel({
   const [error, setError] = useState(false)
   const [result, setResult] = useState<DdTailorResult | null>(null)
   const resultRef = useRef<HTMLDivElement>(null)
+  /* v39.0.2 — keyless deployment? (no Z.ai key AND no built-in engine)
+   * → show an honest "community engines only" notice instead of letting
+   * users discover it as a mystery 502. */
+  const [poolOnly, setPoolOnly] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    fetch("/api/ai/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s: { key?: boolean; workspace?: boolean } | null) => {
+        if (alive && s && !s.key && !s.workspace) setPoolOnly(true)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const generate = async () => {
     if (!target.trim() || busy) return
@@ -585,6 +602,16 @@ function AiPanel({
         </h3>
         <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{tt("dd39.aiIntro", lang)}</p>
       </section>
+
+      {/* keyless deployment notice (v39.0.2) */}
+      {poolOnly && (
+        <section className="rounded-xl border border-amber-500/40 bg-amber-500/[0.07] p-4">
+          <h3 className="flex items-center gap-1.5 text-[13.5px] font-semibold text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="h-4 w-4" /> {tt("dd39.aiEngineHintTitle", lang)}
+          </h3>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{tt("dd39.aiEngineHint", lang)}</p>
+        </section>
+      )}
 
       {/* the form */}
       <section className="rounded-xl border border-border/70 bg-card p-4">

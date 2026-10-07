@@ -4,6 +4,29 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 39.0.2 — AI reliability pass (all AI sections audited)
+
+A live battery of every AI endpoint (scripts/test-ai-battery*.ts) against the
+running server, plus the Vercel deployment findings:
+
+- **EQR reviewer fixed** — a partial engagement payload (missing
+  `procedures`/`pbc`/`signoffs`) crashed the route with a 500; the boundary
+  now defaults every record/array field before the bundle is built.
+- **Keyless pool re-ordered by live health** (probed 2026-10-07): kilo now
+  auth-walled, ovh now OAuth-walled, llm7 IP-quota-throttled — pollinations
+  (alive) now leads the fallback chain on keyless deployments.
+- **DD customizer self-heals** — one automatic retry with a firmer
+  strict-JSON instruction when a small community engine returns prose or a
+  thin answer, instead of surfacing a 502.
+- **New `/api/ai/status`** — honest engine report (key configured?
+  built-in engine alive?). The DD customizer shows an amber "community
+  engines only — add ZAI_OPEN_API_KEY for reliable AI" notice on keyless
+  deployments instead of a mystery failure.
+- Battery results (workspace engine): dd-generate, chat, translate,
+  industry, kam, program-tailor, exam-generate, toc-generate, tts, asr,
+  podcast generate + speak, exam-mark — all healthy; podcast/speak requires
+  2+ turns by design.
+
 ## 39.0.0 — Due Diligence: the Big-4 playbook, per account
 
 A whole new section (`#/dd` in the sidebar, badge: 25) answering the deal

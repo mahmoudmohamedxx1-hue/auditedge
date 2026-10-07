@@ -1626,6 +1626,11 @@ export const T = {
       ar: "مثلًا: المؤسس يدير كل شيء شخصيًا، الإيرادات تقفز في الربع الأخير، بنك واحد يحوز كل الدين…",
     },
     aiGenerate: { en: "Tailor the playbook", ar: "فصّل الدليل" },
+    aiEngineHintTitle: { en: "AI engine notice", ar: "تنبيه محرك الذكاء الاصطناعي" },
+    aiEngineHint: {
+      en: "This deployment has no AI key configured, so generation runs on free community engines — slower, and it can fail. For reliable full-quality AI, add ZAI_OPEN_API_KEY in your hosting settings (Vercel → Settings → Environment Variables) and redeploy.",
+      ar: "لا يوجد مفتاح ذكاء اصطناعي مضبوط على هذا النشر، لذا يعمل التوليد على محركات مجانية — أبطأ وقد يفشل. لتشغيل موثوق بكامل الجودة أضف ZAI_OPEN_API_KEY في إعدادات الاستضافة (Vercel ← Settings ← Environment Variables) ثم أعد النشر.",
+    },
     aiGenerating: { en: "Tailoring…", ar: "جارٍ التفصيل…" },
     aiGeneratingNote: {
       en: "The AI is reading your target against the playbook — memo, focus areas, extra instructions and requests. This usually takes under a minute.",

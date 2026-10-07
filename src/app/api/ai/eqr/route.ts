@@ -33,8 +33,14 @@ export async function POST(req: NextRequest) {
   }
 
   // defensive: cap the serialized payload (findings + procedures could grow)
+  // and default every record/array field — a partial engagement payload
+  // (e.g. missing `procedures`) must never 500 the reviewer (v39.0.2)
   const safeEng: Engagement = {
     ...eng,
+    procedures:
+      eng.procedures && typeof eng.procedures === "object" ? eng.procedures : {},
+    pbc: eng.pbc && typeof eng.pbc === "object" ? eng.pbc : {},
+    signoffs: eng.signoffs && typeof eng.signoffs === "object" ? eng.signoffs : {},
     findings: (Array.isArray(eng.findings) ? eng.findings : []).slice(0, 80),
   }
 

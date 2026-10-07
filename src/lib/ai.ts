@@ -580,9 +580,12 @@ const WORKSPACE_NOTICE =
 
 const UNIVERSAL_TAIL: ChainStep[] = [
   { kind: "workspace" },
-  { kind: "pool", engine: "kilo" },
-  { kind: "pool", engine: "llm7" },
+  /* v39.0.2 — pollinations first: live-verified 2026-10-07 (kilo returned
+   * INVALID_TOKEN, ovh Forbidden — both now auth-walled; llm7 IP-quota
+   * throttled). Order = health, re-probe with scripts (pool probe). */
   { kind: "pool", engine: "pollinations" },
+  { kind: "pool", engine: "llm7" },
+  { kind: "pool", engine: "kilo" },
   { kind: "pool", engine: "ovh" },
 ]
 
