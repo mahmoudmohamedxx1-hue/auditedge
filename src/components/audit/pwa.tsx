@@ -28,9 +28,31 @@ export function PwaProvider() {
   }, [])
 
   useEffect(() => {
-    // service workers are a footgun in dev (stale caches over HMR) — prod only
-    if (process.env.NODE_ENV !== "production") return
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return
+
+    // v39.0.1 — dev-mode self-heal. Dev never registers a worker, but one
+    // installed by an EARLIER production visit on this origin keeps
+    // controlling the page: its cache-first `/_next/static` strategy keeps
+    // serving the OLD app chunks next to fresh HTML, so users "can't see the
+    // new updates". Unregister any leftover worker, drop all its caches, and
+    // reload once so nothing from the old shell survives on the page.
+    if (process.env.NODE_ENV !== "production") {
+      const hadController = Boolean(navigator.serviceWorker.controller)
+      void (async () => {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations()
+          await Promise.all(regs.map((r) => r.unregister()))
+          if ("caches" in window) {
+            const keys = await caches.keys()
+            await Promise.all(keys.map((k) => caches.delete(k)))
+          }
+          if (hadController) window.location.reload()
+        } catch (e) {
+          console.warn("sw dev cleanup failed", e)
+        }
+      })()
+      return
+    }
 
     let reg: ServiceWorkerRegistration | undefined
     // v34 — self-heal: if a new worker takes control of this page while it
