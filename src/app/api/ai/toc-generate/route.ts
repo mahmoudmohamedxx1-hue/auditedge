@@ -1,7 +1,7 @@
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { generateOnce, type EngineMessage } from "@/lib/ai"
 import { getSessionUser } from "@/lib/auth"
-import { DEFAULT_MODEL, isAiModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { DEFAULT_MODEL, normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
 import { extractJsonObject, normalizeAiQuestionnaire } from "@/lib/toc/normalize"
 import { NextRequest } from "next/server"
 
@@ -109,8 +109,8 @@ export async function POST(req: NextRequest) {
   const caseContext = String(body.caseContext ?? "").trim().slice(0, 4000)
   const lang: "en" | "ar" = body.lang === "ar" ? "ar" : "en"
 
-  let model: AiModelId = DEFAULT_MODEL
-  if (isAiModelId(body.model)) model = body.model
+  // v40 — GLM 5.3 Flash is the site's main model; unknown/legacy ids normalize to it
+  let model: AiModelId = normalizeModelId(body.model)
   model = resolveModel(model, false)
 
   const { system, user } = buildPrompt(lang, industry, caseContext)
@@ -119,13 +119,11 @@ export async function POST(req: NextRequest) {
     { role: "user", content: user },
   ]
 
-  // two attempts with ENGINE DIVERSITY: reasoning models occasionally wrap
-  // JSON or drift schema, and on keyless deployments the first pool engine
-  // can be a small model. Attempt 1 runs with thinking off (the chain then
-  // prefers bigger engines first — this is strict-JSON generation, not
-  // essay writing); attempt 2 switches to the big Qwen-397B pool route (a
-  // different engine, not a re-roll) plus a sterner JSON-only nudge.
-  const retryModel: AiModelId = "pool-qwen3.5-397b"
+  // two attempts: reasoning models occasionally wrap JSON or drift schema.
+  // Attempt 1 runs with thinking off (strict-JSON generation, not essay
+  // writing); attempt 2 (v40) re-rolls the main model — the engine chain
+  // itself rotates engines on failure — plus a sterner JSON-only nudge.
+  const retryModel: AiModelId = DEFAULT_MODEL
   let lastError = "no-response"
   for (let attempt = 0; attempt < 2; attempt++) {
     const attemptModel = attempt === 0 ? model : retryModel

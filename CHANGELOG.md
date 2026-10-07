@@ -4,6 +4,37 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 40.0.0 — GLM 5.3 Flash everywhere: the Z.ai SDK is the main model
+
+The entire website now runs on **GLM 5.3 Flash** as its one main AI model,
+carried by the **z-ai-web-dev-sdk engine** — every AI feature (tutor,
+DD customizer, exam generator/marker, EQR, KAM, ToC, program tailor,
+industry analyst, podcast, translate, sim, study plan) requests
+`model: "glm-5.3-flash"` explicitly and follows one GLM-first engine chain.
+
+- **Engine chain reordered — SDK is the MAIN**: the keyless Z.ai SDK engine
+  leads every request (pinned to glm-5.3-flash on every call, zero setup),
+  the user's Z.ai key serves the REAL `glm-5.3-flash` model on failover
+  (verified live on the Z.ai Open Platform — previously the key mapped
+  5.3-flash down to glm-4.7-flash), then LLM7's real `glm-5.3` route
+  (free key), and the keyless community pool only as last-resort resilience.
+- **Model registry is GLM-only**: the non-GLM community models (Kilo Auto,
+  LLM7 Fast, Qwen3.5 397B) were removed from the picker — the site never
+  presents a non-GLM model as a choice again. The pool engines remain
+  internal failovers in the chain, honestly labelled when they serve.
+- **`normalizeModelId()`** — every route that reads a client-sent model
+  (chat, industry, toc-generate, dd-generate, program-tailor, kam) and both
+  generation entry points coerce unknown/legacy pool-* ids back to the main
+  model; stored legacy preferences migrate automatically on hydration.
+- **ToC generator retry** re-rolls the main model (engine rotation happens
+  inside the chain) instead of switching to the removed Qwen-397B route.
+- **Honest engine badges**: "GLM engine · Z.ai SDK" (main), "Your Z.ai key
+  · GLM", "GLM-5.3 · LLM7"; `/api/ai/status` pings the SDK engine with the
+  pinned model and now also reports the main model id.
+- **UI**: the model picker shows GLM-5.3 Flash as the "Main" model (keyless,
+  Z.ai SDK first) plus the Z.ai-key GLM tier; the industry analyst's engine
+  dropdown gained the matching Main badge.
+
 ## 39.0.2 — AI reliability pass (all AI sections audited)
 
 A live battery of every AI endpoint (scripts/test-ai-battery*.ts) against the

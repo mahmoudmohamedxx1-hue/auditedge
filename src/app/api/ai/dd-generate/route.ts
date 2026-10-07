@@ -2,7 +2,7 @@ import { NextRequest } from "next/server"
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
-import { DEFAULT_MODEL, isAiModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
 import { DD_SECTIONS } from "@/lib/dd"
 
 export const runtime = "nodejs"
@@ -142,8 +142,8 @@ export async function POST(req: NextRequest) {
   if (target.length < 8) return Response.json({ error: "target is required" }, { status: 400 })
   const concerns = String(body.concerns ?? "").trim().slice(0, 900)
 
-  let model: AiModelId = DEFAULT_MODEL
-  if (isAiModelId(body.model)) model = body.model
+  // v40 — GLM 5.3 Flash is the site's main model; unknown/legacy ids normalize to it
+  let model: AiModelId = normalizeModelId(body.model)
   model = resolveModel(model, false)
 
   // v39.0.2 — small keyless engines (community pool on zero-config deploys)

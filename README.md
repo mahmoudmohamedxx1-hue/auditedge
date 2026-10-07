@@ -55,7 +55,7 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 - **TB & JE analyzer** — trial balance and journal-entry analysis (Benford's law, JE testing)
 - **AI examiner** — marks written exam answers against the certified solutions of the real exams, with a deterministic fallback marker
 - **Vision** — attach an image (a reconciliation screenshot, a ledger extract) to your question
-- **Model switcher** — GLM-4.7-Flash (default, reasoning, free tier), GLM-4.6V-Flash (vision, free tier), GLM-4-Plus, with graceful fallback
+- **Model switcher** — GLM-5.3 Flash (the site-wide main model — Z.ai SDK engine first, keyless), plus GLM-4.7-Flash and GLM-4-Plus on your Z.ai key, with graceful GLM-first fallback
 
 ### Read-aloud and dictation
 - **16 Microsoft Edge neural voices** — Salma & Shakir (Egyptian Arabic), Zariyah & Hamed (Gulf Arabic), Jenny & Guy (US English), Sonia & Ryan (UK English), Natasha (AU), Neerja (IN), Denise (FR), Elvira (ES), Katja (DE), Elsa (IT), Emel (TR), Swara (HI)
@@ -84,7 +84,7 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 - All model traffic proxies through server routes — the API key never reaches the browser
 - The tutor retrieves over the materials library (scored PDF/text excerpts) and cites what it used
 - The system prompt encodes the IFAC standard-setting architecture (who issues what), the Egyptian oversight map (FRA, CBE, Law 159/1981, PM Decree 3725/2025) and audit craft from engagement acceptance to partner review
-- A model router serves all three GLM models with balance-aware fallback
+- A model router serves the GLM family with balance-aware fallback — the Z.ai SDK engine (pinned to glm-5.3-flash) is the main model carrier
 
 ## The voice engine (reverse-engineered, key-free)
 
@@ -106,7 +106,7 @@ Adding a voice is a data change, not a code change: append an `EdgeVoiceInfo` en
 | Language | TypeScript 5 (strict) |
 | State | Zustand (persisted preferences), TanStack Query & Table |
 | Data | Prisma 6 + SQLite |
-| AI | Z.ai GLM-4.7-Flash / GLM-4.6V-Flash / GLM-4-Plus via OpenAI-compatible streaming |
+| AI | GLM-5.3 Flash (main, via the Z.ai SDK engine) with GLM-4.7/4.6V/4-Plus on your Z.ai key — OpenAI-compatible streaming |
 | Speech | Microsoft Edge neural TTS (custom WSS client), Z.ai TTS fallback, ASR dictation |
 | Runtime & tooling | Bun, ESLint 9, GitHub Actions (workflow config included) |
 
@@ -115,7 +115,7 @@ Adding a voice is a data change, not a code change: append an `EdgeVoiceInfo` en
 ### Prerequisites
 
 - [Bun](https://bun.sh) 1.2+ (the lockfile is Bun's; Node 20+ with npm also works if you regenerate the lockfile)
-- A Z.ai API key for the AI features (the free tier covers GLM-4.7-Flash and GLM-4.6V-Flash) — optional; everything else works without it
+- Optional: a Z.ai API key so the REAL glm-5.3-flash model serves deployments where the Z.ai SDK engine is absent (e.g. Vercel) — everything else works without it
 
 ### Setup
 
@@ -265,7 +265,7 @@ Released under the [MIT License](LICENSE).
 
 - Content sources: IAASB Handbook, IFAC, Egyptian FRA decree texts (Egyptian Accounting & Auditing Standards), IFRS Foundation publications
 - Voices: Microsoft Edge read-aloud neural voices, Z.ai TTS
-- AI: Z.ai GLM-4.7-Flash, GLM-4.6V-Flash, GLM-4-Plus
+- AI: GLM-5.3 Flash (main, Z.ai SDK engine) — GLM-4.7-Flash / GLM-4.6V-Flash / GLM-4-Plus on your own Z.ai key
 - Built with Next.js, Tailwind CSS, shadcn/ui, Prisma and Bun
 
 ---

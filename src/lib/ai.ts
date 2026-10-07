@@ -448,7 +448,7 @@ export async function buildContextBlock(
 /* ---------------- user-key engine (Z.ai Open Platform) ---------------- */
 
 import type { AiModelId } from "@/lib/models"
-import { DEFAULT_MODEL, KEYED_FALLBACK_MODEL, getAiModel, resolveModel, type EngineId } from "@/lib/models"
+import { DEFAULT_MODEL, KEYED_FALLBACK_MODEL, getAiModel, normalizeModelId, resolveModel, type EngineId } from "@/lib/models"
 import { POOL, callPoolOnce, callPoolStream, llm7Key, type PoolEngineId } from "@/lib/keyless-pool"
 
 const ZAI_OPEN_BASE = process.env.ZAI_OPEN_BASE_URL || "https://api.z.ai/api/paas/v4"
@@ -486,6 +486,28 @@ type EngineOutcome =
   | { ok: false; reason: "no-key" | "balance" | "error" }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/** v40 — the main Z.ai SDK engine rate-limits rapid bursts (HTTP 429 from
+ *  the internal gateway). One bounded retry with jitter keeps requests on
+ *  the MAIN model instead of bouncing to the community pool at the first
+ *  burst; the chain still fails over when the engine is truly unavailable.
+ *  Exported for the /api/ai/status probe (a transient 429 must not read as
+ *  "engine down"). */
+export async function sdkCreateWithRetry<T>(make: () => Promise<T>, attempts = 2): Promise<T> {
+  for (let i = 0; ; i++) {
+    try {
+      return await make()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      const rateLimited = msg.includes("429") || msg.toLowerCase().includes("too many requests")
+      if (rateLimited && i < attempts - 1) {
+        await sleep(1200 + Math.random() * 800)
+        continue
+      }
+      throw e
+    }
+  }
+}
 
 /** v38 — Retry-After-aware backoff for the user-key engine: exponential
  *  schedule with ±30% jitter, overridden by the server's own Retry-After
@@ -568,7 +590,7 @@ async function callUserKey(opts: {
   }
 }
 
-/* ---------------- engine chain (key → workspace GLM → keyless pool) ---------------- */
+/* ---------------- engine chain (Z.ai SDK main → key → GLM routes → pool) ---------------- */
 
 type ChainStep =
   | { kind: "key"; model: AiModelId }
@@ -576,28 +598,37 @@ type ChainStep =
   | { kind: "pool"; engine: PoolEngineId }
 
 const WORKSPACE_NOTICE =
-  "Answered by the built-in workspace GLM engine (keyless) — add a Z.ai API key (ZAI_OPEN_API_KEY) for full GLM model selection."
+  "Answered by the built-in Z.ai SDK GLM engine (keyless) — add a Z.ai API key (ZAI_OPEN_API_KEY) for full GLM model selection."
 
-const UNIVERSAL_TAIL: ChainStep[] = [
-  { kind: "workspace" },
-  /* v39.0.2 — pollinations first: live-verified 2026-10-07 (kilo returned
-   * INVALID_TOKEN, ovh Forbidden — both now auth-walled; llm7 IP-quota
-   * throttled). Order = health, re-probe with scripts (pool probe). */
+/* v39.0.2 pool order (live-verified 2026-10-07: kilo returned INVALID_TOKEN,
+ * ovh Forbidden — both now auth-walled; llm7 IP-quota throttled) —
+ * pollinations leads the last-resort tail. */
+const POOL_TAIL: ChainStep[] = [
   { kind: "pool", engine: "pollinations" },
   { kind: "pool", engine: "llm7" },
   { kind: "pool", engine: "kilo" },
   { kind: "pool", engine: "ovh" },
 ]
 
+/** Default tail for key-tier selections: the Z.ai SDK engine, then the pool. */
+const UNIVERSAL_TAIL: ChainStep[] = [{ kind: "workspace" }, ...POOL_TAIL]
+
 function messagesHaveImages(messages: EngineMessage[]): boolean {
   return messages.some((m) => Array.isArray(m.content) && m.content.some((p) => p.type === "image_url"))
 }
 
-/** Plan the ordered engine chain (v22). The first step that produces a
+/** Plan the ordered engine chain (v40). The first step that produces a
  *  stream/answer serves the request; every later step is failover:
- *   1. the user's Z.ai key engine (when configured)
- *   2. the keyless GLM workspace engine (in-workspace deployments)
- *   3. the keyless community pool — freellmpool-curated public routes
+ *   1. MAIN — the keyless Z.ai SDK engine, pinned to glm-5.3-flash on
+ *      every call (zero setup, always on in-workspace)
+ *   2. the user's Z.ai key engine — serves the REAL glm-5.3-flash model
+ *      (glm-4.7-flash only when the account cannot serve 5.3)
+ *   3. GLM-5.3 via LLM7 — a real glm-5.3 route behind a FREE
+ *      LLM7_API_KEY (dash.llm7.io); skipped when no key is set
+ *   4. the keyless community pool — last-resort resilience so no AI
+ *      feature ever dies, honestly labelled
+ *  Key-tier selections keep the key first (that is the engine they asked
+ *  for), then the SDK engine, then the pool.
  *  Exported for the offline engine-chain tests. */
 export function planEngineChain(
   model: AiModelId,
@@ -619,62 +650,21 @@ export function planEngineChain(
     return steps
   }
 
-  switch (model) {
-    case "glm-5.3-flash":
-      /* v25 — the flagship must serve REAL GLM whenever any GLM route is
-       * reachable, and only then fall back to the community pool:
-       *   1. the user's Z.ai key (real GLM)
-       *   2. the keyless workspace GLM engine (in-workspace deployments)
-       *   3. GLM-5.3 via LLM7 — a real glm-5.3 route behind a FREE
-       *      LLM7_API_KEY (dash.llm7.io); skipped when no key is set
-       *   4. the keyless community pool (Pollinations' reasoning route
-       *      first when the thinking process is on), honestly labelled */
-      if (hasKey) steps.push({ kind: "key", model: KEYED_FALLBACK_MODEL })
-      steps.push({ kind: "workspace" })
-      if (llm7Key()) steps.push({ kind: "pool", engine: "llm7-glm" })
-      if (thinking) {
-        steps.push({ kind: "pool", engine: "pollinations" }, { kind: "pool", engine: "kilo" })
-      } else {
-        steps.push({ kind: "pool", engine: "kilo" }, { kind: "pool", engine: "pollinations" })
-      }
-      steps.push({ kind: "pool", engine: "ovh" }, { kind: "pool", engine: "llm7" })
-      return steps
-    case "pool-kilo-auto":
-      steps.push(
-        { kind: "pool", engine: "kilo" },
-        { kind: "pool", engine: "llm7" },
-        { kind: "workspace" },
-        { kind: "pool", engine: "pollinations" },
-        { kind: "pool", engine: "ovh" }
-      )
-      return steps
-    case "pool-llm7-fast":
-      steps.push(
-        { kind: "pool", engine: "llm7" },
-        { kind: "pool", engine: "kilo" },
-        { kind: "workspace" },
-        { kind: "pool", engine: "pollinations" },
-        { kind: "pool", engine: "ovh" }
-      )
-      return steps
-    case "pool-qwen3.5-397b":
-      steps.push(
-        { kind: "pool", engine: "ovh" },
-        { kind: "workspace" },
-        { kind: "pool", engine: "kilo" },
-        { kind: "pool", engine: "llm7" },
-        { kind: "pool", engine: "pollinations" }
-      )
-      return steps
-    default:
-      steps.push(...UNIVERSAL_TAIL)
-      return steps
-  }
+  // v40 — the keyless main model: the Z.ai SDK engine LEADS (the site's
+  // main AI model runs on the SDK), real-GLM 5.3 Flash routes follow, and
+  // the community pool only keeps features alive when GLM is unreachable.
+  steps.push({ kind: "workspace" })
+  if (hasKey) steps.push({ kind: "key", model })
+  if (llm7Key()) steps.push({ kind: "pool", engine: "llm7-glm" })
+  steps.push(...visionSteps)
+  steps.push(...POOL_TAIL)
+  return steps
 }
 
-/** The single generation entry point for AI features (v22 engine chain):
- *  the user's key engine → the keyless GLM workspace engine → the keyless
- *  community pool (Kilo / LLM7 / Pollinations / OVHcloud, via freellmpool).
+/** The single generation entry point for AI features (v40 engine chain):
+ *  the Z.ai SDK engine (MAIN, pinned to glm-5.3-flash) → the user's key
+ *  engine (real GLM 5.3 Flash) → GLM via LLM7 → the keyless community
+ *  pool (Pollinations / LLM7 / Kilo / OVHcloud, via freellmpool).
  *  Returns which model was requested, which engine actually served, and an
  *  optional human-readable notice for the UI. */
 export async function generateStream(opts: {
@@ -687,8 +677,9 @@ export async function generateStream(opts: {
   engine: EngineId | "none"
   notice?: string
 }> {
+  const model = normalizeModelId(opts.model) // v40 — the main model policy
   const thinking = opts.thinking ?? false
-  const chain = planEngineChain(opts.model, thinking, opts.messages)
+  const chain = planEngineChain(model, thinking, opts.messages)
 
   for (const step of chain) {
     if (step.kind === "key") {
@@ -696,16 +687,17 @@ export async function generateStream(opts: {
       if (attempt.ok && attempt.kind === "stream") {
         return {
           stream: attempt.stream,
-          modelUsed: opts.model,
+          modelUsed: model,
           engine: "zai-key",
           notice:
-            step.model !== opts.model
-              ? `GLM-5.3 Flash served through your Z.ai key (${getAiModel(step.model).name}, thinking ${thinking ? "on" : "off"}).`
+            step.model !== model
+              ? `${getAiModel(model).name} served through your Z.ai key as ${getAiModel(step.model).name} (thinking ${thinking ? "on" : "off"}).`
               : undefined,
         }
       }
       if (!attempt.ok && attempt.reason !== "no-key" && step.model !== KEYED_FALLBACK_MODEL) {
-        // e.g. GLM-4 Plus selected but the account has no balance → keyed free flash
+        // e.g. glm-5.3-flash not entitled on this account, or GLM-4 Plus
+        // selected with no balance → retry with the keyed free flash
         const retry = await callUserKey({
           model: KEYED_FALLBACK_MODEL,
           messages: opts.messages,
@@ -715,9 +707,9 @@ export async function generateStream(opts: {
         if (retry.ok && retry.kind === "stream") {
           return {
             stream: retry.stream,
-            modelUsed: opts.model,
+            modelUsed: model,
             engine: "zai-key",
-            notice: `${getAiModel(step.model).name} is unavailable on the configured account (no balance) — answered with ${getAiModel(KEYED_FALLBACK_MODEL).name} instead.`,
+            notice: `${getAiModel(step.model).name} is unavailable on the configured Z.ai key (not entitled or no balance) — answered with ${getAiModel(KEYED_FALLBACK_MODEL).name} instead.`,
           }
         }
       }
@@ -725,15 +717,18 @@ export async function generateStream(opts: {
     }
 
     if (step.kind === "workspace") {
-      // built-in workspace GLM engine (images cannot be served here — flatten to text)
+      // MAIN — the built-in Z.ai SDK engine, pinned to the main model
       try {
         const zai = await getZai()
         const completion = await withTimeout(
-          zai.chat.completions.create({
-            messages: opts.messages.map(engineToSdkMessage),
-            stream: true,
-            thinking: { type: thinking ? "enabled" : "disabled" },
-          }),
+          sdkCreateWithRetry(() =>
+            zai.chat.completions.create({
+              model: "glm-5.3-flash", // v40 — request the main model explicitly
+              messages: opts.messages.map(engineToSdkMessage),
+              stream: true,
+              thinking: { type: thinking ? "enabled" : "disabled" },
+            })
+          ),
           30_000
         )
         const wrap = (full: string) =>
@@ -746,9 +741,9 @@ export async function generateStream(opts: {
         if (completion instanceof ReadableStream) {
           return {
             stream: completion,
-            modelUsed: opts.model,
+            modelUsed: model,
             engine: "workspace",
-            notice: getAiModel(opts.model).group === "keyless" ? undefined : WORKSPACE_NOTICE,
+            notice: getAiModel(model).group === "keyless" ? undefined : WORKSPACE_NOTICE,
           }
         }
         const full = String(
@@ -757,9 +752,9 @@ export async function generateStream(opts: {
         if (full) {
           return {
             stream: wrap(full),
-            modelUsed: opts.model,
+            modelUsed: model,
             engine: "workspace",
-            notice: getAiModel(opts.model).group === "keyless" ? undefined : WORKSPACE_NOTICE,
+            notice: getAiModel(model).group === "keyless" ? undefined : WORKSPACE_NOTICE,
           }
         }
       } catch (e) {
@@ -775,18 +770,18 @@ export async function generateStream(opts: {
       let notice: string
       if (step.engine === "llm7-glm") {
         notice = `Answered by GLM-5.3 through LLM7 (free-key community route) — real GLM with the visible thinking process.`
-      } else if (opts.model === "glm-5.3-flash") {
+      } else if (model === "glm-5.3-flash") {
         notice = `GLM-5.3 Flash was requested, but no GLM route is currently reachable — answered by the keyless community pool (${label}). Add ZAI_OPEN_API_KEY or a free LLM7 key (LLM7_API_KEY) for real GLM.`
-      } else if (getAiModel(opts.model).group === "zai") {
+      } else if (getAiModel(model).group === "zai") {
         notice = `The key engine was unavailable — answered by the keyless community pool (${label}, via freellmpool).`
       } else {
         notice = `Answered by the keyless community pool — ${label} (via freellmpool).`
       }
-      return { stream, modelUsed: opts.model, engine: step.engine, notice }
+      return { stream, modelUsed: model, engine: step.engine, notice }
     }
   }
 
-  return { stream: null, modelUsed: opts.model, engine: "none" }
+  return { stream: null, modelUsed: model, engine: "none" }
 }
 
 /** Non-streaming variant (router decisions, KAM drafter, small utility calls). */
@@ -795,7 +790,7 @@ export async function generateOnce(opts: {
   messages: EngineMessage[]
   thinking?: boolean
 }): Promise<{ text: string; modelUsed: AiModelId; engine: EngineId | "none"; notice?: string } | null> {
-  const model = opts.model ?? DEFAULT_MODEL
+  const model = normalizeModelId(opts.model ?? DEFAULT_MODEL) // v40 — main model policy
   const thinking = opts.thinking ?? false
   const chain = planEngineChain(model, thinking, opts.messages)
 
@@ -820,13 +815,17 @@ export async function generateOnce(opts: {
     }
 
     if (step.kind === "workspace") {
+      // MAIN — the built-in Z.ai SDK engine, pinned to the main model
       try {
         const zai = await getZai()
         const completion = await withTimeout(
-          zai.chat.completions.create({
-            messages: opts.messages.map(engineToSdkMessage),
-            thinking: { type: thinking ? "enabled" : "disabled" },
-          }),
+          sdkCreateWithRetry(() =>
+            zai.chat.completions.create({
+              model: "glm-5.3-flash", // v40 — request the main model explicitly
+              messages: opts.messages.map(engineToSdkMessage),
+              thinking: { type: thinking ? "enabled" : "disabled" },
+            })
+          ),
           60_000
         )
         const text = String(completion?.choices?.[0]?.message?.content ?? "")

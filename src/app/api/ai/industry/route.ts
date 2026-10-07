@@ -9,7 +9,7 @@ import {
   searchFailedBlock,
   searchWeb,
 } from "@/lib/ai"
-import { DEFAULT_MODEL, isAiModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
 
 export const runtime = "nodejs"
 export const maxDuration = 240
@@ -106,8 +106,8 @@ export async function POST(req: NextRequest) {
   }
   const lang: "en" | "ar" = body.lang === "ar" ? "ar" : "en"
 
-  let model: AiModelId = DEFAULT_MODEL
-  if (isAiModelId(body.model)) model = body.model
+  // v40 — GLM 5.3 Flash is the site's main model; unknown/legacy ids normalize to it
+  let model: AiModelId = normalizeModelId(body.model)
   model = resolveModel(model, false)
 
   const encoder = new TextEncoder()

@@ -1,6 +1,6 @@
 {
   "name": "auditedge",
-  "version": "39.0.2",
+  "version": "40.0.0",
   "description": "Bilingual (EN/AR) AI-powered audit & accounting academy — IFRS handwritten summaries for all 41 standards, the Test of Control industry questionnaires with a strong/moderate/weak verdict engine, the Big-4 style Due Diligence playbook (legal / operational / per-account financial) with an AI customizer, AI program customizer, real-structure exams with certified-solution grading, and 23 neural read-aloud voices.",
   "private": true,
   "license": "MIT",

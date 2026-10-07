@@ -7,9 +7,10 @@ import type { Lang } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { ChevronDown, KeyRound, Sparkles, Zap } from "lucide-react"
 
-/** Compact AI engine switcher (v22: keyless community tier + Z.ai key tier).
- *  Shared by the AI Tutor header, the floating assistant and anywhere the
- *  engine choice matters. Selection persists in the app store. */
+/** Compact AI engine switcher (v40: GLM only — GLM-5.3 Flash, the main
+ *  model of the entire site, plus the Z.ai-key GLM tier). Shared by the AI
+ *  Tutor header, the floating assistant and anywhere the engine choice
+ *  matters. Selection persists in the app store. */
 
 const LABELS = {
   keyless: { en: "Keyless", ar: "بدون مفتاح" },
@@ -18,7 +19,7 @@ const LABELS = {
 } as const
 
 const GROUPS = {
-  keyless: { en: "Keyless — zero setup, always on", ar: "بدون مفتاح — بدون إعداد، تعمل دائمًا" },
+  keyless: { en: "Main — Z.ai SDK, zero setup", ar: "الرئيسي — Z.ai SDK بدون إعداد" },
   zai: { en: "Your Z.ai key", ar: "مفتاح Z.ai الخاص بك" },
 } as const
 
@@ -125,7 +126,7 @@ export function ModelPicker({
                         {m.name}
                         {m.id === DEFAULT_MODEL && (
                           <span className="ms-1.5 rounded bg-primary/10 px-1 py-px text-[9px] font-semibold uppercase text-primary">
-                            {lang === "ar" ? "افتراضي" : "default"}
+                            {lang === "ar" ? "الرئيسي" : "main"}
                           </span>
                         )}
                       </span>

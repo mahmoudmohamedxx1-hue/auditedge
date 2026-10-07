@@ -65,6 +65,7 @@ const UI = {
     ar: "تحليل مولد بالذكاء الاصطناعي لأغراض التعلم — تحقق دائمًا من المعايير المنطبقة قبل الاعتماد عليه عمليًا.",
   },
   engine: { en: "Engine", ar: "المحرك" },
+  main: { en: "Main", ar: "الرئيسي" },
   free: { en: "Free", ar: "مجاني" },
   plus: { en: "Plus", ar: "Plus" },
 } as const
@@ -180,12 +181,18 @@ export function IndustryAsker({
                 <span
                   className={cn(
                     "shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase",
-                    currentModel.tier === "free"
-                      ? "bg-sage/20 text-sage-deep"
-                      : "bg-gold/25 text-gold-deep"
+                    currentModel.tier === "keyless"
+                      ? "bg-olive/20 text-olive-deep"
+                      : currentModel.tier === "free"
+                        ? "bg-sage/20 text-sage-deep"
+                        : "bg-gold/25 text-gold-deep"
                   )}
                 >
-                  {currentModel.tier === "free" ? t("free", lang) : t("plus", lang)}
+                  {currentModel.tier === "keyless"
+                    ? t("main", lang)
+                    : currentModel.tier === "free"
+                      ? t("free", lang)
+                      : t("plus", lang)}
                 </span>
               </span>
               <ChevronDown
@@ -211,12 +218,18 @@ export function IndustryAsker({
                       <span
                         className={cn(
                           "rounded-md px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase",
-                          m.tier === "free"
-                            ? "bg-sage/20 text-sage-deep"
-                            : "bg-gold/25 text-gold-deep"
+                          m.tier === "keyless"
+                            ? "bg-olive/20 text-olive-deep"
+                            : m.tier === "free"
+                              ? "bg-sage/20 text-sage-deep"
+                              : "bg-gold/25 text-gold-deep"
                         )}
                       >
-                        {m.tier === "free" ? t("free", lang) : t("plus", lang)}
+                        {m.tier === "keyless"
+                          ? t("main", lang)
+                          : m.tier === "free"
+                            ? t("free", lang)
+                            : t("plus", lang)}
                       </span>
                     </span>
                     <span className="text-[11.5px] leading-snug text-muted-foreground">

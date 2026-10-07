@@ -389,7 +389,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   hydrateAiModel: () => {
     try {
       const saved = localStorage.getItem(AI_MODEL_KEY)
-      if (isAiModelId(saved)) {
+      // v40 — GLM 5.3 Flash is the site's main model: legacy pool-* ids
+      // (Kilo/Qwen/LLM7 picks from before v40) are no longer registry
+      // models, so isAiModelId rejects them and the store keeps the main
+      // model — stored legacy selections migrate automatically.
+      if (saved && isAiModelId(saved)) {
         set({ aiModel: saved })
       }
     } catch {}

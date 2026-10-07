@@ -1,7 +1,7 @@
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { NextRequest, NextResponse } from "next/server"
 import { generateOnce } from "@/lib/ai"
-import { DEFAULT_MODEL, isAiModelId } from "@/lib/models"
+import { normalizeModelId } from "@/lib/models"
 import { getSessionUser } from "@/lib/auth"
 
 export const runtime = "nodejs"
@@ -74,7 +74,8 @@ Why it is significant (auditor's raw notes): ${why}
 How it was addressed in the audit (auditor's raw notes): ${how}
 ${body.listed ? "The entity is listed — KAM communication is mandatory." : "The entity is not listed — KAMs are reported voluntarily / by arrangement."}`
 
-    const model = isAiModelId(body.model) ? body.model : DEFAULT_MODEL
+    // v40 — GLM 5.3 Flash is the site's main model; unknown/legacy ids normalize to it
+    const model = normalizeModelId(body.model)
     const result = (await Promise.race([
       generateOnce({
         model,

@@ -19,7 +19,7 @@ import {
   searchWeb,
   tutorSystemPrompt,
 } from "@/lib/ai"
-import { DEFAULT_MODEL, getAiModel, isAiModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { getAiModel, normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Thumbnail too large" }, { status: 400 })
   }
 
-  let model: AiModelId = DEFAULT_MODEL
-  if (isAiModelId(body.model)) model = body.model
+  // v40 — GLM 5.3 Flash is the site's main model; unknown/legacy ids normalize to it
+  let model: AiModelId = normalizeModelId(body.model)
   model = resolveModel(model, !!dataUrl)
   // v22 thinking: on by default for reasoning-capable engines (the visible
   // thinking process), overridable per request from the tutor header toggle

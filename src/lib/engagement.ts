@@ -633,11 +633,28 @@ export function engagementBundleMd(eng: Engagement, sections = PROGRAM_SECTIONS)
     ...(eng.sectorId ? [`- Industry sector: ${eng.sectorId}`] : []),
     "",
     "## 2. Materiality (ISA 320)",
-    ...(eng.materiality
+    // v40 — a partial materiality memo (missing om/pm/ctt numbers, e.g. from
+    // a legacy record) must never crash the close-out bundle: each line is
+    // printed only when its number exists, and a fully-empty memo reads as
+    // "not yet saved" instead of a 500.
+    ...(eng.materiality &&
+    (typeof eng.materiality.om === "number" ||
+      typeof eng.materiality.pm === "number" ||
+      typeof eng.materiality.ctt === "number")
       ? [
-          `- Overall materiality: EGP ${eng.materiality.om.toLocaleString()} (${eng.materiality.benchmark})`,
-          `- Performance materiality: EGP ${eng.materiality.pm.toLocaleString()} (${eng.materiality.pmPct}% of OM)`,
-          `- Clearly-trivial threshold: EGP ${eng.materiality.ctt.toLocaleString()}`,
+          ...(typeof eng.materiality.om === "number"
+            ? [
+                `- Overall materiality: EGP ${eng.materiality.om.toLocaleString()}${eng.materiality.benchmark ? ` (${eng.materiality.benchmark})` : ""}`,
+              ]
+            : []),
+          ...(typeof eng.materiality.pm === "number"
+            ? [
+                `- Performance materiality: EGP ${eng.materiality.pm.toLocaleString()}${typeof eng.materiality.pmPct === "number" ? ` (${eng.materiality.pmPct}% of OM)` : ""}`,
+              ]
+            : []),
+          ...(typeof eng.materiality.ctt === "number"
+            ? [`- Clearly-trivial threshold: EGP ${eng.materiality.ctt.toLocaleString()}`]
+            : []),
           `- Rationale: ${eng.materiality.rationale || "—"}`,
         ]
       : ["- Not yet saved from the AP-02 calculator."]),

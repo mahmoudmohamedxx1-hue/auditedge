@@ -2,7 +2,7 @@ import { NextRequest } from "next/server"
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
-import { DEFAULT_MODEL, isAiModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
 import { PROGRAM_SECTIONS } from "@/lib/program"
 
 export const runtime = "nodejs"
@@ -133,8 +133,8 @@ export async function POST(req: NextRequest) {
   const systems = String(body.systems ?? "").trim().slice(0, 200)
   const concerns = String(body.concerns ?? "").trim().slice(0, 600)
 
-  let model: AiModelId = DEFAULT_MODEL
-  if (isAiModelId(body.model)) model = body.model
+  // v40 — GLM 5.3 Flash is the site's main model; unknown/legacy ids normalize to it
+  let model: AiModelId = normalizeModelId(body.model)
   model = resolveModel(model, false)
 
   const result = await generateOnce({
