@@ -1,16 +1,17 @@
 /** AI engine registry — the models that power the app's AI features.
  *
- *  v40 — GLM 5.3 Flash is THE main model of the entire site. Every AI
- *  feature (tutor, DD customizer, exam generator/marker, EQR, KAM, ToC,
- *  program tailor, industry analyst, podcast, translate, sim, study plan)
- *  runs on it, carried by the Z.ai SDK engine first:
- *  1. MAIN — the keyless Z.ai SDK engine (z-ai-web-dev-sdk), pinned to
- * *   `glm-5.3-flash` on every call — zero setup, always on in-workspace.
- *  2. The user's own Z.ai Open Platform key (ZAI_OPEN_API_KEY) called
- *     directly at the OpenAI-compatible endpoint — serves the REAL
- *     `glm-5.3-flash` model whenever the SDK engine is unreachable
- *     (e.g. Vercel deployments without the workspace config).
- *  3. LLM7's real `glm-5.3` route behind a FREE key (LLM7_API_KEY).
+ *  v40.1 — GLM 5.3 Flash is THE main model of the entire site, and it is
+ *  TOTALLY KEYLESS: every AI feature (tutor, DD customizer, exam
+ *  generator/marker, EQR, KAM, ToC, program tailor, industry analyst,
+ *  podcast, translate, sim, study plan) is served by one engine chain:
+ *  1. MAIN — the REAL GLM-5.3-Flash model on LLM7 (api.llm7.io), no api
+ *    key, no signup, identical on every deployment including a zero-config
+ *    Vercel build. An optional free LLM7_API_KEY only raises the per-IP
+ *    daily token quota — it is never required.
+ *  2. The keyless Z.ai SDK engine (z-ai-web-dev-sdk), pinned to
+ *     `glm-5.3-flash` — always on in-workspace, instant failover elsewhere.
+ *  3. The user's own Z.ai Open Platform key (ZAI_OPEN_API_KEY) — an
+ *    optional booster, dormant unless configured.
  *  4. The keyless community pool (pollinations / llm7 / kilo / ovh, via
  *     freellmpool) — last-resort resilience so no AI feature ever dies.
  *
@@ -20,8 +21,8 @@
  *  identities users pick — the entire website runs GLM. */
 
 export type AiModelId =
-  // the site-wide main model — keyless GLM flagship: Z.ai SDK engine first,
-  // real GLM 5.3 Flash via the Z.ai key / LLM7 on failover
+  // the site-wide main model — the REAL GLM-5.3-Flash on LLM7, totally
+  // keyless; Z.ai SDK engine and the optional Z.ai key as failovers
   | "glm-5.3-flash"
   // Z.ai key tier
   | "glm-4.7-flash"
@@ -54,8 +55,8 @@ export const AI_MODELS: AiModelInfo[] = [
     vision: false,
     reasoning: true,
     note: {
-      en: "Main model of the whole site — Z.ai SDK engine first, zero setup; real GLM-5.3 Flash via your Z.ai key or a free LLM7 key when the SDK is unreachable; community pool only as last-resort failover · shows thinking",
-      ar: "النموذج الرئيسي للموقع بالكامل — محرك Z.ai SDK أولًا بدون إعداد؛ GLM-5.3 Flash حقيقي عبر مفتاح Z.ai أو مفتاح LLM7 مجاني عند تعذر الـ SDK، والمجموعة المجتمعية احتياط أخير فقط · يعرض التفكير",
+      en: "Main model of the whole site — the real GLM-5.3 Flash served totally keyless via LLM7 (zero setup on any deployment, including Vercel); the built-in Z.ai engine and an optional Z.ai key are automatic failovers; community pool only as last resort · shows thinking",
+      ar: "النموذج الرئيسي للموقع بالكامل — GLM-5.3 Flash حقيقي يُقدَّم بدون أي مفاتيح عبر LLM7 (بدون إعداد على أي نشر بما فيه Vercel)؛ محرك Z.ai المدمج ومفتاح Z.ai الاختياري احتياطيان تلقائيان، والمجموعة المجتمعية ملاذ أخير فقط · يعرض التفكير",
     },
   },
   {
@@ -99,7 +100,7 @@ export const AI_MODELS: AiModelInfo[] = [
   },
 ]
 
-/** v40 default: GLM-5.3 Flash — the main model of the entire site. */
+/** v40.1 default: GLM-5.3 Flash — the main model of the entire site. */
 export const DEFAULT_MODEL: AiModelId = "glm-5.3-flash"
 /** Free keyed model used as the in-key fallback (e.g. the account cannot
  *  serve glm-5.3-flash, or Plus selected with no balance). */
@@ -148,7 +149,7 @@ export type EngineId =
   | "workspace" // the built-in workspace GLM engine (SDK, keyless in-workspace)
   | "kilo" // Kilo Gateway community route
   | "llm7" // LLM7 community route
-  | "llm7-glm" // v25 — real GLM-5.3 served through LLM7 (free key)
+  | "llm7-glm" // v40.1 — the MAIN engine: real GLM-5.3-Flash on LLM7, keyless
   | "pollinations" // Pollinations community route
   | "ovh" // OVHcloud community route
   | "ovh-vision" // OVHcloud keyless vision route (Qwen2.5-VL)
@@ -168,7 +169,7 @@ export function describeEngine(used: string | null | undefined): {
     case "llm7":
       return { label: "LLM7 · keyless pool", tone: "keyless" }
     case "llm7-glm":
-      return { label: "GLM-5.3 · LLM7", tone: "keyless" }
+      return { label: "GLM-5.3 Flash · LLM7 keyless", tone: "keyless" }
     case "pollinations":
       return { label: "Pollinations · keyless pool", tone: "keyless" }
     case "ovh":

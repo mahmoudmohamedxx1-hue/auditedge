@@ -63,7 +63,7 @@ async function main() {
     getAiModel,
     SELECTABLE_MODELS,
   } = await import("../src/lib/models")
-  const { POOL, llm7Key } = await import("../src/lib/keyless-pool")
+  const { POOL } = await import("../src/lib/keyless-pool")
 
   const hasKey = userKeyEngineReady()
   console.log(`engine ready (key configured): ${hasKey}\n`)
@@ -73,7 +73,7 @@ async function main() {
   check("registry: vision model is glm-4.6v-flash", VISION_MODEL === "glm-4.6v-flash")
   check("registry: keyed fallback is glm-4.7-flash", KEYED_FALLBACK_MODEL === "glm-4.7-flash")
   check("registry: rejects unknown model ids", !isAiModelId("gpt-9"))
-  check("registry: 4 keyless + 3 keyed models", SELECTABLE_MODELS.length === 6, `${SELECTABLE_MODELS.length} selectable`)
+  check("registry: GLM-only picker — main + key tier, vision excluded", SELECTABLE_MODELS.length === 3, `${SELECTABLE_MODELS.length} selectable`)
   check("registry: keyless group present", SELECTABLE_MODELS.some((m) => m.group === "keyless" && m.id === "glm-5.3-flash"))
   check("registry: glm-5.3-flash is reasoning-capable", getAiModel("glm-5.3-flash").reasoning === true)
   check("routing: image + non-vision selection → vision model", resolveModel("glm-4-plus", true) === VISION_MODEL)
@@ -92,24 +92,28 @@ async function main() {
   const glmFast = planEngineChain("glm-5.3-flash", false, plain)
   const firstPool = (steps: ReturnType<typeof planEngineChain>) =>
     steps.find((s) => s.kind === "pool") as { kind: "pool"; engine: string } | undefined
-  // v25: real-GLM routes (key → workspace → llm7-glm) must precede the generic community pool
-  const firstGenericPoolIdx = glmThinking.findIndex(
+  // v40.1: the keyless llm7-glm route (real GLM-5.3-Flash on LLM7) LEADS;
+  // generic community pool routes only follow after the GLM failovers
+  const firstGenericPool = glmThinking.find(
     (s) => s.kind === "pool" && (s as { engine: string }).engine !== "llm7-glm"
   )
   const workspaceIdx = glmThinking.findIndex((s) => s.kind === "workspace")
   check(
     "chain: glm-5.3-flash serves real GLM (workspace) before generic pool routes",
-    workspaceIdx !== -1 && (firstGenericPoolIdx === -1 || workspaceIdx < firstGenericPoolIdx)
+    workspaceIdx !== -1 && (firstGenericPool === undefined || workspaceIdx < glmThinking.indexOf(firstGenericPool))
   )
   check(
-    "chain: glm-5.3-flash (llm7 key set) tries the real glm-5.3 pool route before generic pools",
-    !llm7Key() || firstPool(glmThinking)?.engine === "llm7-glm"
+    "chain: glm-5.3-flash leads with the KEYLESS llm7-glm route (no key required)",
+    firstPool(glmThinking)?.engine === "llm7-glm"
   )
   check(
-    "chain: glm-5.3-flash thinking keeps pollinations (reasoning) as the first generic hop",
-    firstPool(glmThinking)?.engine === (llm7Key() ? "llm7-glm" : "pollinations")
+    "chain: thinking keeps pollinations (reasoning) as the first generic hop",
+    (firstGenericPool as { engine: string } | undefined)?.engine === "pollinations"
   )
-  check("chain: glm-5.3-flash without thinking prefers the workspace engine", glmFast[0]?.kind === "workspace" || (hasKey && glmFast[0]?.kind === "key"))
+  check(
+    "chain: glm-5.3-flash leads with the keyless GLM route with thinking off too",
+    firstPool(glmFast)?.engine === "llm7-glm"
+  )
   check("chain: keyed model leads with the key step", planEngineChain("glm-4-plus", false, plain)[0]?.kind === (hasKey ? "key" : "key"))
   check("chain: every chain ends with pool failover hops", planEngineChain("glm-4.7-flash", false, plain).some((s) => s.kind === "pool"))
   const imgMsgs = [
@@ -125,7 +129,7 @@ async function main() {
   check("chain: image messages insert the keyless vision hop", imgChain.some((s) => s.kind === "pool" && (s as { engine: string }).engine === "ovh-vision"))
   check("pool: 6 routes catalogued (kilo/llm7/llm7-glm/pollinations/ovh/vision)", Object.keys(POOL).length === 6)
   check("pool: kilo and pollinations stream reasoning", POOL.kilo.reasoning && POOL.pollinations.reasoning)
-  check("pool: llm7-glm serves the real glm-5.3 model", POOL["llm7-glm"].model === "glm-5.3" && POOL["llm7-glm"].keyEnv === "LLM7_API_KEY")
+  check("pool: llm7-glm serves the real GLM-5.3-Flash model, keyless", POOL["llm7-glm"].model === "GLM-5.3-Flash" && !("keyEnv" in POOL["llm7-glm"]))
 
   /* ---- live: keyless flagship, non-streaming ---- */
   console.log("\n[1] glm-5.3-flash — non-streaming (keyless chain)")

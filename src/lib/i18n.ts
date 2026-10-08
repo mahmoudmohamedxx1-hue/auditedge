@@ -1628,8 +1628,8 @@ export const T = {
     aiGenerate: { en: "Tailor the playbook", ar: "فصّل الدليل" },
     aiEngineHintTitle: { en: "AI engine notice", ar: "تنبيه محرك الذكاء الاصطناعي" },
     aiEngineHint: {
-      en: "This deployment has no AI key configured, so generation runs on free community engines — slower, and it can fail. For reliable full-quality AI, add ZAI_OPEN_API_KEY in your hosting settings (Vercel → Settings → Environment Variables) and redeploy.",
-      ar: "لا يوجد مفتاح ذكاء اصطناعي مضبوط على هذا النشر، لذا يعمل التوليد على محركات مجانية — أبطأ وقد يفشل. لتشغيل موثوق بكامل الجودة أضف ZAI_OPEN_API_KEY في إعدادات الاستضافة (Vercel ← Settings ← Environment Variables) ثم أعد النشر.",
+      en: "All GLM routes are momentarily unreachable from this deployment, so generation falls back to free community engines — slower, and it can fail. Nothing to configure: the main route — GLM-5.3 Flash on LLM7, no API key needed — resumes automatically, usually within minutes.",
+      ar: "جميع مسارات GLM غير متاحة مؤقتًا من هذا النشر، لذا يعمل التوليد على محركات مجتمعية مجانية — أبطأ وقد يفشل. لا يلزم أي إعداد: يعود المسار الرئيسي — GLM-5.3 Flash عبر LLM7 بدون أي مفتاح — تلقائيًا خلال دقائق عادةً.",
     },
     aiGenerating: { en: "Tailoring…", ar: "جارٍ التفصيل…" },
     aiGeneratingNote: {

@@ -449,7 +449,7 @@ export async function buildContextBlock(
 
 import type { AiModelId } from "@/lib/models"
 import { DEFAULT_MODEL, KEYED_FALLBACK_MODEL, getAiModel, normalizeModelId, resolveModel, type EngineId } from "@/lib/models"
-import { POOL, callPoolOnce, callPoolStream, llm7Key, type PoolEngineId } from "@/lib/keyless-pool"
+import { POOL, callPoolOnce, callPoolStream, type PoolEngineId } from "@/lib/keyless-pool"
 
 const ZAI_OPEN_BASE = process.env.ZAI_OPEN_BASE_URL || "https://api.z.ai/api/paas/v4"
 const ZAI_OPEN_KEY = process.env.ZAI_OPEN_API_KEY || ""
@@ -590,7 +590,7 @@ async function callUserKey(opts: {
   }
 }
 
-/* ---------------- engine chain (Z.ai SDK main → key → GLM routes → pool) ---------------- */
+/* ---------------- engine chain (keyless GLM-5.3-Flash on LLM7 → SDK → key → pool) ---------------- */
 
 type ChainStep =
   | { kind: "key"; model: AiModelId }
@@ -598,7 +598,7 @@ type ChainStep =
   | { kind: "pool"; engine: PoolEngineId }
 
 const WORKSPACE_NOTICE =
-  "Answered by the built-in Z.ai SDK GLM engine (keyless) — add a Z.ai API key (ZAI_OPEN_API_KEY) for full GLM model selection."
+  "Answered by the built-in Z.ai SDK GLM engine — the keyless in-workspace failover for GLM 5.3 Flash."
 
 /* v39.0.2 pool order (live-verified 2026-10-07: kilo returned INVALID_TOKEN,
  * ovh Forbidden — both now auth-walled; llm7 IP-quota throttled) —
@@ -610,25 +610,34 @@ const POOL_TAIL: ChainStep[] = [
   { kind: "pool", engine: "ovh" },
 ]
 
-/** Default tail for key-tier selections: the Z.ai SDK engine, then the pool. */
-const UNIVERSAL_TAIL: ChainStep[] = [{ kind: "workspace" }, ...POOL_TAIL]
+/** v40.1 — THE MAIN ENGINE STEP of the entire site: the real GLM-5.3-Flash
+ *  model on LLM7, totally keyless — no signup, no env var, identical
+ *  behavior in-workspace and on a zero-config Vercel deploy. An optional
+ *  free LLM7_API_KEY (when set) only raises the per-IP daily token quota. */
+const KEYLESS_GLM: ChainStep = { kind: "pool", engine: "llm7-glm" }
+
+/** v40.1 — default tail for key-tier selections: keyless GLM via LLM7,
+ * then the SDK engine, then the community pool. */
+const UNIVERSAL_TAIL: ChainStep[] = [KEYLESS_GLM, { kind: "workspace" }, ...POOL_TAIL]
 
 function messagesHaveImages(messages: EngineMessage[]): boolean {
   return messages.some((m) => Array.isArray(m.content) && m.content.some((p) => p.type === "image_url"))
 }
 
-/** Plan the ordered engine chain (v40). The first step that produces a
+/** Plan the ordered engine chain (v40.1). The first step that produces a
  *  stream/answer serves the request; every later step is failover:
- *   1. MAIN — the keyless Z.ai SDK engine, pinned to glm-5.3-flash on
- *      every call (zero setup, always on in-workspace)
- *   2. the user's Z.ai key engine — serves the REAL glm-5.3-flash model
- *      (glm-4.7-flash only when the account cannot serve 5.3)
- *   3. GLM-5.3 via LLM7 — a real glm-5.3 route behind a FREE
- *      LLM7_API_KEY (dash.llm7.io); skipped when no key is set
+ *   1. MAIN — the real GLM-5.3-Flash model on LLM7, TOTALLY KEYLESS (no
+ *      signup, no env var; works identically in-workspace and on a
+ *      zero-config deploy like Vercel). LLM7's per-IP daily quota 429s
+ *      park the engine for the stated window and the chain fails over.
+ *   2. the keyless Z.ai SDK engine, pinned to glm-5.3-flash (always on
+ *      in-workspace; absent on external deploys — fails over instantly)
+ *   3. the user's optional Z.ai key engine (only when ZAI_OPEN_API_KEY is
+ *      configured — a booster, never a requirement)
  *   4. the keyless community pool — last-resort resilience so no AI
  *      feature ever dies, honestly labelled
  *  Key-tier selections keep the key first (that is the engine they asked
- *  for), then the SDK engine, then the pool.
+ *  for), then the keyless GLM route, the SDK engine, then the pool.
  *  Exported for the offline engine-chain tests. */
 export function planEngineChain(
   model: AiModelId,
@@ -650,21 +659,23 @@ export function planEngineChain(
     return steps
   }
 
-  // v40 — the keyless main model: the Z.ai SDK engine LEADS (the site's
-  // main AI model runs on the SDK), real-GLM 5.3 Flash routes follow, and
-  // the community pool only keeps features alive when GLM is unreachable.
+  // v40.1 — the keyless main model, TOTALLY KEYLESS FIRST: the real
+  // GLM-5.3-Flash route on LLM7 leads on EVERY deployment (zero setup,
+  // including a fresh Vercel build), the built-in SDK engine backs it up
+  // in-workspace, the optional Z.ai key is a third failover, and the
+  // community pool only keeps features alive when GLM is unreachable.
+  steps.push(KEYLESS_GLM)
   steps.push({ kind: "workspace" })
   if (hasKey) steps.push({ kind: "key", model })
-  if (llm7Key()) steps.push({ kind: "pool", engine: "llm7-glm" })
   steps.push(...visionSteps)
   steps.push(...POOL_TAIL)
   return steps
 }
 
-/** The single generation entry point for AI features (v40 engine chain):
- *  the Z.ai SDK engine (MAIN, pinned to glm-5.3-flash) → the user's key
- *  engine (real GLM 5.3 Flash) → GLM via LLM7 → the keyless community
- *  pool (Pollinations / LLM7 / Kilo / OVHcloud, via freellmpool).
+/** The single generation entry point for AI features (v40.1 engine chain):
+ *  the real GLM-5.3-Flash on LLM7 (MAIN, totally keyless) → the Z.ai SDK
+ *  engine (keyless in-workspace) → the user's optional key engine → the
+ *  keyless community pool (Pollinations / LLM7 / Kilo / OVHcloud).
  *  Returns which model was requested, which engine actually served, and an
  *  optional human-readable notice for the UI. */
 export async function generateStream(opts: {
@@ -767,11 +778,17 @@ export async function generateStream(opts: {
     const stream = await callPoolStream(step.engine, opts.messages)
     if (stream) {
       const label = POOL[step.engine].label
-      let notice: string
+      let notice: string | undefined
       if (step.engine === "llm7-glm") {
-        notice = `Answered by GLM-5.3 through LLM7 (free-key community route) — real GLM with the visible thinking process.`
+        // MAIN — keyless GLM-5.3-Flash on LLM7 is exactly what the site
+        // promises, so the keyless main model serves silently. Only a
+        // key-tier selection served by this route gets an honest label.
+        notice =
+          getAiModel(model).group === "zai"
+            ? `The key engine was unavailable — answered by GLM-5.3 Flash on LLM7's keyless route (real GLM, visible thinking process).`
+            : undefined
       } else if (model === "glm-5.3-flash") {
-        notice = `GLM-5.3 Flash was requested, but no GLM route is currently reachable — answered by the keyless community pool (${label}). Add ZAI_OPEN_API_KEY or a free LLM7 key (LLM7_API_KEY) for real GLM.`
+        notice = `The keyless GLM-5.3 Flash routes (LLM7 and the built-in engine) were momentarily unreachable — answered by the community pool (${label}). No setup is needed; the main route resumes automatically.`
       } else if (getAiModel(model).group === "zai") {
         notice = `The key engine was unavailable — answered by the keyless community pool (${label}, via freellmpool).`
       } else {
@@ -784,7 +801,8 @@ export async function generateStream(opts: {
   return { stream: null, modelUsed: model, engine: "none" }
 }
 
-/** Non-streaming variant (router decisions, KAM drafter, small utility calls). */
+/** Non-streaming variant (router decisions, KAM drafter, small utility
+ *  calls) — same v40.1 chain: keyless GLM-5.3-Flash on LLM7 first. */
 export async function generateOnce(opts: {
   model?: AiModelId
   messages: EngineMessage[]

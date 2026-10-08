@@ -12,20 +12,21 @@ function check(name: string, actual: unknown, expected: unknown) {
   console.log(`${ok ? "PASS" : "FAIL"} ${name}${ok ? "" : ` — got ${JSON.stringify(actual)}, want ${JSON.stringify(expected)}`}`)
 }
 
-// 1. main model chain: SDK workspace LEADS, then (no key/llm7 here) pool tail
+// 1. v40.1 — main model chain: the KEYLESS llm7-glm route (real
+// GLM-5.3-Flash on LLM7, no key) LEADS, then the SDK engine, then the pool
 const chain = planEngineChain("glm-5.3-flash", false, [{ role: "user", content: "hi" }])
 check(
-  "glm-5.3-flash chain = [workspace, pollinations, llm7, kilo, ovh]",
+  "glm-5.3-flash chain = [llm7-glm, workspace, pollinations, llm7, kilo, ovh]",
   chain.map((s) => ("engine" in s ? `pool:${s.engine}` : s.kind)),
-  ["workspace", "pool:pollinations", "pool:llm7", "pool:kilo", "pool:ovh"]
+  ["pool:llm7-glm", "workspace", "pool:pollinations", "pool:llm7", "pool:kilo", "pool:ovh"]
 )
 
-// 2. key-tier selection keeps the key first, then the SDK engine
+// 2. key-tier selection keeps the key first, then the keyless GLM route
 const keyed = planEngineChain("glm-4-plus", false, [{ role: "user", content: "hi" }])
 check(
-  "glm-4-plus chain = [key, workspace, pollinations, llm7, kilo, ovh]",
+  "glm-4-plus chain = [key, llm7-glm, workspace, pollinations, llm7, kilo, ovh]",
   keyed.map((s) => ("engine" in s ? `pool:${s.engine}` : s.kind)),
-  ["key", "workspace", "pool:pollinations", "pool:llm7", "pool:kilo", "pool:ovh"]
+  ["key", "pool:llm7-glm", "workspace", "pool:pollinations", "pool:llm7", "pool:kilo", "pool:ovh"]
 )
 
 // 3. vision messages route to the keyless vision pool before the tail
@@ -33,9 +34,9 @@ const vision = planEngineChain("glm-4.6v-flash", false, [
   { role: "user", content: [{ type: "text", text: "look" }, { type: "image_url", image_url: { url: "data:image/png;base64,x" } }] },
 ])
 check(
-  "vision chain puts ovh-vision before the pool tail",
+  "vision chain puts ovh-vision before the keyless GLM route and the pool tail",
   vision.map((s) => ("engine" in s ? `pool:${s.engine}` : s.kind)),
-  ["key", "pool:ovh-vision", "workspace", "pool:pollinations", "pool:llm7", "pool:kilo", "pool:ovh"]
+  ["key", "pool:ovh-vision", "pool:llm7-glm", "workspace", "pool:pollinations", "pool:llm7", "pool:kilo", "pool:ovh"]
 )
 
 // 4. normalization — legacy pool ids and junk coerce to the main model
@@ -55,15 +56,18 @@ check(
 // 6. engine badge labels
 check("describeEngine('workspace')", describeEngine("workspace").label, "GLM engine · Z.ai SDK")
 check("describeEngine('zai-key')", describeEngine("zai-key").label, "Your Z.ai key · GLM")
-check("describeEngine('llm7-glm')", describeEngine("llm7-glm").label, "GLM-5.3 · LLM7")
+check("describeEngine('llm7-glm')", describeEngine("llm7-glm").label, "GLM-5.3 Flash · LLM7 keyless")
+check("describeEngine('llm7-glm') is keyless-toned", describeEngine("llm7-glm").tone, "keyless")
 
 // 7. generateStream normalizes a legacy pool id instead of crashing
-//    (no network needed — the first chain step will be attempted and fail
-//    fast in this offline context, or serve from the workspace engine)
+//    (the keyless llm7-glm route is attempted first — it may 429-park on a
+//    quota'd IP and fail over to the SDK engine; either way the main-model
+//    policy must hold)
 const res = await generateStream({
   model: "pool-kilo-auto" as never, // a legacy id that must normalize
   messages: [{ role: "user", content: "Reply with the single word OK" }],
 })
 check("generateStream legacy id → modelUsed = main", res?.modelUsed, "glm-5.3-flash")
+console.log(`served by engine: ${res?.engine}`)
 console.log(`\n${fail === 0 ? "ALL GREEN" : "FAILURES"} — ${pass} passed, ${fail} failed`)
 process.exit(fail === 0 ? 0 : 1)

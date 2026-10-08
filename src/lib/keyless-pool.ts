@@ -6,11 +6,19 @@
  *  failover tier under the user's Z.ai key engine and the workspace GLM
  *  engine. Each route is tried in order; the first that answers serves.
  *
- *  Endpoints live-verified 2026-09-27:
- *   - Kilo Gateway   — no auth header, ~200 req/hr/IP, streams `delta.reasoning`
- *   - LLM7           — optional key ("unused" works), SSE deltas
+ *  v40.1 — `llm7-glm` is no longer a failover: it is the site's MAIN engine,
+ *  serving the REAL GLM-5.3-Flash model on LLM7 totally keyless (live-
+ *  verified 2026-10-08: /v1/models and /v1/chat/completions authenticate
+ *  with NO auth header; an optional free LLM7_API_KEY only raises the
+ *  per-IP daily token quota — dash.llm7.io).
+ *
+ *  Endpoints live-verified 2026-10-08:
+ *   - LLM7           — KEYLESS (no auth header needed); per-IP daily token
+ *                      quota → 429 {code:"quota_exceeded", retry_after:<s>};
+ *                      hosts the real GLM-5.3-Flash (400k ctx, reasoning)
  *   - Pollinations   — no auth, gpt-oss-20b, streams `delta.reasoning`
- *   - OVHcloud       — no auth, large open models (often IP rate-limited) */
+ *   - Kilo Gateway   — auth-walled as of 2026-10-07 (INVALID_TOKEN)
+ *   - OVHcloud       — Forbidden as of 2026-10-07 (kept for revival) */
 
 import type { EngineMessage } from "@/lib/ai"
 import { withTimeout } from "@/lib/ai"
@@ -18,7 +26,7 @@ import {
   computeBackoffMs,
   DEFAULT_COOLDOWN_MS,
   isWaitInRequestViable,
-  parseRetryAfterMs,
+  MAX_IN_REQUEST_WAIT_MS,
 } from "@/lib/backoff"
 
 export type PoolEngineId = "kilo" | "llm7" | "llm7-glm" | "pollinations" | "ovh" | "ovh-vision"
@@ -34,14 +42,11 @@ export type PoolEngine = {
   reasoning: boolean
   /** Accepts OpenAI image_url content parts */
   vision: boolean
-  /** v25 — when set, this route needs the named env var (a FREE key from
-   *  the provider's dashboard) and is skipped when it is not configured.
-   *  LLM7's `default` route stays keyless; its named models (glm-5.3) need
-   *  a free key — dash.llm7.io. */
-  keyEnv?: string
 }
 
-/** v25 — the optional free LLM7 key unlocks the real glm-5.3 route. */
+/** v40.1 — the optional FREE LLM7 key. NOT required: every LLM7 route
+ *  authenticates keyless. When set, it is attached as a bearer token and
+ *  lifts the per-IP daily token quota (dash.llm7.io). */
 export function llm7Key(): string {
   return (process.env.LLM7_API_KEY ?? "").trim()
 }
@@ -73,15 +78,18 @@ export const POOL: Record<PoolEngineId, PoolEngine> = {
     reasoning: false,
     vision: false,
   },
+  /* v40.1 — THE MAIN ENGINE OF THE ENTIRE SITE: the real GLM-5.3-Flash
+   *  model on LLM7, totally keyless (model id live-verified against
+   *  https://api.llm7.io/v1/models on 2026-10-08 — 400k context, reasoning,
+   *  tools; no native json_mode, which the JSON-extractor retries absorb). */
   "llm7-glm": {
     id: "llm7-glm",
-    label: "GLM-5.3 via LLM7",
+    label: "GLM-5.3 Flash via LLM7",
     url: "https://api.llm7.io/v1/chat/completions",
-    model: "glm-5.3",
+    model: "GLM-5.3-Flash",
     headers: {},
     reasoning: true,
     vision: false,
-    keyEnv: "LLM7_API_KEY",
   },
   pollinations: {
     id: "pollinations",
@@ -151,25 +159,62 @@ export function resetPoolCooldowns(): void {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/* ---------------- v40.1 — quota-aware rate-limit handling ---------------- */
+
+/** v40.1 — LLM7 states its quota window INSIDE the JSON body
+ *  ({"error":{"code":"quota_exceeded","retry_after":<seconds>}}), not in
+ *  the Retry-After header (live-verified 2026-10-08). A daily-quota 429 must
+ *  park the engine for the stated window instead of burning in-request
+ *  retries against a wall. */
+function parseBodyRetryAfterSec(body: string): number {
+  try {
+    const j = JSON.parse(body) as { error?: { retry_after?: unknown }; retry_after?: unknown }
+    const n = Number(j?.error?.retry_after ?? j?.retry_after)
+    return Number.isFinite(n) && n > 0 ? Math.min(n, 1800) : 0
+  } catch {
+    return 0
+  }
+}
+
+/** Longest an engine may be parked on a stated quota window — LLM7 daily
+ *  quotas can state hours (live: Retry-After 15418s); one fresh probe after
+ *  30 minutes is cheaper than parking the main engine until tomorrow. */
+const MAX_COOLDOWN_MS = 30 * 60_000
+const MAX_COOLDOWN_SEC = MAX_COOLDOWN_MS / 1000
+
+/** Raw Retry-After header in SECONDS for PARKING decisions — deliberately
+ *  NOT capped by backoff.MAX_BACKOFF_MS (that 15s cap governs in-request
+ *  sleeps only); parking may legitimately reach the 30-minute cap. */
+function parseRetryAfterSecForParking(header: string | null): number {
+  if (!header) return 0
+  const secs = Number(header.trim())
+  return Number.isFinite(secs) && secs > 0 ? Math.min(secs, MAX_COOLDOWN_SEC) : 0
+}
+
 /** Shared 429/503 handler for both call paths. Returns true when the caller
  *  should RETRY (short backoff fits inside the request), false when the
  *  engine must be parked and the chain fail over. */
 async function handleRateLimit(
   engine: PoolEngine,
   res: Response,
-  attempt: number
+  attempt: number,
+  bodyRetryAfterSec = 0
 ): Promise<boolean> {
   const retryAfter = res.headers.get("retry-after")
-  const stated = parseRetryAfterMs(retryAfter)
+  // parking window: the raw header seconds, else the JSON body's retry_after
+  // (LLM7 quota errors) — both capped at 30 minutes
+  const statedSec = parseRetryAfterSecForParking(retryAfter) || Math.min(bodyRetryAfterSec, MAX_COOLDOWN_SEC)
   const wait = computeBackoffMs(attempt, retryAfter)
-  if (isWaitInRequestViable(wait) && attempt <= 2) {
+  // a stated window longer than the in-request budget parks the engine NOW
+  if (isWaitInRequestViable(wait) && attempt <= 2 && statedSec * 1000 <= MAX_IN_REQUEST_WAIT_MS) {
     await sleep(wait)
     return true
   }
   // too long to wait in-request (or retries exhausted) — park the engine
-  markPoolCooldown(engine.id, stated > 0 ? stated : DEFAULT_COOLDOWN_MS)
+  const parkMs = statedSec > 0 ? statedSec * 1000 : DEFAULT_COOLDOWN_MS
+  markPoolCooldown(engine.id, parkMs)
   console.warn(
-    `keyless pool ${engine.label} rate-limited (HTTP ${res.status}) — parked ${Math.round((stated > 0 ? stated : DEFAULT_COOLDOWN_MS) / 1000)}s${retryAfter ? ` (Retry-After: ${retryAfter})` : ""}`
+    `keyless pool ${engine.label} rate-limited (HTTP ${res.status}) — parked ${Math.round(parkMs / 1000)}s${retryAfter ? ` (Retry-After: ${retryAfter})` : bodyRetryAfterSec ? ` (body retry_after: ${bodyRetryAfterSec}s)` : ""}`
   )
   return false
 }
@@ -229,7 +274,8 @@ export async function callPoolStream(
       )
       if (!res.ok) {
         if (res.status === 429 || res.status === 503) {
-          if (await handleRateLimit(engine, res, attempt)) continue
+          const bodyText = await res.text().catch(() => "")
+          if (await handleRateLimit(engine, res, attempt, parseBodyRetryAfterSec(bodyText))) continue
           return null
         }
         const body = await res.text().catch(() => "")
@@ -282,7 +328,8 @@ export async function callPoolOnce(
       )
       if (!res.ok) {
         if (res.status === 429 || res.status === 503) {
-          if (await handleRateLimit(engine, res, attempt)) continue
+          const bodyText = await res.text().catch(() => "")
+          if (await handleRateLimit(engine, res, attempt, parseBodyRetryAfterSec(bodyText))) continue
           return null
         }
         console.warn(`keyless pool ${engine.label} (once) HTTP ${res.status}`)

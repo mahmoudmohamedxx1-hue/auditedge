@@ -274,7 +274,7 @@ async function main() {
   check("rate-limited under the draft policy", routeSrc.includes("AI_POLICIES.draft"))
   check("session-gated (no anonymous generation)", routeSrc.includes("getSessionUser") && routeSrc.includes("unauthenticated"))
   check("uses the non-streaming engine with reasoning off for strict JSON", routeSrc.includes("generateOnce") && routeSrc.includes("thinking: false"))
-  check("attempt 2 switches engines (Qwen-397B route) instead of re-rolling", routeSrc.includes('"pool-qwen3.5-397b"'))
+  check("attempt 2 re-rolls the main model (the removed Qwen route stays out)", !routeSrc.includes("pool-qwen") && routeSrc.includes("retryModel"))
   check("two attempts before giving up", routeSrc.includes("attempt < 2"))
   check("every reply hardened through the normalizer", routeSrc.includes("normalizeAiQuestionnaire"))
   check("bilingual prompts (EN + AR)", routeSrc.includes("صمّم استبيان رقابة داخلية"))

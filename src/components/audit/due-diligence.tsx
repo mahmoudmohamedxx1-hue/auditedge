@@ -533,17 +533,18 @@ function AiPanel({
   const [error, setError] = useState(false)
   const [result, setResult] = useState<DdTailorResult | null>(null)
   const resultRef = useRef<HTMLDivElement>(null)
-  /* v39.0.2 — keyless deployment? (no Z.ai key AND no built-in engine)
-   * → show an honest "community engines only" notice instead of letting
-   * users discover it as a mystery 502. */
+  /* v40.1 — the main engine (keyless GLM-5.3-Flash on LLM7) is healthy?
+   * Show the honest "community engines only" notice ONLY when every route
+   * is down (llm7 unreachable AND no built-in engine AND no optional key) —
+   * on a normal zero-config Vercel deploy llm7 is up, so users see nothing. */
   const [poolOnly, setPoolOnly] = useState(false)
 
   useEffect(() => {
     let alive = true
     fetch("/api/ai/status")
       .then((r) => (r.ok ? r.json() : null))
-      .then((s: { key?: boolean; workspace?: boolean } | null) => {
-        if (alive && s && !s.key && !s.workspace) setPoolOnly(true)
+      .then((s: { key?: boolean; workspace?: boolean; llm7?: boolean } | null) => {
+        if (alive && s && !s.llm7 && !s.key && !s.workspace) setPoolOnly(true)
       })
       .catch(() => {})
     return () => {

@@ -163,7 +163,7 @@ async function main() {
   /* ---------------- 7. version lockstep ---------------- */
   console.log("\n── 7. Version lockstep ──")
   const pkg = JSON.parse(read("package.json")) as { version: string; scripts: Record<string, string>; description: string }
-  check("package.json at 39.0.x (v39 line)", /^39\.0\.\d+$/.test(pkg.version), pkg.version)
+  check("package.json major ≥ 39 (a floor, not a pin — now on the GLM-keyless 40.x line)", Number(pkg.version.split(".")[0]) >= 39, pkg.version)
   check("description mentions due diligence", /due diligence/i.test(pkg.description))
   const major = Number(pkg.version.split(".")[0])
   const sw = read("public/sw.js")

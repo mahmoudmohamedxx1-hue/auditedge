@@ -4,6 +4,47 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 40.1.0 — GLM 5.3 Flash + LLM7 as totally keyless providers
+
+The site's main AI model — **GLM 5.3 Flash** — is now served by a **totally
+keyless engine chain**: the REAL `GLM-5.3-Flash` model on **LLM7**
+(api.llm7.io) leads every request on every deployment, with **no api key,
+no signup, and no environment variables** — identical behavior in the
+workspace and on a zero-config Vercel build (live-verified 2026-10-08:
+LLM7's `/v1/models` and `/v1/chat/completions` authenticate with no auth
+header, and the catalog lists the real `GLM-5.3-Flash` — 400k context,
+reasoning, tools).
+
+- **`llm7-glm` is the MAIN engine and fully keyless**: previously the LLM7
+  GLM route sat behind an optional free key (`LLM7_API_KEY`) as a late
+  failover; now it leads the chain for every AI feature, pinned to the
+  live-verified model id `GLM-5.3-Flash`. An optional free LLM7 key, when
+  set, is only attached as a bearer token to lift the per-IP daily token
+  quota (dash.llm7.io) — it is never required.
+- **Engine chain reordered — keyless first**: for the main model the chain
+  is now `llm7-glm (keyless GLM-5.3-Flash on LLM7) → Z.ai SDK engine
+  (keyless in-workspace failover) → the user's optional Z.ai key (a dormant
+  booster) → the keyless community pool (Pollinations / LLM7 / Kilo /
+  OVHcloud)`. Key-tier selections keep their key first, then get the
+  keyless GLM route before the pool tail.
+- **Quota-aware 429 handling**: LLM7 states its per-IP daily quota window
+  inside the JSON body (`{"error":{"code":"quota_exceeded","retry_after":
+  <seconds>}}`), not the `Retry-After` header. The pool layer now parses
+  that body value and parks the engine for the stated window (capped at
+  30 minutes) instead of burning in-request retries — the chain fails over
+  to the SDK engine instantly, and the main route resumes automatically.
+- **`/api/ai/status` probes the keyless main route**: reports `llm7`
+  (LLM7's public model list is reachable AND still catalogues
+  GLM-5.3-Flash — zero tokens burned), `workspace`, `key`, and the main
+  model id. The DD customizer now shows its honest degraded-engine notice
+  only when ALL routes are down — on a normal zero-config deploy the
+  keyless main route is up, so users see nothing.
+- **Honest keyless copy everywhere**: the DD engine hint, the model-picker
+  note for GLM-5.3 Flash, the workspace notice, and the engine badges
+  (`GLM-5.3 Flash · LLM7 keyless`) no longer push users to configure API
+  keys — the site's promise is AI that works with zero setup, with the
+  Z.ai SDK engine and an optional key as silent automatic failovers.
+
 ## 40.0.0 — GLM 5.3 Flash everywhere: the Z.ai SDK is the main model
 
 The entire website now runs on **GLM 5.3 Flash** as its one main AI model,
