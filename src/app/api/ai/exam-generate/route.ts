@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/auth"
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 import { questionForClient } from "@/lib/bank"
 import type { BankArea } from "@/lib/exam-blueprint"
 
@@ -193,6 +194,7 @@ export async function POST(req: Request) {
     const angle = `\nEmphasize: ${ANGLES[angleSeed % ANGLES.length]}.`
     const gen = await generateOnce({
       thinking: true,
+      tuning: AI_TUNING.examWrite, // v41 — question variety, capped bilingual JSON
       messages: [
         {
           role: "system",

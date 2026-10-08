@@ -606,7 +606,10 @@ export function pbcAging(eng: Engagement): AgedPbc[] {
 /* ------------------------------------------------------------------ */
 
 function mdEscape(s: string): string {
-  return s.replace(/\|/g, "\\|")
+  // v41 hardening: a partial/crafted engagement payload (e.g. a finding row
+  // missing a field the real client always sends) must never 500 the EQR
+  // reviewer — coerce before escaping
+  return String(s ?? "").replace(/\|/g, "\\|")
 }
 
 /** The one-document engagement summary: progress, PBC, SAD vs PM,
@@ -706,14 +709,14 @@ export function engagementBundleMd(eng: Engagement, sections = PROGRAM_SECTIONS)
           "| Account | Assertion | IR | CR | Significant | Response |",
           "| --- | --- | --- | --- | --- | --- |",
           ...eng.riskMatrix.map(
-            (r) => `| ${mdEscape(r.account)} | ${r.assertion} | ${r.ir} | ${r.cr} | ${r.significant ? "yes" : ""} | ${mdEscape(r.response)} |`
+            (r) => `| ${mdEscape(r.account)} | ${r.assertion ?? ""} | ${r.ir ?? ""} | ${r.cr ?? ""} | ${r.significant ? "yes" : ""} | ${mdEscape(r.response)} |`
           ),
         ]
       : ["- Risk matrix not yet built."]),
     "",
     "## 9. JE / TB analytics (ISA 240)",
     eng.jeSummary
-      ? `- Population ${eng.jeSummary.population.toLocaleString()} entries · ${eng.jeSummary.exceptions} exceptions flagged · saved ${csvDate(eng.jeSummary.savedAt)}`
+      ? `- Population ${(eng.jeSummary.population ?? 0).toLocaleString()} entries · ${(eng.jeSummary.exceptions ?? 0)} exceptions flagged · saved ${csvDate(eng.jeSummary.savedAt)}`
       : "- Analyzer results not yet saved to this engagement.",
     "",
     "## 10. Open findings register",
@@ -722,7 +725,7 @@ export function engagementBundleMd(eng: Engagement, sections = PROGRAM_SECTIONS)
           "| Section | Description | EGP | Status |",
           "| --- | --- | --- | --- |",
           ...eng.findings.map(
-            (f) => `| ${f.sectionId} | ${mdEscape(f.description)} | ${typeof f.amount === "number" ? f.amount.toLocaleString() : "—"} | ${f.status} |`
+            (f) => `| ${String(f.sectionId ?? "")} | ${mdEscape(f.description)} | ${typeof f.amount === "number" ? f.amount.toLocaleString() : "—"} | ${String(f.status ?? "")} |`
           ),
         ]
       : ["- No findings recorded."]),

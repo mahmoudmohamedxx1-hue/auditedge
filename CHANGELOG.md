@@ -4,6 +4,59 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 41.0.0 — every AI feature tuned: per-task sampling profiles
+
+Before this release, every AI call in the site ran on **provider-default
+sampling** — no temperature, no `top_p`, no output cap. A strict-JSON exam
+marker and a creative podcast script were sampled identically, and small
+utility calls (the chat search router, the rolling conversation summary)
+could emit unbounded prose, burning the keyless LLM7 per-IP daily token
+quota for nothing. v41 introduces a **per-task tuning registry**
+(`src/lib/ai-tuning.ts`) and threads it through the ENTIRE engine chain —
+keyless GLM-5.3-Flash on LLM7, the Z.ai SDK engine, the optional Z.ai key,
+and the community pool all now sample a request identically, whichever
+engine serves it.
+
+- **16 named task profiles** replace raw provider defaults, in three
+  families: deterministic (temperature ≤ 0.2 — search router 0.0, AI
+  examiner 0.05, sim grader 0.05, translation 0.15), professional drafts
+  (0.3-0.6 — DD/program tailors, EQR review, KAM drafter, study planner,
+  ToC designer, rolling summary), and generative (≥ 0.7 — tutor chat 0.7,
+  exam writer 0.85, podcast script 0.9 for real dialogue variety).
+- **Every non-streaming task is now token-capped** (`max_tokens`), sized to
+  its payload with headroom: the search-router decision that runs on EVERY
+  chat message is capped at 160 tokens (was potentially an essay), the
+  rolling summary at 480, exam marking at 768, while the big JSON
+  generators keep room to breathe (DD tailor 4,600; ToC 4,600; podcast
+  5,600; translation 4,600). Only the streaming tutor-chat path stays
+  uncapped — answer length legitimately varies. Caps double as **quota
+  conservation** for the keyless LLM7 daily per-IP allowance.
+- **Full-chain threading**: `generateStream`/`generateOnce` accept a
+  `tuning` profile; it is applied on every engine path — the Z.ai key
+  fetch body, the workspace SDK call body, and both keyless pool call
+  paths (`callPoolStream`/`callPoolOnce`) — with unset dimensions omitted
+  so each engine keeps its own default for that axis.
+- **KAM drafter upgraded to a thinking task**: the one-shot ISA 701 KAM
+  draft now runs with the visible thinking process enabled (like the DD
+  and program tailors) for standard-reference accuracy, with a tight
+  900-token cap.
+- **EQR reviewer hardened against partial payloads (500 fix)**: the
+  close-out bundle builder escaped finding/risk-matrix fields with
+  `.replace` on values a crafted or partial engagement payload could leave
+  undefined — a finding row missing `description` crashed the EQR route
+  with a 500. `mdEscape` and every bundle cell now coerce before use, and
+  the JE/TB analytics line guards missing counters, so the reviewer always
+  answers (live-verified: partial payload → 200 + partner-level review).
+- **Test battery `test-v41-tuning.ts`** (25 checks) locks the policy in:
+  registry validation (ranges + "near-deterministic tasks must be capped"),
+  family sanity, the `AiTuning → OpenAI keys` translation, live
+  fetch-threading through the pool (mocked + captured request body), and a
+  wiring invariant — **no route may call the generation chain without a
+  tuning profile** (13 calling routes audited, all tuned).
+- Voice features (23 neural TTS voices, speed control) and ASR were
+  already user-tunable; `/api/ai/status` already ran capped. Conversations
+  persistence is pure database (no model call) — correctly untuned.
+
 ## 40.1.0 — GLM 5.3 Flash + LLM7 as totally keyless providers
 
 The site's main AI model — **GLM 5.3 Flash** — is now served by a **totally

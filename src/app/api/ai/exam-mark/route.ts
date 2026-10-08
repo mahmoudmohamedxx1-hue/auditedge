@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/auth"
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 import { getCrTask, type CrTask } from "@/lib/cr-tasks"
 import type { SessionSection } from "@/lib/paper-formats"
 
@@ -149,6 +150,7 @@ export async function POST(req: Request) {
       for (let attempt = 0; attempt < 2 && !taskAwards; attempt++) {
         try {
           const res = await generateOnce({
+            tuning: AI_TUNING.examMark, // v41 — repeatable examiner judgment
             messages: [
               { role: "system", content: "You are a rigorous professional-exam marker. Output only valid JSON." },
               { role: "user", content: EXAMINER_PROMPT(task, answers, lang) },

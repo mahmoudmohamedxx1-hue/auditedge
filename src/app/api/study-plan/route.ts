@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 import { masteryByTag } from "@/lib/analytics"
 
 /** GET /api/study-plan — the active plan (if any) + past plans. */
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
   let title = `Study plan — ${goal.slice(0, 60)}`
   try {
     const res = await generateOnce({
+      tuning: AI_TUNING.studyPlan, // v41 — structured, standard-specific planning
       messages: [{ role: "user", content: prompt }],
     })
     if (res?.text) {

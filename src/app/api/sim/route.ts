@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/auth"
 import { findScenario, SIM_SCENARIOS, type SimScenario } from "@/lib/sim-scenario"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 import type { SimScenarioClient } from "@/lib/audit-types"
 
 /** Strip scoring from the scenario before shipping it to the browser. */
@@ -215,6 +216,7 @@ export async function POST(req: Request) {
         .map((d) => `[${d.decisionId}] score ${d.score}/4 :: ${d.feedback}`)
         .join("\n")
       const res = await generateOnce({
+        tuning: AI_TUNING.simDebrief, // v41 — warm, tight partner note
         messages: [
           {
             role: "system",
@@ -246,6 +248,7 @@ async function gradeFreeText(
 ): Promise<{ score: number; feedback: string; judged: boolean }> {
   try {
     const res = await generateOnce({
+      tuning: AI_TUNING.simGrade, // v41 — repeatable rubric grading
       messages: [
         {
           role: "system",

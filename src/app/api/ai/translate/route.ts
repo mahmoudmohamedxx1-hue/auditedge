@@ -2,6 +2,7 @@ import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const res = await generateOnce({
+      tuning: AI_TUNING.translate, // v41 — translation fidelity, structure preserved
       messages: [
         {
           role: "user",

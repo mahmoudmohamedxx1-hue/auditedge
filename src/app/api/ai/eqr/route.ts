@@ -2,6 +2,7 @@ import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 import { engagementBundleMd, type Engagement } from "@/lib/engagement"
 
 export const runtime = "nodejs"
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const res = await generateOnce({
+      tuning: AI_TUNING.eqrReview, // v41 — grounded partner review, never inventive
       messages: [
         {
           role: "user",

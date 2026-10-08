@@ -2,6 +2,7 @@ import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
@@ -200,6 +201,7 @@ export async function POST(req: NextRequest) {
   let attempt: Awaited<ReturnType<typeof generateOnce>> = null
   for (let i = 0; i < 2 && !script; i++) {
     attempt = await generateOnce({
+      tuning: AI_TUNING.podcastScript, // v41 — a REAL conversation, maximum variety
       messages: buildMessages({ topic, lang, minutes, style, host, guest, turnCount }),
     })
     if (attempt?.text) script = parseScript(attempt.text)

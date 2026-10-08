@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 import { normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
 import { PROGRAM_SECTIONS } from "@/lib/program"
 
@@ -140,6 +141,7 @@ export async function POST(req: NextRequest) {
   const result = await generateOnce({
     model,
     thinking: true,
+    tuning: AI_TUNING.programTailor, // v41 — client-tailored professional JSON, capped
     messages: [
       { role: "system", content: tailorPrompt({ sector, size, listed, systems, concerns }) },
       {

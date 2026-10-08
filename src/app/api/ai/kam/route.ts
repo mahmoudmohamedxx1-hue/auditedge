@@ -1,6 +1,7 @@
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { NextRequest, NextResponse } from "next/server"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 import { normalizeModelId } from "@/lib/models"
 import { getSessionUser } from "@/lib/auth"
 
@@ -79,6 +80,10 @@ ${body.listed ? "The entity is listed — KAM communication is mandatory." : "Th
     const result = (await Promise.race([
       generateOnce({
         model,
+        // v41 — KAM is a one-shot professional report: enable the visible
+        // thinking for standard-reference accuracy and tune tight
+        thinking: true,
+        tuning: AI_TUNING.kamDraft,
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },

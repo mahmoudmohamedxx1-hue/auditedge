@@ -1,5 +1,6 @@
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { generateOnce, type EngineMessage } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 import { getSessionUser } from "@/lib/auth"
 import { DEFAULT_MODEL, normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
 import { extractJsonObject, normalizeAiQuestionnaire } from "@/lib/toc/normalize"
@@ -130,6 +131,7 @@ export async function POST(req: NextRequest) {
     const result = await generateOnce({
       model: attemptModel,
       thinking: false,
+      tuning: AI_TUNING.tocDesign, // v41 — ICQ variety, capped structured JSON
       messages:
         attempt === 0
           ? messages

@@ -20,6 +20,7 @@ import {
   tutorSystemPrompt,
 } from "@/lib/ai"
 import { getAiModel, normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { AI_TUNING } from "@/lib/ai-tuning"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
@@ -150,6 +151,7 @@ export async function POST(req: NextRequest) {
         .join("\n")
         .slice(-8000)
       const res = await generateOnce({
+        tuning: AI_TUNING.summarize, // v41 — concise factual memory, capped
         messages: [
           {
             role: "user",
@@ -351,6 +353,7 @@ ${transcript}`,
             model,
             messages,
             thinking: wantThinking,
+            tuning: AI_TUNING.tutorChat, // v41 — the tutor's teaching voice
           })
           send({ type: "meta", model: modelUsed, engine, notice })
 

@@ -21,6 +21,7 @@
  *   - OVHcloud       — Forbidden as of 2026-10-07 (kept for revival) */
 
 import type { EngineMessage } from "@/lib/ai"
+import type { AiTuning } from "@/lib/ai-tuning"
 import { withTimeout } from "@/lib/ai"
 import {
   computeBackoffMs,
@@ -242,15 +243,31 @@ function jsonToSseStream(json: unknown): ReadableStream<Uint8Array> | null {
   })
 }
 
+/** v41 — translate the task profile into OpenAI-compatible sampling keys.
+ *  Every pool route speaks the OpenAI chat-completions dialect, so
+ *  temperature / top_p / max_tokens are safe on all of them; keys are
+ *  omitted entirely when the profile leaves a value unset (engines keep
+ *  their own default for that dimension). Also test-exported. */
+export function tuningToSamplingBody(tuning?: AiTuning): Record<string, number> {
+  if (!tuning) return {}
+  const body: Record<string, number> = {}
+  if (tuning.temperature !== undefined) body.temperature = tuning.temperature
+  if (tuning.topP !== undefined) body.top_p = tuning.topP
+  if (tuning.maxTokens !== undefined) body.max_tokens = tuning.maxTokens
+  return body
+}
+
 /** Call a keyless pool route in streaming mode. Returns a normalized SSE
  *  ReadableStream (pool-native SSE passed through, JSON responses wrapped),
  *  or null when this route is down/rate-limited — the caller fails over.
  *  v38: rate-limited engines are skipped while cooling down and get one
- *  bounded in-request retry with Retry-After-aware backoff. */
+ *  bounded in-request retry with Retry-After-aware backoff.
+ *  v41: the task's tuning profile is applied to every attempt. */
 export async function callPoolStream(
   engineId: PoolEngineId,
   messages: EngineMessage[],
-  timeoutMs = 20_000
+  timeoutMs = 20_000,
+  tuning?: AiTuning
 ): Promise<ReadableStream<Uint8Array> | null> {
   const engine = POOL[engineId]
   const cooling = poolEngineCoolingDown(engineId)
@@ -268,6 +285,7 @@ export async function callPoolStream(
             model: engine.model,
             messages: toPoolMessages(messages, engine),
             stream: true,
+            ...tuningToSamplingBody(tuning),
           }),
         }),
         timeoutMs
@@ -300,11 +318,13 @@ export async function callPoolStream(
 
 /** Call a keyless pool route non-streaming (router decisions, drafters,
  *  generators). Returns the answer text or null on failure.
- *  v38: same cooldown + Retry-After-aware retry as the streaming path. */
+ *  v38: same cooldown + Retry-After-aware retry as the streaming path.
+ *  v41: the task's tuning profile is applied to every attempt. */
 export async function callPoolOnce(
   engineId: PoolEngineId,
   messages: EngineMessage[],
-  timeoutMs = 45_000
+  timeoutMs = 45_000,
+  tuning?: AiTuning
 ): Promise<string | null> {
   const engine = POOL[engineId]
   const cooling = poolEngineCoolingDown(engineId)
@@ -322,6 +342,7 @@ export async function callPoolOnce(
             model: engine.model,
             messages: toPoolMessages(messages, engine),
             stream: false,
+            ...tuningToSamplingBody(tuning),
           }),
         }),
         timeoutMs

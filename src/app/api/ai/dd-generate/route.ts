@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
+import { AI_TUNING } from "@/lib/ai-tuning"
 import { normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
 import { DD_SECTIONS } from "@/lib/dd"
 
@@ -160,6 +161,7 @@ export async function POST(req: NextRequest) {
     result = await generateOnce({
       model,
       thinking: true,
+      tuning: AI_TUNING.ddTailor, // v41 — deal-tailored professional JSON, capped
       messages: [
         { role: "system", content: tailorPrompt({ deal, size, target, concerns }) },
         { role: "user", content: reminder },

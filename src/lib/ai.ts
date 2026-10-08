@@ -153,6 +153,7 @@ export async function decideSearch(
 ): Promise<RouterDecision> {
   try {
     const result = await generateOnce({
+      tuning: AI_TUNING.router,
       messages: [
         { role: "system", content: ROUTER_PROMPT },
         {
@@ -449,7 +450,9 @@ export async function buildContextBlock(
 
 import type { AiModelId } from "@/lib/models"
 import { DEFAULT_MODEL, KEYED_FALLBACK_MODEL, getAiModel, normalizeModelId, resolveModel, type EngineId } from "@/lib/models"
-import { POOL, callPoolOnce, callPoolStream, type PoolEngineId } from "@/lib/keyless-pool"
+import { POOL, callPoolOnce, callPoolStream, tuningToSamplingBody, type PoolEngineId } from "@/lib/keyless-pool"
+import type { AiTuning } from "@/lib/ai-tuning"
+import { AI_TUNING } from "@/lib/ai-tuning"
 
 const ZAI_OPEN_BASE = process.env.ZAI_OPEN_BASE_URL || "https://api.z.ai/api/paas/v4"
 const ZAI_OPEN_KEY = process.env.ZAI_OPEN_API_KEY || ""
@@ -521,6 +524,8 @@ async function callUserKey(opts: {
   messages: EngineMessage[]
   stream: boolean
   thinking: boolean
+  /** v41 — the task's tuning profile (sampling keys for the OpenAI-compatible body) */
+  tuning?: AiTuning
   /** internal: retries left for transient (429/5xx) failures */
   retries?: number
 }): Promise<EngineOutcome> {
@@ -544,6 +549,7 @@ async function callUserKey(opts: {
           messages: opts.messages,
           stream: opts.stream,
           ...(thinking ? { thinking } : {}),
+          ...tuningToSamplingBody(opts.tuning),
         }),
       }),
       opts.stream ? 30_000 : 90_000
@@ -682,6 +688,8 @@ export async function generateStream(opts: {
   model: AiModelId
   messages: EngineMessage[]
   thinking?: boolean
+  /** v41 — the task's tuning profile, applied identically on every engine */
+  tuning?: AiTuning
 }): Promise<{
   stream: ReadableStream<Uint8Array> | null
   modelUsed: AiModelId
@@ -694,7 +702,7 @@ export async function generateStream(opts: {
 
   for (const step of chain) {
     if (step.kind === "key") {
-      const attempt = await callUserKey({ model: step.model, messages: opts.messages, stream: true, thinking })
+      const attempt = await callUserKey({ model: step.model, messages: opts.messages, stream: true, thinking, tuning: opts.tuning })
       if (attempt.ok && attempt.kind === "stream") {
         return {
           stream: attempt.stream,
@@ -714,6 +722,7 @@ export async function generateStream(opts: {
           messages: opts.messages,
           stream: true,
           thinking,
+          tuning: opts.tuning,
         })
         if (retry.ok && retry.kind === "stream") {
           return {
@@ -738,6 +747,7 @@ export async function generateStream(opts: {
               messages: opts.messages.map(engineToSdkMessage),
               stream: true,
               thinking: { type: thinking ? "enabled" : "disabled" },
+              ...tuningToSamplingBody(opts.tuning), // v41 — task tuning
             })
           ),
           30_000
@@ -775,7 +785,7 @@ export async function generateStream(opts: {
     }
 
     // keyless community pool hop
-    const stream = await callPoolStream(step.engine, opts.messages)
+    const stream = await callPoolStream(step.engine, opts.messages, 20_000, opts.tuning)
     if (stream) {
       const label = POOL[step.engine].label
       let notice: string | undefined
@@ -807,6 +817,8 @@ export async function generateOnce(opts: {
   model?: AiModelId
   messages: EngineMessage[]
   thinking?: boolean
+  /** v41 — the task's tuning profile, applied identically on every engine */
+  tuning?: AiTuning
 }): Promise<{ text: string; modelUsed: AiModelId; engine: EngineId | "none"; notice?: string } | null> {
   const model = normalizeModelId(opts.model ?? DEFAULT_MODEL) // v40 — main model policy
   const thinking = opts.thinking ?? false
@@ -814,7 +826,7 @@ export async function generateOnce(opts: {
 
   for (const step of chain) {
     if (step.kind === "key") {
-      const attempt = await callUserKey({ model: step.model, messages: opts.messages, stream: false, thinking })
+      const attempt = await callUserKey({ model: step.model, messages: opts.messages, stream: false, thinking, tuning: opts.tuning })
       if (attempt.ok && attempt.kind === "text") {
         return { text: attempt.text, modelUsed: model, engine: "zai-key" }
       }
@@ -824,6 +836,7 @@ export async function generateOnce(opts: {
           messages: opts.messages,
           stream: false,
           thinking,
+          tuning: opts.tuning,
         })
         if (retry.ok && retry.kind === "text") {
           return { text: retry.text, modelUsed: model, engine: "zai-key", notice: "fallback-to-flash" }
@@ -842,6 +855,7 @@ export async function generateOnce(opts: {
               model: "glm-5.3-flash", // v40 — request the main model explicitly
               messages: opts.messages.map(engineToSdkMessage),
               thinking: { type: thinking ? "enabled" : "disabled" },
+              ...tuningToSamplingBody(opts.tuning), // v41 — task tuning
             })
           ),
           60_000
@@ -854,7 +868,7 @@ export async function generateOnce(opts: {
       continue
     }
 
-    const text = await callPoolOnce(step.engine, opts.messages)
+    const text = await callPoolOnce(step.engine, opts.messages, 45_000, opts.tuning)
     if (text) return { text, modelUsed: model, engine: step.engine }
   }
   return null

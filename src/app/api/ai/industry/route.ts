@@ -10,6 +10,7 @@ import {
   searchWeb,
 } from "@/lib/ai"
 import { normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { AI_TUNING } from "@/lib/ai-tuning"
 
 export const runtime = "nodejs"
 export const maxDuration = 240
@@ -148,6 +149,7 @@ export async function POST(req: NextRequest) {
         const { stream: upstream, modelUsed, engine, notice } = await generateStream({
           model,
           thinking: true,
+          tuning: AI_TUNING.industryDossier, // v41 — rich but grounded dossier
           messages: [
             { role: "system", content: industrySystemPrompt(lang, industry, sourcesBlock) },
             {
