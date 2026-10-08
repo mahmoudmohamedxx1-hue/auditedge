@@ -3,6 +3,7 @@ import { generateOnce, type EngineMessage } from "@/lib/ai"
 import { AI_TUNING } from "@/lib/ai-tuning"
 import { getSessionUser } from "@/lib/auth"
 import { DEFAULT_MODEL, normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { sseProgress, wantsProgress, type ProgressEmit } from "@/lib/ai-sse"
 import { extractJsonObject, normalizeAiQuestionnaire } from "@/lib/toc/normalize"
 import { NextRequest } from "next/server"
 
@@ -126,49 +127,66 @@ export async function POST(req: NextRequest) {
   // itself rotates engines on failure — plus a sterner JSON-only nudge.
   const retryModel: AiModelId = DEFAULT_MODEL
   let lastError = "no-response"
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const attemptModel = attempt === 0 ? model : retryModel
-    const result = await generateOnce({
-      model: attemptModel,
-      thinking: false,
-      tuning: AI_TUNING.tocDesign, // v41 — ICQ variety, capped structured JSON
-      messages:
-        attempt === 0
-          ? messages
-          : [
-              ...messages,
-              {
-                role: "user",
-                content:
-                  "IMPORTANT: your previous reply was not usable. Return ONLY the raw JSON object now — the very first character must be { and the very last must be }. No reasoning, no explanations, no markdown fences.",
-              },
-            ],
-    })
-    if (!result || !result.text.trim()) {
-      lastError = "no-response"
-      continue
+
+  /** v42 — one core, two transports (plain JSON + SSE progress) */
+  const run = async (emit: ProgressEmit | null) => {
+    emit?.({ i: 0, id: "reading" })
+    for (let attempt = 0; attempt < 2; attempt++) {
+      emit?.({ i: attempt === 0 ? 1 : 2, id: attempt === 0 ? "writing" : "tightening" })
+      const attemptModel = attempt === 0 ? model : retryModel
+      const result = await generateOnce({
+        model: attemptModel,
+        thinking: false,
+        tuning: AI_TUNING.tocDesign, // v41 — ICQ variety, capped structured JSON
+        messages:
+          attempt === 0
+            ? messages
+            : [
+                ...messages,
+                {
+                  role: "user",
+                  content:
+                    "IMPORTANT: your previous reply was not usable. Return ONLY the raw JSON object now — the very first character must be { and the very last must be }. No reasoning, no explanations, no markdown fences.",
+                },
+              ],
+      })
+      if (!result || !result.text.trim()) {
+        lastError = "no-response"
+        continue
+      }
+      const parsed = extractJsonObject(result.text)
+      if (!parsed) {
+        lastError = `unparseable-json (${result.engine})`
+        continue
+      }
+      emit?.({ i: 3, id: "structuring" })
+      const normalized = normalizeAiQuestionnaire(parsed, industry)
+      if (!normalized.ok) {
+        lastError = `${normalized.error} (${result.engine})`
+        continue
+      }
+      return {
+        ok: true as const,
+        payload: {
+          questionnaire: {
+            ...normalized.data,
+            id: `ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+            createdAt: Date.now(),
+            input: { industry, caseContext, lang },
+          },
+          model: result.modelUsed,
+          engine: result.engine,
+        },
+      }
     }
-    const parsed = extractJsonObject(result.text)
-    if (!parsed) {
-      lastError = `unparseable-json (${result.engine})`
-      continue
-    }
-    const normalized = normalizeAiQuestionnaire(parsed, industry)
-    if (!normalized.ok) {
-      lastError = `${normalized.error} (${result.engine})`
-      continue
-    }
-    return Response.json({
-      questionnaire: {
-        ...normalized.data,
-        id: `ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
-        createdAt: Date.now(),
-        input: { industry, caseContext, lang },
-      },
-      model: result.modelUsed,
-      engine: result.engine,
-    })
+    return { ok: false as const, error: `generation-failed (${lastError})`, status: 502 }
   }
 
-  return Response.json({ error: `generation-failed (${lastError})` }, { status: 502 })
+  if (wantsProgress(req)) {
+    return sseProgress((emit) => run(emit))
+  }
+
+  const out = await run(null)
+  if (!out.ok) return Response.json({ error: out.error }, { status: out.status })
+  return Response.json(out.payload)
 }

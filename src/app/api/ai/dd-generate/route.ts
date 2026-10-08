@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
 import { AI_TUNING } from "@/lib/ai-tuning"
 import { normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { sseProgress, wantsProgress, type ProgressEmit } from "@/lib/ai-sse"
 import { DD_SECTIONS } from "@/lib/dd"
 
 export const runtime = "nodejs"
@@ -147,102 +148,129 @@ export async function POST(req: NextRequest) {
   let model: AiModelId = normalizeModelId(body.model)
   model = resolveModel(model, false)
 
-  // v39.0.2 — small keyless engines (community pool on zero-config deploys)
-  // sometimes wrap the JSON in prose or return a thin answer. One automatic
-  // retry with a firmer instruction recovers most of those instead of
-  // surfacing a 502 to the user.
-  let result: Awaited<ReturnType<typeof generateOnce>> = null
-  let parsed: RawTailor | null = null
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const reminder =
-      attempt === 0
-        ? "Tailor the due diligence playbook for this target and deal now. Return the JSON object only."
-        : "Your previous answer was NOT valid strict JSON (or was too thin). Answer AGAIN with the complete JSON object ONLY — no prose before or after, no markdown fences, 8-16 procedures, double quotes, no trailing commas."
-    result = await generateOnce({
-      model,
-      thinking: true,
-      tuning: AI_TUNING.ddTailor, // v41 — deal-tailored professional JSON, capped
-      messages: [
-        { role: "system", content: tailorPrompt({ deal, size, target, concerns }) },
-        { role: "user", content: reminder },
-      ],
-    })
-    if (!result || !result.text.trim()) continue
-    parsed = extractJson(result.text) as unknown as RawTailor | null
-    if (parsed) break
-  }
+  /** v42 — one core, two transports: the plain-JSON path the site always
+   *  had, and (X-AI-Progress: 1) an SSE stream that reports the REAL phases
+   *  (writing → tightening the retry → validating against the playbook)
+   *  and then the identical payload. */
+  const run = async (emit: ProgressEmit | null) => {
+    emit?.({ i: 0, id: "reading" })
 
-  if (!result || !result.text.trim()) {
-    return Response.json({ error: "The AI could not tailor the playbook — please try again." }, { status: 502 })
-  }
-
-  if (!parsed) {
-    return Response.json({ error: "The AI answer was unreadable — please try again." }, { status: 502 })
-  }
-
-  /* ---- validate + normalize against the real playbook sections ---- */
-  const validIds = new Set(DD_SECTIONS.map((s) => s.id))
-  const perSection = new Map<string, number>()
-
-  const procs: { id: string; sectionId: string; ref?: string; text: { en: string; ar: string } }[] = []
-  if (Array.isArray(parsed.procedures)) {
-    for (const raw of parsed.procedures as RawProc[]) {
-      if (procs.length >= MAX_PROC_TOTAL) break
-      const sectionId = typeof raw?.sectionId === "string" ? raw.sectionId.trim() : ""
-      if (!validIds.has(sectionId)) continue
-      const used = perSection.get(sectionId) ?? 0
-      if (used >= MAX_PROC_PER_SECTION) continue
-      const textEn = asText(raw.textEn, 460)
-      const textAr = asText(raw.textAr, 460)
-      if (textEn.length < 12 || textAr.length < 12) continue
-      perSection.set(sectionId, used + 1)
-      procs.push({
-        id: `ai-${procs.length + 1}`,
-        sectionId,
-        ref: asText(raw.ref, 40) || undefined,
-        text: { en: textEn, ar: textAr },
+    // v39.0.2 — small keyless engines (community pool on zero-config deploys)
+    // sometimes wrap the JSON in prose or return a thin answer. One automatic
+    // retry with a firmer instruction recovers most of those instead of
+    // surfacing a 502 to the user.
+    let result: Awaited<ReturnType<typeof generateOnce>> = null
+    let parsed: RawTailor | null = null
+    for (let attempt = 0; attempt < 2; attempt++) {
+      emit?.({ i: attempt === 0 ? 1 : 2, id: attempt === 0 ? "writing" : "tightening" })
+      const reminder =
+        attempt === 0
+          ? "Tailor the due diligence playbook for this target and deal now. Return the JSON object only."
+          : "Your previous answer was NOT valid strict JSON (or was too thin). Answer AGAIN with the complete JSON object ONLY — no prose before or after, no markdown fences, 8-16 procedures, double quotes, no trailing commas."
+      result = await generateOnce({
+        model,
+        thinking: true,
+        tuning: AI_TUNING.ddTailor, // v41 — deal-tailored professional JSON, capped
+        messages: [
+          { role: "system", content: tailorPrompt({ deal, size, target, concerns }) },
+          { role: "user", content: reminder },
+        ],
       })
+      if (!result || !result.text.trim()) continue
+      parsed = extractJson(result.text) as unknown as RawTailor | null
+      if (parsed) break
+    }
+
+    if (!result || !result.text.trim()) {
+      return { ok: false as const, error: "The AI could not tailor the playbook — please try again.", status: 502 }
+    }
+
+    if (!parsed) {
+      return { ok: false as const, error: "The AI answer was unreadable — please try again.", status: 502 }
+    }
+
+    emit?.({ i: 3, id: "structuring" })
+
+    /* ---- validate + normalize against the real playbook sections ---- */
+    const validIds = new Set(DD_SECTIONS.map((s) => s.id))
+    const perSection = new Map<string, number>()
+
+    const procs: { id: string; sectionId: string; ref?: string; text: { en: string; ar: string } }[] = []
+    if (Array.isArray(parsed.procedures)) {
+      for (const raw of parsed.procedures as RawProc[]) {
+        if (procs.length >= MAX_PROC_TOTAL) break
+        const sectionId = typeof raw?.sectionId === "string" ? raw.sectionId.trim() : ""
+        if (!validIds.has(sectionId)) continue
+        const used = perSection.get(sectionId) ?? 0
+        if (used >= MAX_PROC_PER_SECTION) continue
+        const textEn = asText(raw.textEn, 460)
+        const textAr = asText(raw.textAr, 460)
+        if (textEn.length < 12 || textAr.length < 12) continue
+        perSection.set(sectionId, used + 1)
+        procs.push({
+          id: `ai-${procs.length + 1}`,
+          sectionId,
+          ref: asText(raw.ref, 40) || undefined,
+          text: { en: textEn, ar: textAr },
+        })
+      }
+    }
+
+    const focusEn = (Array.isArray(parsed.focusEn) ? parsed.focusEn : [])
+      .map((f) => asText(f, 260))
+      .filter(Boolean)
+      .slice(0, 6)
+    const focusAr = (Array.isArray(parsed.focusAr) ? parsed.focusAr : [])
+      .map((f) => asText(f, 260))
+      .filter(Boolean)
+      .slice(0, 6)
+    const requestsEn = (Array.isArray(parsed.requestsEn) ? parsed.requestsEn : [])
+      .map((f) => asText(f, 220))
+      .filter(Boolean)
+      .slice(0, MAX_REQUESTS)
+    const requestsAr = (Array.isArray(parsed.requestsAr) ? parsed.requestsAr : [])
+      .map((f) => asText(f, 220))
+      .filter(Boolean)
+      .slice(0, MAX_REQUESTS)
+
+    const summaryEn = asText(parsed.summaryEn, 1600)
+    const summaryAr = asText(parsed.summaryAr, 1600)
+
+    if (!summaryEn && !summaryAr && procs.length === 0) {
+      return { ok: false as const, error: "The AI returned an empty customization — please try again.", status: 502 }
+    }
+    if (procs.length < 4) {
+      return { ok: false as const, error: "The AI answer was too thin — please try again.", status: 502 }
+    }
+
+    return {
+      ok: true as const,
+      payload: {
+        tailor: {
+          id: "",
+          summary: { en: summaryEn, ar: summaryAr },
+          focus: focusEn.map((en, i) => ({ en, ar: focusAr[i] ?? focusAr[0] ?? en })).filter((f) => f.en && f.ar),
+          procs,
+          requests: requestsEn
+            .map((en, i) => ({ en, ar: requestsAr[i] ?? requestsAr[0] ?? en }))
+            .filter((r) => r.en && r.ar),
+          model: result.modelUsed,
+          engine: result.engine ?? "none",
+        },
+      },
     }
   }
 
-  const focusEn = (Array.isArray(parsed.focusEn) ? parsed.focusEn : [])
-    .map((f) => asText(f, 260))
-    .filter(Boolean)
-    .slice(0, 6)
-  const focusAr = (Array.isArray(parsed.focusAr) ? parsed.focusAr : [])
-    .map((f) => asText(f, 260))
-    .filter(Boolean)
-    .slice(0, 6)
-  const requestsEn = (Array.isArray(parsed.requestsEn) ? parsed.requestsEn : [])
-    .map((f) => asText(f, 220))
-    .filter(Boolean)
-    .slice(0, MAX_REQUESTS)
-  const requestsAr = (Array.isArray(parsed.requestsAr) ? parsed.requestsAr : [])
-    .map((f) => asText(f, 220))
-    .filter(Boolean)
-    .slice(0, MAX_REQUESTS)
-
-  const summaryEn = asText(parsed.summaryEn, 1600)
-  const summaryAr = asText(parsed.summaryAr, 1600)
-
-  if (!summaryEn && !summaryAr && procs.length === 0) {
-    return Response.json({ error: "The AI returned an empty customization — please try again." }, { status: 502 })
-  }
-  if (procs.length < 4) {
-    return Response.json({ error: "The AI answer was too thin — please try again." }, { status: 502 })
+  if (wantsProgress(req)) {
+    return sseProgress((emit) => run(emit))
   }
 
-  return Response.json({
-    tailor: {
-      id: "",
-      summary: { en: summaryEn, ar: summaryAr },
-      focus: focusEn.map((en, i) => ({ en, ar: focusAr[i] ?? focusAr[0] ?? en })).filter((f) => f.en && f.ar),
-      procs,
-      requests: requestsEn
-        .map((en, i) => ({ en, ar: requestsAr[i] ?? requestsAr[0] ?? en }))
-        .filter((r) => r.en && r.ar),
-      model: result.modelUsed,
-      engine: result.engine ?? "none",
-    },
-  })
+  try {
+    const out = await run(null)
+    if (!out.ok) return Response.json({ error: out.error }, { status: out.status })
+    return Response.json(out.payload)
+  } catch (e) {
+    console.error("[dd-generate]", e)
+    return Response.json({ error: "The customization failed — please try again." }, { status: 500 })
+  }
 }

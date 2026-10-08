@@ -4,6 +4,99 @@ All notable changes to AuditEdge Academy. Versions follow the app's internal
 release history (each version shipped fully verified: `eslint` clean,
 `tsc --noEmit` clean, production build green, automated suites passing).
 
+## 42.0.0 — the Closing Suite, progressive AI everywhere, durable data
+
+The audit lifecycle now closes end-to-end, every long generation reports
+what it is doing while it does it, and production data can survive redeploys
+with one environment variable.
+
+### The Closing Suite — the documents that complete the audit
+
+Four new AI documents, all drafted from the engagement's OWN facts (the
+close-out bundle the EQR reviewer already reads), all bilingual EN/AR, all
+keyless GLM-5.3-Flash, all tuned:
+
+- **ISA 700 Auditor's Report drafter** (close-out tab, beside the EQR
+  review): the full independent auditor's report — opinion, basis for
+  opinion, KAM section (auto-prefilled with the KAMs drafted in the
+  completion section), EOM, responsibilities, signature placeholders — with
+  the opinion ladder applied honestly to the file's SAD verdict and
+  going-concern conclusion. "Let the file decide" picks the opinion and
+  explains its reasoning; every opinion type can also be forced.
+- **ISA 240 Fraud Brainstorm assistant** (methodology section): the
+  mandatory planning session as a facilitated dialogue — a session memo,
+  6-10 inquiries for TCWG / management / in-house counsel (ISA 240.16-17),
+  and 4-6 fraud-risk hypotheses with ratings and audit responses. Each
+  hypothesis drops into the AP-01 risk matrix with one click, flagged
+  `significant: true` (ISA 240.32 — fraud risks are significant by
+  definition).
+- **ISA 210 Engagement Letter drafter** (methodology section): every
+  ISA 210.10 element — scope, framework, the form of the report,
+  management's responsibilities, the TCWG acknowledgment request, fee
+  placeholders, the separate-letter note — with honest [placeholders] where
+  only the signer can fill in.
+- **ISA 300 Planning Memo drafter** (risk-assessment section): the audit
+  strategy — scope/timing/direction driven by the client's actual profile,
+  the linked materiality, the risk areas and responses, milestones and
+  deliverables.
+- **The DD Deal-Brief closer** (a third tab in Due Diligence): the 25
+  workstreams' tick state condenses into a one-page, decision-grade brief —
+  state of play, what the open areas could be hiding FOR THIS DEAL TYPE,
+  conditions before money moves, the deal-breaker watch list, an honest
+  recommendation. Grounded strictly in what was actually ticked: it quotes
+  the workstream codes (FIN-DBT 2/9…) and never asserts a finding that was
+  not cleared.
+
+Each document persists its last draft, exports Markdown, speaks through the
+voice stack, and carries the professional-responsibility note. Four tuning
+profiles join the registry (`reportDraft` 0.3, `dealBrief` 0.4,
+`fraudBrainstorm` 0.5, `engagementDoc` 0.4 — all token-capped).
+
+### Progressive AI — no more frozen spinners
+
+- **An SSE progress transport** (`src/lib/ai-sse.ts` + `src/lib/ai-client.ts`):
+  routes report their REAL phases (inputs read → the model is writing →
+  retry/tightening → validating) as `stage` events with a 7-second heartbeat
+  (proxies can no longer buffer or time out a 2-minute generation), then
+  deliver the identical payload as a `result` event. One core per route, two
+  transports — plain JSON is untouched for old clients and curl, so the
+  protocol is fully backward compatible.
+- **Applied to all four new routes natively and retrofitted into the four
+  big existing generators**: the DD customizer, the program tailor, the ToC
+  designer and the custom-exam writer (per-batch stages). The exam writer's
+  runline also carries the live n/N question count.
+- **The shared `StageTicker` runline** on every one of them: done/current/
+  pending stages, a live elapsed clock, and an honest **Cancel** — aborting
+  the fetch tears the stream down and applies nothing.
+
+### Durable production data — the one-env-var upgrade
+
+- **`scripts/db-seed-postgres.ts`**: a managed Postgres DATABASE_URL now
+  boots as a FULL site — the build seeds the content (41 courses · 990
+  lessons · 146 materials · 27 quizzes · the 2,685-question bank · the one
+  workspace user) from the same sanitized snapshot the demo mode restores
+  from, in FK order, only into EMPTY tables (idempotent; live data is never
+  touched). Previously the Postgres path pushed the schema but seeded
+  nothing — a durable ghost town.
+- **`GET /api/health`**: reports the effective database mode
+  (postgres / snapshot / sqlite), durability, the content counts and the
+  app version — the switch is verifiable in one curl.
+- **`docs/DURABLE-DATA-SETUP.md`**: the 3-step Neon walkthrough (create the
+  free database → paste `DATABASE_URL` in Vercel → redeploy and verify).
+  Zero code changes; rollback is deleting the env var.
+
+### Battery
+
+- `scripts/test-v42-closing.ts` (66 checks): the four tuning profiles,
+  the exact SSE wire format (stage/heartbeat/result/error), the client
+  parser (resolve/reject/plain-JSON fallback), route wiring (tuned +
+  rate-limited + auth'd + grounded + dual-transport), client wiring (the
+  third DD tab, the section mounts, the tickers, the KAM prefill, the
+  risk-matrix bridge), the i18n keys, and the durable-data path. A live
+  SSE round-trip runs with `LIVE=1`.
+- The v41 tuning invariant now audits **17 tuned routes** (13 + the Closing
+  Suite's four) and locks the **20-profile** registry.
+
 ## 41.0.0 — every AI feature tuned: per-task sampling profiles
 
 Before this release, every AI call in the site ran on **provider-default

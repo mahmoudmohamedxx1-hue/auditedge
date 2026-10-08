@@ -71,6 +71,18 @@ export const AI_TUNING = {
   simDebrief: { temperature: 0.55, topP: 0.9, maxTokens: 384 } as AiTuning,
   /** Simulation free-text grader — strict rubric JSON. */
   simGrade: { temperature: 0.05, topP: 0.7, maxTokens: 512 } as AiTuning,
+
+  /* ---- v42 — the Closing Suite (report/deal/fraud/engagement docs) ---- */
+  /** ISA 700 auditor's report — the strictest register in the site: every
+   *  required element, no invention, bilingual. */
+  reportDraft: { temperature: 0.3, topP: 0.85, maxTokens: 2200 } as AiTuning,
+  /** DD deal brief — a one-page decision memo from the fieldwork ticks:
+   *  grounded in what is cleared vs open, never invents findings. */
+  dealBrief: { temperature: 0.4, topP: 0.9, maxTokens: 1800 } as AiTuning,
+  /** ISA 240 fraud brainstorm — hypothesis + inquiry JSON, sharp but grounded. */
+  fraudBrainstorm: { temperature: 0.5, topP: 0.9, maxTokens: 2000 } as AiTuning,
+  /** ISA 210 letter / ISA 300 planning memo — formal engagement documents. */
+  engagementDoc: { temperature: 0.4, topP: 0.9, maxTokens: 2000 } as AiTuning,
 } as const
 
 export type TuningTask = keyof typeof AI_TUNING

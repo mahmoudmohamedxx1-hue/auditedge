@@ -50,12 +50,15 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 - **AI Tutor** — full page and floating popup, streaming answers, RAG over your library with cited excerpts, persistent conversations, and a tutor persona that encodes the full IFAC / IAASB / IESBA architecture plus the Egyptian regulatory map
 - **AI program customizer** — describe the client (industry, size, listed status, systems, concerns) and the AI tailors the Audit Program: an engagement memo, focus areas, 10-16 extra tickable procedures dropped into the right sections, and extra PBC requests — bilingual, grounded in the ISAs / Egyptian standards / IFRS-EAS, re-tailorable and individually removable
 - **AI due-diligence customizer** — describe the TARGET and the deal (buy-side acquisition / minority investment / lending / partnership) plus what worries you; the AI writes the deal memo, focus areas, extra field-ready instructions dropped into the right playbook workstreams (validated against the real library, capped, bilingual) and extra information requests — applied results live inside their workstreams as AI supplements
+- **AI deal-brief closer** — the DD tab that ends the diligence: your tick state across the 25 workstreams condenses into a one-page, decision-grade brief (state of play, what the open areas could be hiding for THIS deal type, conditions before money moves, the deal-breaker watch list, an honest recommendation) that only knows what you actually cleared
+- **The Closing Suite** — the documents that complete the audit lifecycle, drafted from the engagement's own facts: the **ISA 210 engagement letter** (methodology), the **ISA 300 planning memo** (risk assessment), the **ISA 240 fraud brainstorm** whose hypotheses drop into the risk matrix with one click, and the **ISA 700 auditor's report** (close-out) with the opinion ladder applied to your SAD verdict and going-concern conclusion — bilingual, exportable, with the KAMs auto-embedded
 - **AI Industry Risk Analyst** — streaming risk profiles for 20 sectors, with deep-dive presets
 - **KAM drafter** — drafts Key Audit Matters from your program findings
 - **TB & JE analyzer** — trial balance and journal-entry analysis (Benford's law, JE testing)
 - **AI examiner** — marks written exam answers against the certified solutions of the real exams, with a deterministic fallback marker
 - **Vision** — attach an image (a reconciliation screenshot, a ledger extract) to your question
 - **Model switcher** — GLM-5.3 Flash (the site-wide main model — Z.ai SDK engine first, keyless), plus GLM-4.7-Flash and GLM-4-Plus on your Z.ai key, with graceful GLM-first fallback
+- **Progressive generation everywhere** — the long AI generators (DD customizer, program tailor, ToC designer, custom exams, the Closing Suite documents) stream their real phases (reading → writing → tightening → validating) with a live elapsed clock and an honest Cancel button; a 7-second heartbeat keeps proxies from buffering two-minute generations
 
 ### Read-aloud and dictation
 - **16 Microsoft Edge neural voices** — Salma & Shakir (Egyptian Arabic), Zariyah & Hamed (Gulf Arabic), Jenny & Guy (US English), Sonia & Ryan (UK English), Natasha (AU), Neerja (IN), Denise (FR), Elvira (ES), Katja (DE), Elsa (IT), Emel (TR), Swara (HI)
@@ -77,6 +80,7 @@ Everything is bilingual (full RTL, not just translated strings), themeable (ligh
 - Dark and light themes — persisted, OS-preference aware, no flash of unstyled theme
 - PWA — installable, offline lessons via service worker
 - Single-user by design — the app simply opens; no accounts, no trackers
+- **Durable data, one env var** — point `DATABASE_URL` at a free Neon/Vercel Postgres and the build seeds the full content automatically, so AI conversations, exam sittings and study plans survive every redeploy (`/api/health` verifies the mode; `docs/DURABLE-DATA-SETUP.md` is the 3-step walkthrough)
 - SQLite + Prisma, Next.js standalone output
 
 ## AI architecture

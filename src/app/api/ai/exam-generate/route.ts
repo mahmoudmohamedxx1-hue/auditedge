@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth"
 import { aiRateLimit, AI_POLICIES } from "@/lib/ai-guard"
 import { generateOnce } from "@/lib/ai"
 import { AI_TUNING } from "@/lib/ai-tuning"
+import { sseProgress, wantsProgress, type ProgressEmit } from "@/lib/ai-sse"
 import { questionForClient } from "@/lib/bank"
 import type { BankArea } from "@/lib/exam-blueprint"
 
@@ -177,56 +178,70 @@ export async function POST(req: Request) {
 
   /* ============================ CHUNK ============================ */
   if (action === "chunk") {
-    const avoid = Array.isArray(body.avoid)
-      ? body.avoid
-          .filter((x): x is string => typeof x === "string")
-          .map((s) => s.slice(0, 160))
-          .slice(0, 24)
-      : []
-    // v23: micro exams (≤5) ask for the whole batch in one request
-    const ask = Math.min(5, Math.max(1, Number(body.count) || 3))
-    const avoidBlock = avoid.length
-      ? `\nQuestions already written in earlier batches (do NOT repeat or paraphrase them):\n${avoid
-          .map((s) => `- ${s}`)
-          .join("\n")}`
-      : ""
-    const angleSeed = avoid.length + Math.floor(Math.random() * ANGLES.length)
-    const angle = `\nEmphasize: ${ANGLES[angleSeed % ANGLES.length]}.`
-    const gen = await generateOnce({
-      thinking: true,
-      tuning: AI_TUNING.examWrite, // v41 — question variety, capped bilingual JSON
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a professional exam writer. You output only valid JSON arrays of exam questions. Every question is factually correct under current ISA/IFRS/IESBA standards. Keep each question compact so the whole array fits within your output limit.",
-        },
-        {
-          role: "user",
-          content: PROMPT({ topic, area, count: ask, difficulty, bilingual }) + angle + avoidBlock,
-        },
-      ],
-    })
-    if (!gen?.text?.trim()) {
-      return NextResponse.json({ error: "The AI engine is busy — try again." }, { status: 502 })
+    /** v42 — one core, two transports (plain JSON + SSE progress); the
+     *  finalize branch is pure DB work and stays plain-JSON. */
+    const run = async (emit: ProgressEmit | null) => {
+      emit?.({ i: 0, id: "reading" })
+      const avoid = Array.isArray(body.avoid)
+        ? body.avoid
+            .filter((x): x is string => typeof x === "string")
+            .map((s) => s.slice(0, 160))
+            .slice(0, 24)
+        : []
+      // v23: micro exams (≤5) ask for the whole batch in one request
+      const ask = Math.min(5, Math.max(1, Number(body.count) || 3))
+      const avoidBlock = avoid.length
+        ? `\nQuestions already written in earlier batches (do NOT repeat or paraphrase them):\n${avoid
+            .map((s) => `- ${s}`)
+            .join("\n")}`
+        : ""
+      const angleSeed = avoid.length + Math.floor(Math.random() * ANGLES.length)
+      const angle = `\nEmphasize: ${ANGLES[angleSeed % ANGLES.length]}.`
+      emit?.({ i: 1, id: "writing" })
+      const gen = await generateOnce({
+        thinking: true,
+        tuning: AI_TUNING.examWrite, // v41 — question variety, capped bilingual JSON
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a professional exam writer. You output only valid JSON arrays of exam questions. Every question is factually correct under current ISA/IFRS/IESBA standards. Keep each question compact so the whole array fits within your output limit.",
+          },
+          {
+            role: "user",
+            content: PROMPT({ topic, area, count: ask, difficulty, bilingual }) + angle + avoidBlock,
+          },
+        ],
+      })
+      if (!gen?.text?.trim()) {
+        return { ok: false as const, error: "The AI engine is busy — try again.", status: 502 }
+      }
+      emit?.({ i: 2, id: "structuring" })
+      const parsed = parseQuestions(gen.text)
+      if (!parsed) {
+        return { ok: false as const, error: "The AI response was malformed — try again.", status: 502 }
+      }
+      const valid: GeneratedQ[] = []
+      const seen = new Set<string>(avoid.map((s) => s.slice(0, 120).toLowerCase()))
+      for (const item of parsed.map(validateQ)) {
+        if (!item) continue
+        const key = item.stem.slice(0, 120).toLowerCase()
+        if (seen.has(key)) continue
+        seen.add(key)
+        valid.push(item)
+      }
+      if (!valid.length) {
+        return { ok: false as const, error: "No fresh questions this batch — try again.", status: 502 }
+      }
+      return { ok: true as const, payload: { questions: valid, engine: gen.engine } }
     }
-    const parsed = parseQuestions(gen.text)
-    if (!parsed) {
-      return NextResponse.json({ error: "The AI response was malformed — try again." }, { status: 502 })
+
+    if (wantsProgress(req)) {
+      return sseProgress((emit) => run(emit))
     }
-    const valid: GeneratedQ[] = []
-    const seen = new Set<string>(avoid.map((s) => s.slice(0, 120).toLowerCase()))
-    for (const item of parsed.map(validateQ)) {
-      if (!item) continue
-      const key = item.stem.slice(0, 120).toLowerCase()
-      if (seen.has(key)) continue
-      seen.add(key)
-      valid.push(item)
-    }
-    if (!valid.length) {
-      return NextResponse.json({ error: "No fresh questions this batch — try again." }, { status: 502 })
-    }
-    return NextResponse.json({ questions: valid, engine: gen.engine })
+    const out = await run(null)
+    if (!out.ok) return NextResponse.json({ error: out.error }, { status: out.status })
+    return NextResponse.json(out.payload)
   }
 
   /* =========================== FINALIZE =========================== */

@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth"
 import { generateOnce } from "@/lib/ai"
 import { AI_TUNING } from "@/lib/ai-tuning"
 import { normalizeModelId, resolveModel, type AiModelId } from "@/lib/models"
+import { sseProgress, wantsProgress, type ProgressEmit } from "@/lib/ai-sse"
 import { PROGRAM_SECTIONS } from "@/lib/program"
 
 export const runtime = "nodejs"
@@ -138,105 +139,127 @@ export async function POST(req: NextRequest) {
   let model: AiModelId = normalizeModelId(body.model)
   model = resolveModel(model, false)
 
-  const result = await generateOnce({
-    model,
-    thinking: true,
-    tuning: AI_TUNING.programTailor, // v41 — client-tailored professional JSON, capped
-    messages: [
-      { role: "system", content: tailorPrompt({ sector, size, listed, systems, concerns }) },
-      {
-        role: "user",
-        content: `Tailor the audit program for this client now. Return the JSON object only.`,
+  /** v42 — one core, two transports (plain JSON + SSE progress) */
+  const run = async (emit: ProgressEmit | null) => {
+    emit?.({ i: 0, id: "reading" })
+    emit?.({ i: 1, id: "writing" })
+    const result = await generateOnce({
+      model,
+      thinking: true,
+      tuning: AI_TUNING.programTailor, // v41 — client-tailored professional JSON, capped
+      messages: [
+        { role: "system", content: tailorPrompt({ sector, size, listed, systems, concerns }) },
+        {
+          role: "user",
+          content: `Tailor the audit program for this client now. Return the JSON object only.`,
+        },
+      ],
+    })
+
+    if (!result || !result.text.trim()) {
+      return { ok: false as const, error: "The AI could not tailor the program — please try again.", status: 502 }
+    }
+
+    emit?.({ i: 2, id: "structuring" })
+    const parsed = extractJson(result.text) as unknown as RawTailor | null
+    if (!parsed) {
+      return { ok: false as const, error: "The AI answer was unreadable — please try again.", status: 502 }
+    }
+
+    /* ---- validate + normalize against the real program sections ---- */
+    const validIds = new Set(PROGRAM_SECTIONS.map((s) => s.id))
+    const perSection = new Map<string, number>()
+
+    const procs: { id: string; sectionId: string; ref?: string; text: { en: string; ar: string } }[] = []
+    if (Array.isArray(parsed.procedures)) {
+      for (const raw of parsed.procedures as RawProc[]) {
+        if (procs.length >= MAX_PROC_TOTAL) break
+        const sectionId = typeof raw?.sectionId === "string" ? raw.sectionId.trim() : ""
+        if (!validIds.has(sectionId)) continue
+        const used = perSection.get(sectionId) ?? 0
+        if (used >= MAX_PROC_PER_SECTION) continue
+        const textEn = asText(raw.textEn, 420)
+        const textAr = asText(raw.textAr, 420)
+        if (textEn.length < 12 || textAr.length < 12) continue
+        perSection.set(sectionId, used + 1)
+        procs.push({
+          id: `ai-${procs.length + 1}`,
+          sectionId,
+          ref: asText(raw.ref, 40) || undefined,
+          text: { en: textEn, ar: textAr },
+        })
+      }
+    }
+
+    const focusEn = (Array.isArray(parsed.focusEn) ? parsed.focusEn : [])
+      .map((f) => asText(f, 240))
+      .filter(Boolean)
+      .slice(0, 6)
+    const focusAr = (Array.isArray(parsed.focusAr) ? parsed.focusAr : [])
+      .map((f) => asText(f, 240))
+      .filter(Boolean)
+      .slice(0, 6)
+    const pbcEn = (Array.isArray(parsed.pbcEn) ? parsed.pbcEn : [])
+      .map((f) => asText(f, 200))
+      .filter(Boolean)
+      .slice(0, MAX_PBC)
+    const pbcAr = (Array.isArray(parsed.pbcAr) ? parsed.pbcAr : [])
+      .map((f) => asText(f, 200))
+      .filter(Boolean)
+      .slice(0, MAX_PBC)
+
+    const summaryEn = asText(parsed.summaryEn, 1400)
+    const summaryAr = asText(parsed.summaryAr, 1400)
+
+    if (!summaryEn && !summaryAr && procs.length === 0) {
+      return { ok: false as const, error: "The AI returned an empty customization — please try again.", status: 502 }
+    }
+
+    /* attach each PBC suggestion to the section it serves (by keyword overlap,
+       defaulting to risk assessment) */
+    const pbc: { sectionId: string; text: { en: string; ar: string } }[] = []
+    pbcEn.forEach((en, i) => {
+      const ar = pbcAr[i] ?? pbcAr[0] ?? en
+      const hay = `${en} ${ar}`.toLowerCase()
+      const target = /revenue|sales|customer|مبيعات|إيراد/.test(hay)
+        ? "revenue"
+        : /inventory|stock|مخزون|جرد/.test(hay)
+          ? "inventory"
+          : /payroll|hr|رواتب|أجور/.test(hay)
+            ? "payroll"
+            : /fixed asset|الأصول الثابتة|الاصول/.test(hay)
+              ? "fixed-assets"
+              : /bank|treasury|نقدية|بنك/.test(hay)
+                ? "cash"
+                : "risk-assessment"
+      if (validIds.has(target)) pbc.push({ sectionId: target, text: { en, ar } })
+    })
+
+    return {
+      ok: true as const,
+      payload: {
+        tailor: {
+          summary: { en: summaryEn, ar: summaryAr },
+          focus: focusEn.map((en, i) => ({ en, ar: focusAr[i] ?? focusAr[0] ?? en })).filter((f) => f.en && f.ar),
+          procs,
+          pbc,
+          model: result.modelUsed,
+          engine: result.engine ?? "none",
+        },
       },
-    ],
-  })
-
-  if (!result || !result.text.trim()) {
-    return Response.json({ error: "The AI could not tailor the program — please try again." }, { status: 502 })
-  }
-
-  const parsed = extractJson(result.text) as unknown as RawTailor | null
-  if (!parsed) {
-    return Response.json({ error: "The AI answer was unreadable — please try again." }, { status: 502 })
-  }
-
-  /* ---- validate + normalize against the real program sections ---- */
-  const validIds = new Set(PROGRAM_SECTIONS.map((s) => s.id))
-  const perSection = new Map<string, number>()
-
-  const procs: { id: string; sectionId: string; ref?: string; text: { en: string; ar: string } }[] = []
-  if (Array.isArray(parsed.procedures)) {
-    for (const raw of parsed.procedures as RawProc[]) {
-      if (procs.length >= MAX_PROC_TOTAL) break
-      const sectionId = typeof raw?.sectionId === "string" ? raw.sectionId.trim() : ""
-      if (!validIds.has(sectionId)) continue
-      const used = perSection.get(sectionId) ?? 0
-      if (used >= MAX_PROC_PER_SECTION) continue
-      const textEn = asText(raw.textEn, 420)
-      const textAr = asText(raw.textAr, 420)
-      if (textEn.length < 12 || textAr.length < 12) continue
-      perSection.set(sectionId, used + 1)
-      procs.push({
-        id: `ai-${procs.length + 1}`,
-        sectionId,
-        ref: asText(raw.ref, 40) || undefined,
-        text: { en: textEn, ar: textAr },
-      })
     }
   }
 
-  const focusEn = (Array.isArray(parsed.focusEn) ? parsed.focusEn : [])
-    .map((f) => asText(f, 240))
-    .filter(Boolean)
-    .slice(0, 6)
-  const focusAr = (Array.isArray(parsed.focusAr) ? parsed.focusAr : [])
-    .map((f) => asText(f, 240))
-    .filter(Boolean)
-    .slice(0, 6)
-  const pbcEn = (Array.isArray(parsed.pbcEn) ? parsed.pbcEn : [])
-    .map((f) => asText(f, 200))
-    .filter(Boolean)
-    .slice(0, MAX_PBC)
-  const pbcAr = (Array.isArray(parsed.pbcAr) ? parsed.pbcAr : [])
-    .map((f) => asText(f, 200))
-    .filter(Boolean)
-    .slice(0, MAX_PBC)
-
-  const summaryEn = asText(parsed.summaryEn, 1400)
-  const summaryAr = asText(parsed.summaryAr, 1400)
-
-  if (!summaryEn && !summaryAr && procs.length === 0) {
-    return Response.json({ error: "The AI returned an empty customization — please try again." }, { status: 502 })
+  if (wantsProgress(req)) {
+    return sseProgress((emit) => run(emit))
   }
 
-  /* attach each PBC suggestion to the section it serves (by keyword overlap,
-     defaulting to risk assessment) */
-  const pbc: { sectionId: string; text: { en: string; ar: string } }[] = []
-  pbcEn.forEach((en, i) => {
-    const ar = pbcAr[i] ?? pbcAr[0] ?? en
-    const hay = `${en} ${ar}`.toLowerCase()
-    const target = /revenue|sales|customer|مبيعات|إيراد/.test(hay)
-      ? "revenue"
-      : /inventory|stock|مخزون|جرد/.test(hay)
-        ? "inventory"
-        : /payroll|hr|رواتب|أجور/.test(hay)
-          ? "payroll"
-          : /fixed asset|الأصول الثابتة|الاصول/.test(hay)
-            ? "fixed-assets"
-            : /bank|treasury|نقدية|بنك/.test(hay)
-              ? "cash"
-              : "risk-assessment"
-    if (validIds.has(target)) pbc.push({ sectionId: target, text: { en, ar } })
-  })
-
-  return Response.json({
-    tailor: {
-      summary: { en: summaryEn, ar: summaryAr },
-      focus: focusEn.map((en, i) => ({ en, ar: focusAr[i] ?? focusAr[0] ?? en })).filter((f) => f.en && f.ar),
-      procs,
-      pbc,
-      model: result.modelUsed,
-      engine: result.engine ?? "none",
-    },
-  })
+  try {
+    const out = await run(null)
+    if (!out.ok) return Response.json({ error: out.error }, { status: out.status })
+    return Response.json(out.payload)
+  } catch (e) {
+    console.error("[program-tailor]", e)
+    return Response.json({ error: "The customization failed — please try again." }, { status: 500 })
+  }
 }

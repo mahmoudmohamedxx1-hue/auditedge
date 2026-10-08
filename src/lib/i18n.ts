@@ -1653,6 +1653,76 @@ export const T = {
     aiRegenerate: { en: "Regenerate", ar: "إعادة الإنشاء" },
     save: { en: "Save", ar: "حفظ" },
   },
+
+  /* v42 — the DD deal-brief closer tab + the progressive customizer stages */
+  dd42: {
+    tabTitle: { en: "Deal brief", ar: "موجز الصفقة" },
+    introTitle: { en: "AI deal brief — close the diligence like a deal team", ar: "الموجز الذكي للصفقة — أقفل العناية الواجبة كفريق صفقة حقيقي" },
+    intro: {
+      en: "Your fieldwork ticks across the 25 workstreams become a one-page, decision-grade brief: what is cleared, what the open areas could be hiding for THIS kind of deal, the conditions before money moves, the deal-breaker watch list, and an honest recommendation. It only knows what you ticked — it never invents a finding.",
+      ar: "تتبعاتك للإنجاز عبر مسارات العمل الخمسة والعشرين تصبح موجزًا من صفحة واحدة بدرجة قرارات: ما أُقفل، وما قد تخفيه المناطق المفتوحة لهذا النوع من الصفقات تحديدًا، والشروط قبل تحريك الأموال، وقائمة مراقبة قتلة الصفقة، وتوصية صادقة. لا يعرف إلا ما أنجزته — لا يخترع ملاحظة أبدًا.",
+    },
+    instructionsWord: { en: "instructions cleared", ar: "تعليمة منجزة" },
+    workstreamsTouched: { en: "workstreams started", ar: "مسار عمل بدأ" },
+    deal: { en: "The deal", ar: "الصفقة" },
+    dealAcquisition: { en: "Acquisition", ar: "استحواذ" },
+    dealInvestment: { en: "Minority investment", ar: "استثمار أقلية" },
+    dealLending: { en: "Lending", ar: "إقراض" },
+    dealPartnership: { en: "Partnership", ar: "شراكة" },
+    size: { en: "Target size", ar: "حجم الهدف" },
+    sizeSme: { en: "SME", ar: "منشأة صغيرة/متوسطة" },
+    sizeMid: { en: "Mid-market", ar: "سوق وسيط" },
+    sizeLarge: { en: "Large / listed", ar: "كبيرة / مقيدة" },
+    target: { en: "The target company", ar: "شركة الهدف" },
+    targetPh: {
+      en: "e.g. Delta Steel Trading — family-owned, 3 plants, EGP 900m revenue, main customer is one government contractor",
+      ar: "مثال: شركة دلتا لتجارة الصلب — ملكية عائلية، 3 مصانع، إيراد 900 مليون ج.م، والعميل الرئيسي مقاول حكومي واحد",
+    },
+    concerns: { en: "What worries you", ar: "ما يقلقك" },
+    concernsPh: {
+      en: "e.g. receivables doubled while revenue grew 8%; the CFO resigned last month",
+      ar: "مثال: الذمم المدينة تضاعفت بينما نمت الإيرادات 8%؛ المدير المالي استقال الشهر الماضي",
+    },
+    notes: { en: "Open issues your team noted", ar: "مسائل مفتوحة دونها فريقك" },
+    notesPh: {
+      en: "e.g. the data room is missing the top-10 customer contracts; Q2 bank statements only go to June",
+      ar: "مثال: غرفة البيانات لا تحتوي عقود أكبر عشرة عملاء؛ كشوف البنك للربع الثاني حتى يونيو فقط",
+    },
+    generate: { en: "Write the deal brief", ar: "اكتب موجز الصفقة" },
+    generating: { en: "Working…", ar: "جارٍ الإنشاء…" },
+    cancel: { en: "Cancel", ar: "إلغاء" },
+    cancelled: { en: "Draft cancelled", ar: "تم الإلغاء" },
+    failed: { en: "The brief failed — try again", ar: "فشل الموجز — حاول مجددًا" },
+    needTicks: {
+      en: "Tick some instructions in the playbook first — the brief is built from your fieldwork",
+      ar: "أنجز بعض التعليمات في الدليل أولًا — فالموجز يُبنى من عملك الميداني",
+    },
+    stageReading: { en: "Reading your fieldwork ticks", ar: "قراءة تتبعات العمل الميداني" },
+    stageWriting: { en: "Writing the brief (EN + AR)", ar: "كتابة الموجز (إنجليزي + عربي)" },
+    stageFinalizing: { en: "Finalizing", ar: "اللمسات الأخيرة" },
+    briefTitle: { en: "Deal brief — review, then own it", ar: "موجز الصفقة — راجعه ثم تبنَّه" },
+    briefNote: {
+      en: "AI-assisted brief grounded strictly in your tick state and notes. Validate every open item against the workpapers before this goes near an investment committee.",
+      ar: "موجز بمساعدة الذكاء الاصطناعي مبني حصريًا على حالة إنجازك وملاحظاتك. تحقق من كل بند مفتوح مقابل أوراق العمل قبل أن يقترب هذا من لجنة استثمار.",
+    },
+    download: { en: "Download .md", ar: "تنزيل .md" },
+    copyWord: { en: "Copy", ar: "نسخ" },
+    copiedWord: { en: "Copied", ar: "تم النسخ" },
+    aiStageReading: { en: "Reading the target", ar: "قراءة وصف الهدف" },
+    aiStageWriting: { en: "Writing the tailored playbook", ar: "صياغة الدليل المفصّل" },
+    aiStageTightening: { en: "Tightening the draft", ar: "إحكام المسودة" },
+    aiStageStructuring: { en: "Validating against the playbook", ar: "التحقق من المطابقة" },
+  },
+
+  /* v42 — shared progressive-generation strings (program tailor / ToC / exams) */
+  ai42: {
+    cancel: { en: "Cancel", ar: "إلغاء" },
+    cancelled: { en: "Cancelled", ar: "تم الإلغاء" },
+    stageReading: { en: "Reading the inputs", ar: "قراءة المدخلات" },
+    stageWriting: { en: "Writing the draft", ar: "صياغة المسودة" },
+    stageTightening: { en: "Tightening the draft", ar: "إحكام المسودة" },
+    stageStructuring: { en: "Validating the result", ar: "التحقق من النتيجة" },
+  },
 } as const
 
 /** Dot-lookup helper: tt("nav.home", lang) — typed for key safety. */

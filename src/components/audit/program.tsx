@@ -28,6 +28,7 @@ import { PbcTracker } from "./program-pbc"
 import { FindingsSad } from "./program-findings"
 import { SignoffSummary } from "./program-signoffs"
 import { CloseOutPanel } from "./program-closeout"
+import { EngagementDocCard, FraudBrainstorm, Isa700Drafter } from "./closing-suite"
 import { AiTailorDialog, AiTailorMemoCard, AiProcRow, aiProcIds } from "./program-tailor"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -608,7 +609,13 @@ export function AuditProgram() {
       ) : tab === "signoffs" ? (
         <SignoffSummary lang={lang} eng={eng} onSetSignoff={setSignoff} />
       ) : tab === "closeout" ? (
-        <CloseOutPanel lang={lang} eng={eng} onPatchEng={(patch) => updateEng((e) => ({ ...e, ...patch }))} />
+        <>
+          <CloseOutPanel lang={lang} eng={eng} onPatchEng={(patch) => updateEng((e) => ({ ...e, ...patch }))} />
+          {/* v42 — the Closing Suite's last mile: the auditor's report itself */}
+          <div className="mt-6">
+            <Isa700Drafter lang={lang} eng={eng} />
+          </div>
+        </>
       ) : searchResults ? (
         /* search results mode */
         <div className="mt-5 space-y-2 print:hidden">
@@ -1272,6 +1279,20 @@ function SectionView({
       {section.id === "sampling" && (
         <div className="mt-3">
           <SamplingCalculator lang={lang} />
+        </div>
+      )}
+      {section.id === "methodology" && (
+        <div className="mt-3 space-y-4">
+          {/* v42 — the Closing Suite opens at planning: the ISA 210 letter… */}
+          <EngagementDocCard kind="letter" lang={lang} eng={eng} />
+          {/* …and the ISA 240 mandatory fraud brainstorm, feeding AP-01 */}
+          <FraudBrainstorm lang={lang} eng={eng} onPatchEng={onPatchEng} />
+        </div>
+      )}
+      {section.id === "risk-assessment" && (
+        <div className="mt-3 space-y-4">
+          {/* v42 — the ISA 300 planning memo rides with the risk work */}
+          <EngagementDocCard kind="memo" lang={lang} eng={eng} />
         </div>
       )}
       {section.id === "risk-assessment" && (

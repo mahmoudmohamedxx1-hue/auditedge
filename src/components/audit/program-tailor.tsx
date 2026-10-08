@@ -13,12 +13,14 @@
  *                        (same ProcState store, same WP-ref/note flow) with
  *                        an individual remove button. */
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { SECTOR_PROFILES } from "@/lib/program/sectors"
 import { PROGRAM_SECTIONS } from "@/lib/program"
 import { aiProcsFor, type AiProc, type AiTailor, type Engagement, type ProcState } from "@/lib/engagement"
 import { tt, type Lang } from "@/lib/i18n"
+import { aiJson, type AiStageEvent } from "@/lib/ai-client"
+import { StageTicker } from "./ai-progress"
 import { cn } from "@/lib/utils"
 import { describeEngine } from "@/lib/models"
 import { toast } from "sonner"
@@ -81,6 +83,10 @@ export function AiTailorDialog({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [draft, setDraft] = useState<TailorDraft | null>(null)
+  /* v42 — the progressive runline (SSE stages + cancel) */
+  const [stage, setStage] = useState<AiStageEvent | null>(null)
+  const [startedAt, setStartedAt] = useState(0)
+  const abortRef = useRef<AbortController | null>(null)
 
   const sectorOptions = useMemo(
     () => SECTOR_PROFILES.map((s) => ({ id: s.id, en: s.name.en, ar: s.name.ar })),
@@ -99,28 +105,33 @@ export function AiTailorDialog({
     setLoading(true)
     setError(null)
     setDraft(null)
+    setStage(null)
+    setStartedAt(Date.now())
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
     try {
-      const res = await fetch("/api/ai/program-tailor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // v42 — progressive transport: real stages + heartbeat instead of a frozen spinner
+      const data = await aiJson<{ tailor?: TailorDraft; error?: string }>(
+        "/api/ai/program-tailor",
+        {
           sector: effectiveSector,
           size,
           listed,
           systems: systems.trim(),
           concerns: concerns.trim(),
-        }),
-      })
-      const data = (await res.json().catch(() => ({}))) as { tailor?: TailorDraft; error?: string }
-      if (!res.ok || !data.tailor) {
+        },
+        { onStage: setStage, signal: abortRef.current.signal }
+      )
+      if (!data.tailor) {
         setError(data.error ?? tt("program28.failed", lang))
         return
       }
       setDraft(data.tailor)
-    } catch {
-      setError(tt("program28.failed", lang))
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === "AbortError")) setError(tt("program28.failed", lang))
     } finally {
       setLoading(false)
+      abortRef.current = null
     }
   }
 
@@ -302,6 +313,21 @@ export function AiTailorDialog({
                 )
               })}
             </div>
+          </div>
+        )}
+
+        {/* v42 — the progressive runline: what the model is doing, how long, cancel */}
+        {loading && (
+          <div className="mb-1">
+            <StageTicker
+              busy={loading}
+              labels={[tt("ai42.stageReading", lang), tt("ai42.stageWriting", lang), tt("ai42.stageStructuring", lang)]}
+              stage={stage}
+              startedAt={startedAt}
+              onCancel={() => abortRef.current?.abort()}
+              cancelLabel={tt("ai42.cancel", lang)}
+              runningLabel={tt("program28.generating", lang)}
+            />
           </div>
         )}
 

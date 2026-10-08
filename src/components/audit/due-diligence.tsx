@@ -25,6 +25,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { StageTicker } from "./ai-progress"
+import { DealBriefPanel, DD_FORM_KEY } from "./dd-brief"
+import { aiJson, type AiStageEvent } from "@/lib/ai-client"
 import {
   Activity,
   AlertTriangle,
@@ -38,6 +41,7 @@ import {
   CreditCard,
   Download,
   Factory,
+  FileBarChart,
   FileText,
   Gavel,
   Landmark,
@@ -533,6 +537,10 @@ function AiPanel({
   const [error, setError] = useState(false)
   const [result, setResult] = useState<DdTailorResult | null>(null)
   const resultRef = useRef<HTMLDivElement>(null)
+  /* v42 — the progressive runline: live stages from the SSE transport + cancel */
+  const [stage, setStage] = useState<AiStageEvent | null>(null)
+  const [startedAt, setStartedAt] = useState(0)
+  const abortRef = useRef<AbortController | null>(null)
   /* v40.1 — the main engine (keyless GLM-5.3-Flash on LLM7) is healthy?
    * Show the honest "community engines only" notice ONLY when every route
    * is down (llm7 unreachable AND no built-in engine AND no optional key) —
@@ -557,20 +565,33 @@ function AiPanel({
     setBusy(true)
     setError(false)
     setResult(null)
+    setStage(null)
+    setStartedAt(Date.now())
+    /* v42 — keep the form so the deal-brief tab prefills from it */
     try {
-      const res = await fetch("/api/ai/dd-generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deal, size, target, concerns }),
-      })
-      const data = (await res.json()) as { tailor?: DdTailorResult; error?: string }
-      if (!res.ok || !data.tailor) throw new Error(data.error ?? "failed")
+      localStorage.setItem(DD_FORM_KEY, JSON.stringify({ deal, size, target, concerns }))
+    } catch {}
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
+    try {
+      // v42 — progressive transport: real stages + heartbeat instead of a frozen spinner
+      const data = await aiJson<{ tailor?: DdTailorResult; error?: string }>(
+        "/api/ai/dd-generate",
+        { deal, size, target, concerns },
+        { onStage: setStage, signal: abortRef.current.signal }
+      )
+      if (!data.tailor) throw new Error(data.error ?? "failed")
       setResult(data.tailor)
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80)
-    } catch {
-      setError(true)
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        // honest cancel — nothing applied, nothing saved
+      } else {
+        setError(true)
+      }
     } finally {
       setBusy(false)
+      abortRef.current = null
     }
   }
 
@@ -665,7 +686,23 @@ function AiPanel({
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {busy ? tt("dd39.aiGenerating", lang) : tt("dd39.aiGenerate", lang)}
           </Button>
-          {busy && <p className="text-[12px] text-muted-foreground">{tt("dd39.aiGeneratingNote", lang)}</p>}
+        </div>
+        {/* v42 — the progressive runline: what the model is doing, how long, cancel */}
+        <div className="mt-3">
+          <StageTicker
+            busy={busy}
+            labels={[
+              tt("dd42.aiStageReading", lang),
+              tt("dd42.aiStageWriting", lang),
+              tt("dd42.aiStageTightening", lang),
+              tt("dd42.aiStageStructuring", lang),
+            ]}
+            stage={stage}
+            startedAt={startedAt}
+            onCancel={() => abortRef.current?.abort()}
+            cancelLabel={tt("dd42.cancel", lang)}
+            runningLabel={tt("dd39.aiGeneratingNote", lang)}
+          />
         </div>
         {error && <p className="mt-3 text-[13px] font-medium text-red-500">{tt("dd39.aiFailed", lang)}</p>}
       </section>
@@ -853,8 +890,8 @@ export function DueDiligence() {
   /* state hydrates through lazy initializers — pure localStorage/route reads
    * (both guards are SSR-safe: the loaders try/catch, the route helpers check
    * typeof window) — so no hydration effect is needed at all. */
-  const [tab, setTab] = useState<"library" | "ai">(() =>
-    getRouteParam("ai") === "1" ? "ai" : "library"
+  const [tab, setTab] = useState<"library" | "ai" | "brief">(() =>
+    getRouteParam("ai") === "1" ? "ai" : getRouteParam("brief") === "1" ? "brief" : "library"
   )
   const [scope, setScope] = useState<DDScopeId>(() => {
     const p = getRouteParam("scope")
@@ -881,7 +918,8 @@ export function DueDiligence() {
       const sec = params.get("section")
       const valid = sec ? ddSection(sec) : undefined
       setSectionId(valid ? sec : null)
-      setTab(params.get("ai") === "1" ? "ai" : "library")
+      const briefParam = params.get("brief")
+      setTab(params.get("ai") === "1" ? "ai" : briefParam === "1" ? "brief" : "library")
     })
   }, [])
 
@@ -988,10 +1026,11 @@ export function DueDiligence() {
     setRouteParam("scope", s)
     setRouteParam("section", null)
   }
-  const switchTab = (t: "library" | "ai") => {
+  const switchTab = (t: "library" | "ai" | "brief") => {
     setTab(t)
     setRouteParam("ai", t === "ai" ? "1" : null)
-    if (t === "ai") setSectionId(null)
+    setRouteParam("brief", t === "brief" ? "1" : null)
+    if (t !== "library") setSectionId(null)
   }
 
   /* search across all scopes */
@@ -1060,13 +1099,16 @@ export function DueDiligence() {
         </span>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => switchTab(v as "library" | "ai")}>
+      <Tabs value={tab} onValueChange={(v) => switchTab(v as "library" | "ai" | "brief")}>
         <TabsList>
           <TabsTrigger value="library" className="gap-1.5">
             <ListChecks className="h-3.5 w-3.5" /> {tt("dd39.libraryTab", lang)}
           </TabsTrigger>
           <TabsTrigger value="ai" className="gap-1.5">
             <Sparkles className="h-3.5 w-3.5" /> {tt("dd39.aiTab", lang)}
+          </TabsTrigger>
+          <TabsTrigger value="brief" className="gap-1.5">
+            <FileBarChart className="h-3.5 w-3.5" /> {tt("dd42.tabTitle", lang)}
           </TabsTrigger>
         </TabsList>
 
@@ -1167,6 +1209,11 @@ export function DueDiligence() {
 
         <TabsContent value="ai" className="mt-4">
           <AiPanel saved={savedAi} appliedId={appliedId} onApply={applyAi} onDelete={deleteAi} />
+        </TabsContent>
+
+        {/* v42 — the deal-brief closer: the fieldwork ticks become a decision memo */}
+        <TabsContent value="brief" className="mt-4">
+          <DealBriefPanel progress={progress} aiProcsBySection={aiProcsBySection} sections={DD_SECTIONS} />
         </TabsContent>
       </Tabs>
     </div>

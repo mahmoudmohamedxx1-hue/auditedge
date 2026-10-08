@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { tt } from "@/lib/i18n"
+import { aiJson, type AiStageEvent } from "@/lib/ai-client"
+import { StageTicker } from "./ai-progress"
 import { cn } from "@/lib/utils"
 import { getRouteParam, onRouteParams, setRouteParam } from "@/lib/deeplink"
 import {
@@ -215,6 +217,10 @@ export function TocHub() {
   const [aiBusy, setAiBusy] = useState(false)
   const aiBusyRef = useRef(false)
   const [aiError, setAiError] = useState("")
+  /* v42 — the progressive runline (SSE stages + cancel) */
+  const [aiStage, setAiStage] = useState<AiStageEvent | null>(null)
+  const [aiStartedAt, setAiStartedAt] = useState(0)
+  const aiAbortRef = useRef<AbortController | null>(null)
 
   /* ---------- hydration + deep links ---------- */
   useEffect(() => {
@@ -306,15 +312,19 @@ export function TocHub() {
       aiBusyRef.current = true
       setAiBusy(true)
       setAiError("")
+      setAiStage(null)
+      setAiStartedAt(Date.now())
+      aiAbortRef.current?.abort()
+      aiAbortRef.current = new AbortController()
       try {
-        const res = await fetch("/api/ai/toc-generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ industry: industry.trim(), caseContext: caseContext.trim(), lang }),
-        })
-        const data = await res.json().catch(() => null)
-        if (!res.ok || !data?.questionnaire) throw new Error(data?.error ?? "failed")
-        const q = data.questionnaire as TocAiQuestionnaire
+        // v42 — progressive transport: real stages + heartbeat instead of a frozen skeleton
+        const data = await aiJson<{ questionnaire?: TocAiQuestionnaire; error?: string }>(
+          "/api/ai/toc-generate",
+          { industry: industry.trim(), caseContext: caseContext.trim(), lang },
+          { onStage: setAiStage, signal: aiAbortRef.current.signal }
+        )
+        if (!data.questionnaire) throw new Error(data.error ?? "failed")
+        const q = data.questionnaire
         setSavedAi((prev) => {
           const next = [q, ...prev.filter((s) => s.id !== q.id)].slice(0, MAX_AI_SAVED)
           persistAi(next)
@@ -323,11 +333,12 @@ export function TocHub() {
         setActive({ kind: "ai", q })
         setRouteParam("ind", null)
         window.scrollTo({ top: 0 })
-      } catch {
-        setAiError(tt("toc37.aiFailed", lang))
+      } catch (e) {
+        if (!(e instanceof DOMException && e.name === "AbortError")) setAiError(tt("toc37.aiFailed", lang))
       } finally {
         aiBusyRef.current = false
         setAiBusy(false)
+        aiAbortRef.current = null
       }
     },
     [lang, persistAi]
@@ -601,7 +612,21 @@ export function TocHub() {
                   <Skeleton className="h-3 w-1/2" />
                 </div>
               </div>
-              <p className="text-center text-[12.5px] text-muted-foreground">{tt("toc37.aiGeneratingNote", lang)}</p>
+              {/* v42 — the progressive runline: what the designer is doing, how long, cancel */}
+              <StageTicker
+                busy={aiBusy}
+                labels={[
+                  tt("ai42.stageReading", lang),
+                  tt("ai42.stageWriting", lang),
+                  tt("ai42.stageTightening", lang),
+                  tt("ai42.stageStructuring", lang),
+                ]}
+                stage={aiStage}
+                startedAt={aiStartedAt}
+                onCancel={() => aiAbortRef.current?.abort()}
+                cancelLabel={tt("ai42.cancel", lang)}
+                runningLabel={tt("toc37.aiGeneratingNote", lang)}
+              />
             </div>
           )}
 

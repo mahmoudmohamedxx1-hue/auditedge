@@ -53,9 +53,14 @@ async function main() {
     "studyPlan",
     "simDebrief",
     "simGrade",
+    // v42 — the Closing Suite
+    "reportDraft",
+    "dealBrief",
+    "fraudBrainstorm",
+    "engagementDoc",
   ]
   const names = Object.keys(AI_TUNING)
-  check("16 task profiles present", names.length === 16, String(names.length))
+  check("20 task profiles present (16 at v41 + 4 Closing Suite at v42)", names.length === 20, String(names.length))
   check("exact task set", expected.every((n) => names.includes(n)) && names.length === expected.length)
 
   const validation = validateTuningRegistry()
@@ -176,7 +181,7 @@ async function main() {
     const src = readFileSync(p, "utf8")
     return /generateOnce\(|generateStream\(/.test(src)
   })
-  check("13 route files call the generation chain", calling.length === 13, String(calling.length))
+  check("17 route files call the generation chain (13 at v41 + the 4 Closing Suite routes at v42)", calling.length === 17, String(calling.length))
   const untuned = calling.filter((p) => !readFileSync(p, "utf8").includes("AI_TUNING."))
   check("every calling route passes a tuning profile", untuned.length === 0, untuned.map((p) => p.replace(ROOT + "/", "")).join(", ") || "all tuned")
 

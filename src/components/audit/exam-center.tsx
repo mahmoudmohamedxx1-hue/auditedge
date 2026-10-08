@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { tt, dateLocaleOf } from "@/lib/i18n"
+import { aiJson, type AiStageEvent } from "@/lib/ai-client"
+import { StageTicker } from "./ai-progress"
 import { PAPER_FAMILIES, PAPER_GROUPS, PAPER_SITTINGS, getPastPaper, type PaperFamily } from "@/lib/past-papers"
 import { getRouteParam, onRouteParams, setRouteParam, shareUrlFor } from "@/lib/deeplink"
 import { ShareButton } from "./share-button"
@@ -400,6 +402,10 @@ export function ExamCenter() {
   const [cLoading, setCLoading] = useState(false)
   const [cProgress, setCProgress] = useState(0)
   const [cError, setCError] = useState<string | null>(null)
+  /* v42 — the progressive runline (per-batch SSE stages + cancel) */
+  const [cStage, setCStage] = useState<AiStageEvent | null>(null)
+  const [cStartedAt, setCStartedAt] = useState(0)
+  const cAbortRef = useRef<AbortController | null>(null)
 
   const EXAM_SIZES: { count: string; labelKey: string }[] = [
     { count: "5", labelKey: "exam.sizeMicro" },
@@ -413,38 +419,57 @@ export function ExamCenter() {
     setCLoading(true)
     setCError(null)
     setCProgress(0)
+    setCStage(null)
+    setCStartedAt(Date.now())
     const target = Number(cCount)
     const collected: unknown[] = []
     let failures = 0
+    let aborted = false
+    cAbortRef.current?.abort()
+    cAbortRef.current = new AbortController()
     // chunked generation — each request writes a small batch (serverless-safe);
     // a micro exam (5) fits in a single batch
     const batch = target <= 5 ? 5 : 3
     while (collected.length < target && failures < 2) {
-      const res = await fetch("/api/ai/exam-generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "chunk",
-          topic: cTopic.trim(),
-          area: cArea,
-          difficulty: Number(cDiff),
-          lang: cLang,
-          count: Math.min(batch, target - collected.length),
-          avoid: (collected as { stem?: unknown }[]).map((q) => String(q?.stem ?? "")),
-        }),
-      }).catch(() => null)
-      if (!res || !res.ok) {
+      if (cAbortRef.current.signal.aborted) {
+        aborted = true
+        break
+      }
+      try {
+        // v42 — progressive transport: per-batch stages land in the runline
+        const data = await aiJson<{ questions?: unknown[]; error?: string }>(
+          "/api/ai/exam-generate",
+          {
+            action: "chunk",
+            topic: cTopic.trim(),
+            area: cArea,
+            difficulty: Number(cDiff),
+            lang: cLang,
+            count: Math.min(batch, target - collected.length),
+            avoid: (collected as { stem?: unknown }[]).map((q) => String(q?.stem ?? "")),
+          },
+          { onStage: setCStage, signal: cAbortRef.current.signal }
+        )
+        if (!data.questions?.length) {
+          failures++
+          continue
+        }
+        collected.push(...data.questions)
+        setCProgress(Math.min(collected.length, target))
+        setCStage(null) // fresh runline for the next batch
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+          aborted = true
+          break
+        }
         failures++
         await new Promise((r) => setTimeout(r, 1500))
-        continue
       }
-      const data = (await res.json()) as { questions?: unknown[] }
-      if (!data.questions?.length) {
-        failures++
-        continue
-      }
-      collected.push(...data.questions)
-      setCProgress(Math.min(collected.length, target))
+    }
+    if (aborted) {
+      setCLoading(false)
+      cAbortRef.current = null
+      return // honest cancel — nothing persisted, no sitting opened
     }
     if (collected.length < 3) {
       setCLoading(false)
@@ -1216,6 +1241,24 @@ export function ExamCenter() {
                 </p>
               )}
             </div>
+            {/* v42 — the progressive runline: per-batch stages, the count, cancel */}
+            {cLoading && (
+              <div className="mb-1">
+                <StageTicker
+                  busy={cLoading}
+                  labels={[
+                    tt("ai42.stageReading", lang),
+                    tt("ai42.stageWriting", lang),
+                    tt("ai42.stageStructuring", lang),
+                  ]}
+                  stage={cStage}
+                  startedAt={cStartedAt}
+                  onCancel={() => cAbortRef.current?.abort()}
+                  cancelLabel={tt("ai42.cancel", lang)}
+                  runningLabel={`${tt("exam.customGenerating", lang)} ${cProgress}/${Number(cCount)}`}
+                />
+              </div>
+            )}
             <DialogFooter>
               <Button onClick={() => void startCustomExam()} disabled={!cTopic.trim() || cLoading} className="w-full sm:w-auto">
                 {cLoading ? <Loader2 className="me-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="me-1.5 h-4 w-4" />}
